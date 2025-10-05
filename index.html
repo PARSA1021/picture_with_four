@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>인생네컷 생성기 V3 - 예쁜 디자인 적용</title>
+    <title>인생네컷 생성기 V3 - 화이트&블랙 디자인</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,10 +31,10 @@
             height: auto;
             border-radius: 1rem;
         }
-        /* 탭 및 버튼 활성화 스타일 */
+        /* 탭 및 버튼 활성화 스타일 (Dark Gray/Black Accent) */
         .tab-btn.active {
-            border-color: #ec4899; /* pink-600 */
-            color: #ec4899;
+            border-color: #374151; /* Gray-700 */
+            color: #374151;
             font-weight: 700;
         }
         .control-btn {
@@ -46,22 +46,9 @@
         }
         .control-btn.active {
             transform: scale(1.0); /* 크기 변화 제거, 그림자만 강조 */
-            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.7); /* 핑크색 강조 링 */
-            border-color: #ec4899;
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.7); /* Gray-700 강조 링 */
+            border-color: #374151;
             z-index: 10;
-        }
-        /* 순서 변경 모드 스타일 */
-        .reorder-mode .preview-item {
-            animation: wiggle 0.5s infinite;
-        }
-        .preview-item.reorder-selected {
-            outline: 4px solid #fb7185;
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        @keyframes wiggle {
-            0%, 100% { transform: rotate(-1deg); }
-            50% { transform: rotate(1deg); }
         }
         /* 로더 스타일 */
         #loader {
@@ -78,7 +65,7 @@
     <div class="w-full max-w-7xl mx-auto bg-white lg:rounded-3xl lg:shadow-2xl lg:my-8 overflow-hidden">
         
         <header class="text-center py-6 border-b border-gray-100 lg:hidden">
-            <h1 class="text-3xl font-black text-pink-600">인생네컷 V3</h1>
+            <h1 class="text-3xl font-black text-gray-900">인생네컷 V3</h1>
             <p class="text-gray-400 text-sm">모바일에 최적화된 포토부스</p>
         </header>
         
@@ -86,7 +73,7 @@
             
             <div class="w-full lg:w-2/5 p-4 lg:p-0 lg:sticky lg:top-10 self-start">
                 <header class="hidden lg:block mb-8 mt-4">
-                    <h1 class="text-5xl font-extrabold text-pink-600 tracking-tighter">My Photo Booth</h1>
+                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">My Photo Booth</h1>
                     <p class="text-xl text-gray-500 mt-1">인생네컷 생성기 V3</p>
                 </header>
                 <div id="canvasContainer">
@@ -117,38 +104,37 @@
                 <div class="p-6 space-y-8">
                     <div id="tab-photo" class="tab-content space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <label for="imageUpload" class="w-full bg-pink-500 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-pink-600 transition-colors shadow-lg transform hover:scale-[1.01]">갤러리에서 선택</label>
-                            <label for="cameraUpload" class="w-full bg-purple-500 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-purple-600 transition-colors shadow-lg transform hover:scale-[1.01]">즉시 사진 촬영</label>
+                            <label for="imageUpload" class="w-full bg-gray-900 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-800 transition-colors shadow-lg transform hover:scale-[1.01]">갤러리에서 선택</label>
+                            <label for="cameraUpload" class="w-full bg-gray-700 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-600 transition-colors shadow-lg transform hover:scale-[1.01]">즉시 사진 촬영</label>
                             <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
                             <input type="file" id="cameraUpload" accept="image/*" capture="user" class="hidden">
                         </div>
                         <div id="imagePreviewsContainer" class="space-y-4">
-                            <p id="fileStatus" class="text-sm text-gray-500 h-5"></p>
+                            <p id="fileStatus" class="text-sm text-gray-500 h-5"></p> 
                             <div id="imagePreviews" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
                         </div>
-                        <button id="reorderBtn" class="w-full bg-gray-100 text-gray-700 p-3 rounded-xl font-bold transition-colors shadow-inner hover:bg-gray-200">순서 변경 시작</button>
                     </div>
 
                     <div id="tab-design" class="tab-content hidden space-y-6">
                         <div>
-                           <h3 class="font-bold text-lg mb-2 text-pink-600">📐 레이아웃 선택</h3>
+                           <h3 class="font-bold text-lg mb-2 text-gray-800">📐 레이아웃 선택</h3>
                            <div id="layoutButtons" class="flex flex-wrap gap-4">
                                 <button class="control-btn p-3 rounded-xl shadow-sm border border-gray-200 font-semibold transition-all duration-200 bg-white flex flex-col items-center justify-center text-sm hover:shadow-md active" data-layout="1x4">
-                                     <svg width="20" height="40" viewBox="0 0 20 40" fill="currentColor" class="text-pink-600 mb-1"><rect x="5" y="0" width="10" height="8" rx="1"/><rect x="5" y="10" width="10" height="8" rx="1"/><rect x="5" y="20" width="10" height="8" rx="1"/><rect x="5" y="30" width="10" height="8" rx="1"/></svg>
+                                     <svg width="20" height="40" viewBox="0 0 20 40" fill="currentColor" class="text-gray-800 mb-1"><rect x="5" y="0" width="10" height="8" rx="1"/><rect x="5" y="10" width="10" height="8" rx="1"/><rect x="5" y="20" width="10" height="8" rx="1"/><rect x="5" y="30" width="10" height="8" rx="1"/></svg>
                                     세로 4컷 (1x4)
                                 </button>
                                 <button class="control-btn p-3 rounded-xl shadow-sm border border-gray-200 font-semibold transition-all duration-200 bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x2">
-                                    <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor" class="text-pink-600 mb-1"><rect x="2" y="2" width="16" height="16" rx="1"/><rect x="22" y="2" width="16" height="16" rx="1"/><rect x="2" y="22" width="16" height="16" rx="1"/><rect x="22" y="22" width="16" height="16" rx="1"/></svg>
+                                    <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor" class="text-gray-800 mb-1"><rect x="2" y="2" width="16" height="16" rx="1"/><rect x="22" y="2" width="16" height="16" rx="1"/><rect x="2" y="22" width="16" height="16" rx="1"/><rect x="22" y="22" width="16" height="16" rx="1"/></svg>
                                     정사각 4컷 (2x2)
                                 </button>
                             </div>
                         </div>
                          <div>
-                           <h3 class="font-bold text-lg mb-2 text-pink-600">🎨 테마 프리셋</h3>
+                           <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋</h3>
                            <div id="themeButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
                         </div>
                         <div>
-                           <h3 class="font-bold text-lg mb-2 text-pink-600">🌈 사용자 지정 색상</h3>
+                           <h3 class="font-bold text-lg mb-2 text-gray-800">🌈 사용자 지정 색상</h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label for="backgroundColorPicker" class="font-semibold text-gray-600 text-sm">배경색</label>
@@ -163,12 +149,12 @@
                     </div>
 
                     <div id="tab-text" class="tab-content hidden space-y-4">
-                         <h3 class="font-bold text-lg mb-4 text-pink-600">✏️ 문구 및 스타일</h3>
-                        <input type="text" id="customTextInput" placeholder="여기에 문구를 입력하세요" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 transition-shadow">
+                         <h3 class="font-bold text-lg mb-4 text-gray-800">✏️ 문구 및 스타일</h3>
+                        <input type="text" id="customTextInput" placeholder="여기에 문구를 입력하세요" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
                                 <label for="fontSelector" class="font-semibold text-gray-600">폰트</label>
-                                <select id="fontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-pink-300">
+                                <select id="fontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300">
                                     <option value="Inter">Inter (기본)</option>
                                     <option value="Nanum Pen Script">나눔손글씨 펜</option>
                                     <option value="Caveat">Caveat</option>
@@ -185,15 +171,15 @@
                         </div>
                          <div>
                             <label for="fontSizeSlider" class="font-semibold text-gray-600">크기: <span id="fontSizeValue">50</span>px</label>
-                            <input type="range" id="fontSizeSlider" min="20" max="100" value="50" class="w-full mt-2 h-3 bg-pink-200 rounded-lg appearance-none cursor-pointer">
+                            <input type="range" id="fontSizeSlider" min="20" max="100" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                         </div>
                     </div>
                      <div id="tab-save" class="tab-content hidden space-y-4">
                         <p class="text-center text-gray-600 text-lg font-medium">✨ 결과물이 마음에 드시나요? <br>원하는 파일 형식으로 저장하세요!</p>
-                        <button id="downloadJpgBtn" class="w-full bg-pink-500 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-[1.01]">
+                        <button id="downloadJpgBtn" class="w-full bg-gray-900 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-[1.01]">
                             JPEG로 저장 (일반 화질)
                         </button>
-                        <button id="downloadPngBtn" class="w-full bg-purple-500 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-purple-600 transition-all duration-300 transform hover:scale-[1.01]">
+                        <button id="downloadPngBtn" class="w-full bg-gray-700 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-600 transition-all duration-300 transform hover:scale-[1.01]">
                             PNG로 저장 (고화질, 추천)
                         </button>
                     </div>
@@ -203,7 +189,7 @@
     </div>
     
     <div id="loader" class="fixed inset-0 bg-white bg-opacity-75 hidden justify-center items-center z-50">
-        <div class="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <script>
@@ -212,38 +198,34 @@
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 새로운 테마 추가
+        // 테마 설정: 블랙/화이트 테마로 변경
         const themes = {
-            'pink-soft': { name: '🩷 핑크 감성', bg: '#fce7f3', frame: '#ffffff', text: '#ec4899' },
-            'bw-classic': { name: '⚫️ 흑백 클래식', bg: '#EEEEEE', frame: '#ffffff', text: '#333333' },
-            'blue-cool': { name: '💙 블루 시크', bg: '#E0F2FE', frame: '#ffffff', text: '#0284c7' },
-            'vintage-sepia': { name: '🎞️ 빈티지 세피아', bg: '#f5e8d9', frame: '#fffbf5', text: '#7f5539' },
-            'cozy-autumn': { name: '🍂 코지 어텀', bg: '#f6e4d8', frame: '#ffffff', text: '#c1643c' },
-            'winter-snow': { name: '❄️ 겨울 눈꽃', bg: '#e0e7ff', frame: '#ffffff', text: '#4338ca' },
-            'mint-fresh': { name: '🍃 민트 상큼', bg: '#ccfbf1', frame: '#ffffff', text: '#0d9488' },
+            'bw-minimal': { name: '⚫️ 화이트/블랙', bg: '#f9f9f9', frame: '#ffffff', text: '#1f2937' },
+            'bw-classic': { name: '⚪️ 흑백 클래식', bg: '#EEEEEE', frame: '#ffffff', text: '#333333' },
             'dark-chic': { name: '🖤 다크 시크', bg: '#1f2937', frame: '#4b5563', text: '#f3f4f6' },
+            'sky-clean': { name: '✨ 스카이 클린', bg: '#f0f9ff', frame: '#ffffff', text: '#0ea5e9' },
+            'mint-fresh': { name: '🍃 민트 상큼', bg: '#ccfbf1', frame: '#ffffff', text: '#0d9488' },
+            'vintage-sepia': { name: '🎞️ 빈티지 세피아', bg: '#f5e8d9', frame: '#fffbf5', text: '#7f5539' },
             'retro-pop': { name: '💖 레트로 팝', bg: '#ffedd5', frame: '#fca5a5', text: '#9333ea' },
             'nature-green': { name: '🌿 자연 친화', bg: '#d1fae5', frame: '#a7f3d0', text: '#065f46' },
         };
 
-        // 상태 관리
+        // 상태 관리 (기본 테마를 'bw-minimal'로 설정)
         let config = {
-            images: [],
+            images: [], 
             layout: '1x4',
-            theme: 'pink-soft',
-            backgroundColor: themes['pink-soft'].bg,
-            frameColor: themes['pink-soft'].frame,
+            theme: 'bw-minimal', // 기본 테마 변경
+            backgroundColor: themes['bw-minimal'].bg,
+            frameColor: themes['bw-minimal'].frame,
             customText: {
                 content: 'LIFE 4 CUTS',
                 font: 'Inter',
                 size: 50,
-                color: themes['pink-soft'].text
+                color: themes['bw-minimal'].text // 기본 텍스트 색상 변경
             }
         };
         
         let appState = {
-            isReordering: false,
-            firstReorderIndex: null,
             activeTab: 'tab-photo'
         };
 
@@ -273,8 +255,6 @@
                 }
             });
             
-            document.getElementById('reorderBtn').addEventListener('click', toggleReorderMode);
-
             document.getElementById('backgroundColorPicker').addEventListener('input', (e) => { config.backgroundColor = e.target.value; drawCanvas(); });
             document.getElementById('frameColorPicker').addEventListener('input', (e) => { config.frameColor = e.target.value; drawCanvas(); });
             
@@ -309,7 +289,6 @@
                     });
                 });
             });
-            // 초기 탭 활성화 (HTML에 active 클래스를 추가했으므로 이 부분은 필요없을 수 있으나, 안전을 위해 유지)
             document.querySelector(`.tab-btn[data-tab="${appState.activeTab}"]`).click();
         }
 
@@ -319,9 +298,7 @@
             container.innerHTML = '';
             for (const [key, theme] of Object.entries(themes)) {
                 const button = document.createElement('button');
-                // control-btn 디자인 통일 및 터치 영역 확보
                 button.className = 'control-btn p-3 rounded-xl shadow-sm border border-gray-200 text-sm font-semibold transition-all duration-200 text-center bg-white hover:shadow-md';
-                // 테마 미리보기 박스 스타일 개선
                 button.innerHTML = `<div class="w-full h-4 rounded mb-2 border-2 border-dashed border-gray-300" style="background-color: ${theme.bg}; border-color: ${theme.frame === '#ffffff' ? '#e5e7eb' : theme.frame};"></div>${theme.name}`;
                 button.dataset.theme = key;
                 button.addEventListener('click', () => {
@@ -353,7 +330,7 @@
             if (activeButton) activeButton.classList.add('active');
         }
 
-        // --- 이미지 처리 (터치 순서변경 포함) ---
+        // --- 이미지 처리 ---
         async function handleFiles(files) {
             const fileList = Array.from(files).slice(0, MAX_IMAGES - config.images.length);
             if (fileList.length === 0) {
@@ -365,12 +342,19 @@
             for (const file of fileList) {
                 try {
                     const img = await loadImage(file);
-                    config.images.push({ id: Date.now() + Math.random(), image: img });
+                    config.images.push({ 
+                        id: Date.now() + Math.random(), 
+                        image: img,
+                        // 카메라로 촬영한 경우 (capture="user") 좌우 반전 기본값 true 설정
+                        flipped: file.name && file.name.includes('image') && document.getElementById('cameraUpload').files.length > 0 ? true : false
+                    });
                 } catch (error) { console.error("Image loading failed:", error); }
             }
             renderImagePreviews();
             drawCanvas();
             showLoader(false);
+            document.getElementById('imageUpload').value = null;
+            document.getElementById('cameraUpload').value = null;
         }
 
         function loadImage(file) {
@@ -378,7 +362,6 @@
                 const reader = new FileReader();
                 reader.onload = e => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = e.target.result; };
                 reader.onerror = reject;
-                // FileReader가 파일을 다 읽을 때까지 대기
                 reader.readAsDataURL(file);
             });
         }
@@ -395,110 +378,107 @@
                 const img = document.createElement('img');
                 img.src = imgData.image.src;
                 img.className = 'w-full h-full object-cover rounded-lg shadow-md';
+                if (imgData.flipped) {
+                    img.style.transform = 'scaleX(-1)'; 
+                    img.title = '좌우 반전됨';
+                }
                 
+                // 1. 좌우 반전 버튼 (Black Accent)
+                const flipBtn = document.createElement('button');
+                flipBtn.innerHTML = '↔️';
+                flipBtn.className = `absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs z-10 
+                                     transition-all duration-200 
+                                     ${imgData.flipped ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-800 opacity-70 group-hover:opacity-100'}`;
+                flipBtn.title = '좌우 반전';
+                flipBtn.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    flipImage(index); 
+                };
+                
+                // 2. 삭제 버튼
                 const removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '&times;';
-                // 모바일 터치 시 삭제 버튼이 더 잘 보이도록 hover 클래스 조정 가능
                 removeBtn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10';
                 removeBtn.onclick = (e) => { 
-                    if (appState.isReordering) return; // 재정렬 모드에서 삭제 방지
                     e.stopPropagation(); 
                     removeImage(index); 
                 };
                 
+                // 3. 순서 변경 (위/아래) 버튼 컨테이너 (Blue Accent 유지)
+                const moveContainer = document.createElement('div');
+                moveContainer.className = 'absolute bottom-1 right-1 bg-white bg-opacity-90 rounded-xl flex shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 overflow-hidden divide-x divide-gray-200';
+                
+                // 3a. 위로 버튼
+                const upBtn = document.createElement('button');
+                upBtn.innerHTML = '▲';
+                upBtn.disabled = (index === 0);
+                upBtn.title = '순서 위로';
+                upBtn.className = `w-7 h-7 flex items-center justify-center font-bold text-xs transition-colors 
+                                   ${index === 0 ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 hover:bg-gray-100'}`;
+                upBtn.onclick = (e) => { e.stopPropagation(); moveImage(index, -1); };
+                
+                // 3b. 아래로 버튼
+                const downBtn = document.createElement('button');
+                downBtn.innerHTML = '▼';
+                downBtn.disabled = (index === config.images.length - 1);
+                downBtn.title = '순서 아래로';
+                downBtn.className = `w-7 h-7 flex items-center justify-center font-bold text-xs transition-colors 
+                                     ${index === config.images.length - 1 ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 hover:bg-gray-100'}`;
+                downBtn.onclick = (e) => { e.stopPropagation(); moveImage(index, 1); };
+                
+                moveContainer.appendChild(upBtn);
+                moveContainer.appendChild(downBtn);
+                
                 div.appendChild(img);
                 div.appendChild(removeBtn);
+                div.appendChild(flipBtn);
+                div.appendChild(moveContainer); 
                 container.appendChild(div);
-                
-                // 모바일 터치 이벤트 포함
-                div.addEventListener('click', () => handlePreviewClick(index));
             });
             document.getElementById('fileStatus').textContent = `${config.images.length} / ${MAX_IMAGES}장 업로드됨.`;
         }
+        
+        // --- 순서 변경 및 반전 로직 (유지) ---
+        function moveImage(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < config.images.length) {
+                [config.images[index], config.images[newIndex]] = [config.images[newIndex], config.images[index]];
+                renderImagePreviews(); 
+                drawCanvas(); 
+            }
+        }
+
+        function flipImage(index) {
+            if (index >= 0 && index < config.images.length) {
+                config.images[index].flipped = !config.images[index].flipped;
+                renderImagePreviews();
+                drawCanvas();
+            }
+        }
 
         function removeImage(index) {
-             if (appState.isReordering) return;
-             // 배열에서 해당 인덱스의 이미지 객체 삭제
              config.images.splice(index, 1);
              renderImagePreviews();
              drawCanvas();
         }
 
-        function toggleReorderMode() {
-            appState.isReordering = !appState.isReordering;
-            appState.firstReorderIndex = null;
-            const btn = document.getElementById('reorderBtn');
-            const container = document.getElementById('imagePreviewsContainer');
-            
-            // 재정렬 모드 시 삭제 버튼 숨김 (UX 개선)
-            document.querySelectorAll('.preview-item button').forEach(b => b.classList.toggle('hidden', appState.isReordering));
-            
-            container.classList.toggle('reorder-mode', appState.isReordering);
-            document.querySelectorAll('.preview-item').forEach(el => el.classList.remove('reorder-selected'));
 
-            if (appState.isReordering) {
-                btn.textContent = '순서 변경 완료 (재정렬 취소)';
-                btn.classList.add('bg-pink-500', 'text-white', 'shadow-lg');
-                btn.classList.remove('bg-gray-100', 'text-gray-700', 'shadow-inner');
-                // 사용자 친화적인 메시지
-                document.getElementById('fileStatus').textContent = '✅ 순서를 바꿀 사진 두 장을 차례로 탭하세요. (완료 버튼을 다시 눌러 종료)';
-            } else {
-                btn.textContent = '순서 변경 시작';
-                btn.classList.remove('bg-pink-500', 'text-white', 'shadow-lg');
-                btn.classList.add('bg-gray-100', 'text-gray-700', 'shadow-inner');
-                document.getElementById('fileStatus').textContent = `${config.images.length} / ${MAX_IMAGES}장 업로드됨.`;
-            }
-        }
-
-        function handlePreviewClick(index) {
-            if (!appState.isReordering) return;
-            // 클릭된 엘리먼트를 찾을 때 data-index를 사용 (UI와 config.images의 매핑)
-            const clickedEl = document.querySelector(`#imagePreviewsContainer .preview-item[data-index="${index}"]`);
-
-            if (appState.firstReorderIndex === null) {
-                // 첫 번째 사진 선택
-                appState.firstReorderIndex = index;
-                clickedEl.classList.add('reorder-selected');
-                document.getElementById('fileStatus').textContent = '👉 두 번째 사진을 탭하세요.';
-            } else {
-                // 두 번째 사진 선택 및 교환
-                const firstIndex = appState.firstReorderIndex;
-                const secondIndex = index;
-                
-                // config.images 배열 내 이미지 객체 교환
-                [config.images[firstIndex], config.images[secondIndex]] = [config.images[secondIndex], config.images[firstIndex]];
-                
-                appState.firstReorderIndex = null;
-                renderImagePreviews();
-                drawCanvas();
-                
-                // 다음 교환을 위해 선택 해제 및 메시지 복귀
-                document.querySelectorAll('.preview-item').forEach(el => el.classList.remove('reorder-selected'));
-                document.getElementById('fileStatus').textContent = '✅ 순서를 바꿀 사진 두 장을 차례로 탭하세요.';
-            }
-        }
-
-        // --- 캔버스 그리기 (고해상도 대응) ---
+        // --- 캔버스 그리기 (유지) ---
         function drawCanvas() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.parentElement.getBoundingClientRect();
             
-            // 캔버스 엘리먼트 크기 설정
             canvas.style.width = `${rect.width}px`;
-            // 레이아웃에 따른 높이 비율 조정 (1x4는 3:1, 2x2는 1.5:1)
             const displayHeight = rect.width * (config.layout === '1x4' ? 3 : 1.5);
             canvas.style.height = `${displayHeight}px`;
 
-            // 실제 픽셀 크기 설정 (고해상도)
             const W = rect.width * dpr;
             const H = displayHeight * dpr;
             canvas.width = W;
             canvas.height = H;
             
-            // DPR 스케일링을 적용하여 이후 코드는 논리적 픽셀(Display 크기)로 작업
             ctx.scale(dpr, dpr);
 
-            // 여기서부터는 display 크기 기준으로 그림
             const displayW = rect.width;
             const displayH = displayHeight;
 
@@ -513,18 +493,15 @@
             ctx.fillRect(fx, fy, fw, fh);
             
             // 3. 사진 슬롯 그리기
-            const p = fw * 0.05; // 내부 패딩
+            const p = fw * 0.05; 
             
             if (config.layout === '1x4') {
                 const photoW = fw - 2 * p; 
-                // 사진 4장 + 패딩 5개 (위/아래 마진 + 사진 사이 3개)
                 const photoH = (fh - 5 * p) / 4; 
                 for (let i = 0; i < 4; i++) {
-                    // Y 좌표: 프레임 Y 시작 + 내부 패딩 + i * (사진 높이 + 패딩)
                     drawPhotoSlot(i, fx + p, fy + p + (i * (photoH + p)), photoW, photoH);
                 }
             } else { // 2x2
-                // 사진 2장 + 패딩 3개 (양쪽 마진 + 사진 사이 1개)
                 const photoW = (fw - 3 * p) / 2; 
                 const photoH = (fh - 3 * p) / 2;
                 
@@ -541,14 +518,41 @@
             drawText(displayW, displayH, margin);
         }
         
-        // drawPhotoSlot, applyThemeEffects, applyGrayscale 함수는 변경 없이 유지
+        // drawPhotoSlot 함수: 좌우 반전(flipped) 로직 포함 (유지)
         function drawPhotoSlot(i, x, y, w, h) {
             if (i < config.images.length) {
-                const img = config.images[i].image; const imgRatio = img.width / img.height; const slotRatio = w / h;
+                const imgData = config.images[i];
+                const img = imgData.image; 
+                const isFlipped = imgData.flipped; 
+                
+                const imgRatio = img.width / img.height; 
+                const slotRatio = w / h;
+                
                 let sx, sy, sWidth, sHeight;
-                if (imgRatio > slotRatio) { sHeight = img.height; sWidth = sHeight * slotRatio; sx = (img.width - sWidth) / 2; sy = 0; } 
-                else { sWidth = img.width; sHeight = sWidth / slotRatio; sx = 0; sy = (img.height - sHeight) / 2; }
-                ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+                if (imgRatio > slotRatio) { 
+                    sHeight = img.height; 
+                    sWidth = sHeight * slotRatio; 
+                    sx = (img.width - sWidth) / 2; 
+                    sy = 0; 
+                } else { 
+                    sWidth = img.width; 
+                    sHeight = sWidth / slotRatio; 
+                    sx = 0; 
+                    sy = (img.height - sHeight) / 2; 
+                }
+                
+                ctx.save();
+                
+                if (isFlipped) {
+                    ctx.translate(x + w, y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, w, h);
+                } else {
+                    ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+                }
+                
+                ctx.restore();
+
             } else {
                 ctx.fillStyle = '#e5e7eb'; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#9ca3af';
                 ctx.font = '30px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -556,7 +560,8 @@
             }
         }
         function applyThemeEffects(fx, fy, fw, fh) { 
-            // 흑백 테마 외에는 별도 처리가 필요 없으므로 기존 로직 유지
+            // 'bw-minimal' 테마는 흑백 효과를 적용하지 않습니다. 
+            // 'bw-classic' (사진만 흑백) 또는 'dark-chic' (전체 다크모드) 일 때만 적용합니다.
             if(config.theme === 'bw-classic' || config.theme === 'dark-chic') applyGrayscale(fx, fy, fw, fh); 
         }
         function applyGrayscale(x, y, w, h) { 
@@ -568,45 +573,36 @@
             ctx.putImageData(d, x, y); 
         }
         
-        // 텍스트 그리기 함수 수정 (DPR 스케일링 일관성 확보)
         function drawText(W, H, margin) {
             const { content, font, size, color } = config.customText;
             
-            // 텍스트 크기: 슬라이더 값(size)을 직접 사용 (캔버스 DPR 스케일링에 의존)
             ctx.fillStyle = color; 
-            // 폰트 이름에 따옴표를 사용하여 띄어쓰기가 있는 폰트 처리
             ctx.font = `bold ${size}px "${font}"`; 
             ctx.textAlign = 'center'; 
             ctx.textBaseline = 'middle';
             
-            const fw = W - 2 * margin; // 프레임 너비
-            const fh = H - 2 * margin; // 프레임 높이
-            const p = fw * 0.05; // 내부 패딩
+            const fw = W - 2 * margin; 
+            const fh = H - 2 * margin; 
+            const p = fw * 0.05; 
             
             let textY;
             if(config.layout === '1x4'){
-                // 1x4 레이아웃: 마지막 사진 슬롯 아래
                 const photoH = (fh - 5 * p) / 4;
-                const lastPhotoY = margin + p + (3 * (photoH + p)) + photoH; // 마지막 사진 슬롯의 아래쪽 경계
-                // 텍스트는 프레임의 마지막 사진과 캔버스 하단 마진 사이의 중앙에 위치
+                const lastPhotoY = margin + p + (3 * (photoH + p)) + photoH; 
                 textY = lastPhotoY + (H - margin - lastPhotoY) / 2;
-            } else { // 2x2 레이아웃: 프레임 아래쪽 마진의 중앙에 위치
-                textY = H - (margin / 2); // 캔버스 하단 마진의 중앙
+            } else { 
+                textY = H - (margin / 2); 
             }
-            // 캔버스 중앙에 텍스트를 그립니다.
             if(content) ctx.fillText(content, W / 2, textY);
         }
 
-        // --- 유틸리티 ---
+        // --- 유틸리티 (유지) ---
         function downloadImage(format) {
             if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
             const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'; 
             const quality = format === 'jpeg' ? 0.95 : 1.0;
             
-            showLoader(true); // 다운로드 전 로더 표시
-
-            // drawCanvas()를 다시 호출하여 최종 고화질 렌더링 (필요하다면)
-            // 현재 DPR 로직이 이미 고화질을 지원하므로, toDataURL 호출만으로 충분
+            showLoader(true); 
 
             try {
                 const link = document.createElement('a');
@@ -620,7 +616,7 @@
                  console.error("Download failed:", e);
             }
             
-            showLoader(false); // 다운로드 후 로더 숨김
+            showLoader(false); 
         }
         
         function showLoader(show) { 
@@ -628,7 +624,6 @@
             document.getElementById('loader').classList.toggle('flex', show);
         }
         
-        // 창 크기 변경 시 캔버스 다시 그리기
         window.addEventListener('resize', drawCanvas);
     </script>
 </body>
