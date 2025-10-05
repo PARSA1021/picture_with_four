@@ -3,61 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>인생네컷 생성기 V3 - 화이트&블랙 디자인</title>
+    <title>인생네컷 생성기 V4.1 - 멀티 레이아웃</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&display=swap" rel="stylesheet">
     <style>
-        /* 기본 폰트 및 배경 설정 */
-        html, body {
-            overscroll-behavior-y: contain;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* 약간의 배경색으로 메인 컨테이너 강조 */
-        }
-        /* 캔버스 스타일 (모바일 우선) */
-        #canvasContainer {
-            width: 100%;
-            max-width: 420px;
-            margin: 0 auto;
-        }
+        html, body { overscroll-behavior-y: contain; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        #canvasContainer { width: 100%; max-width: 420px; margin: 0 auto; }
         #photoCanvas {
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); /* 더 부드러운 섀도우 */
-            border: 1px solid #e5e7eb;
-            display: block;
-            width: 100%;
-            height: auto;
-            border-radius: 1rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb;
+            display: block; width: 100%; height: auto; border-radius: 1rem;
         }
-        /* 탭 및 버튼 활성화 스타일 (Dark Gray/Black Accent) */
-        .tab-btn.active {
-            border-color: #374151; /* Gray-700 */
-            color: #374151;
-            font-weight: 700;
-        }
+        .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
         .control-btn {
-             transition: all 0.2s ease-in-out;
-             border: 1px solid #e5e7eb; /* 기본 경계 */
-             padding: 1rem; /* 터치 영역 확장 */
-             min-width: 100px; /* 최소 너비 확보 */
-             text-align: center;
+             transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb;
+             padding: 1rem; min-width: 100px; text-align: center;
         }
         .control-btn.active {
-            transform: scale(1.0); /* 크기 변화 제거, 그림자만 강조 */
-            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.7); /* Gray-700 강조 링 */
-            border-color: #374151;
-            z-index: 10;
+            transform: scale(1.0); box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.7);
+            border-color: #374151; z-index: 10;
         }
-        /* 로더 스타일 */
-        #loader {
-            backdrop-filter: blur(4px);
-        }
-        /* 모바일 폰트 크기 조정 */
-        h1, h2, h3 {
-            word-break: keep-all; /* 한국어 단어 깨짐 방지 */
-        }
+        #textPositionButtons .control-btn.active { box-shadow: 0 0 0 2px rgba(55, 65, 81, 0.7); }
+        #loader { backdrop-filter: blur(4px); }
+        h1, h2, h3 { word-break: keep-all; }
+        /* 드래그 앤 드롭 스타일 */
+        #dropZone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
+        /* 이미지 미리보기 드래그 스타일 */
+        .preview-item.dragging { opacity: 0.5; transform: scale(0.95); }
     </style>
 </head>
 <body class="min-h-screen">
@@ -65,16 +39,16 @@
     <div class="w-full max-w-7xl mx-auto bg-white lg:rounded-3xl lg:shadow-2xl lg:my-8 overflow-hidden">
         
         <header class="text-center py-6 border-b border-gray-100 lg:hidden">
-            <h1 class="text-3xl font-black text-gray-900">인생네컷 V3</h1>
-            <p class="text-gray-400 text-sm">모바일에 최적화된 포토부스</p>
+            <h1 class="text-3xl font-black text-gray-900">인생네컷 V4.1</h1>
+            <p class="text-gray-400 text-sm">멀티 레이아웃 확장</p>
         </header>
         
         <main class="flex flex-col lg:flex-row lg:gap-12 lg:p-10">
             
             <div class="w-full lg:w-2/5 p-4 lg:p-0 lg:sticky lg:top-10 self-start">
                 <header class="hidden lg:block mb-8 mt-4">
-                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">My Photo Booth</h1>
-                    <p class="text-xl text-gray-500 mt-1">인생네컷 생성기 V3</p>
+                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">Photo Booth Pro+</h1>
+                    <p class="text-xl text-gray-500 mt-1">인생네컷 생성기 V4.1</p>
                 </header>
                 <div id="canvasContainer">
                     <canvas id="photoCanvas"></canvas>
@@ -97,12 +71,16 @@
                     </button>
                      <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-save">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        저장
+                        저장 및 공유
                     </button>
                 </nav>
 
                 <div class="p-6 space-y-8">
                     <div id="tab-photo" class="tab-content space-y-4">
+                        <div id="dropZone" class="w-full p-6 border-2 border-dashed border-gray-300 rounded-2xl text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-colors">
+                            <p class="font-bold text-gray-600">이곳에 이미지를 드래그 앤 드롭하세요</p>
+                            <p class="text-sm text-gray-400 mt-1">또는 아래 버튼을 눌러 선택</p>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <label for="imageUpload" class="w-full bg-gray-900 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-800 transition-colors shadow-lg transform hover:scale-[1.01]">갤러리에서 선택</label>
                             <label for="cameraUpload" class="w-full bg-gray-700 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-600 transition-colors shadow-lg transform hover:scale-[1.01]">즉시 사진 촬영</label>
@@ -111,27 +89,38 @@
                         </div>
                         <div id="imagePreviewsContainer" class="space-y-4">
                             <p id="fileStatus" class="text-sm text-gray-500 h-5"></p> 
-                            <div id="imagePreviews" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+                            <div id="imagePreviews" class="grid grid-cols-3 sm:grid-cols-6 gap-4"></div>
                         </div>
                     </div>
 
                     <div id="tab-design" class="tab-content hidden space-y-6">
                         <div>
                            <h3 class="font-bold text-lg mb-2 text-gray-800">📐 레이아웃 선택</h3>
-                           <div id="layoutButtons" class="flex flex-wrap gap-4">
-                                <button class="control-btn p-3 rounded-xl shadow-sm border border-gray-200 font-semibold transition-all duration-200 bg-white flex flex-col items-center justify-center text-sm hover:shadow-md active" data-layout="1x4">
-                                     <svg width="20" height="40" viewBox="0 0 20 40" fill="currentColor" class="text-gray-800 mb-1"><rect x="5" y="0" width="10" height="8" rx="1"/><rect x="5" y="10" width="10" height="8" rx="1"/><rect x="5" y="20" width="10" height="8" rx="1"/><rect x="5" y="30" width="10" height="8" rx="1"/></svg>
-                                    세로 4컷 (1x4)
-                                </button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border border-gray-200 font-semibold transition-all duration-200 bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x2">
-                                    <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor" class="text-gray-800 mb-1"><rect x="2" y="2" width="16" height="16" rx="1"/><rect x="22" y="2" width="16" height="16" rx="1"/><rect x="2" y="22" width="16" height="16" rx="1"/><rect x="22" y="22" width="16" height="16" rx="1"/></svg>
-                                    정사각 4컷 (2x2)
-                                </button>
+                           <div id="layoutButtons" class="grid grid-cols-3 gap-4">
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md active" data-layout="1x4">세로 4컷</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x2">정사각 4컷</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="1+3">1+3 분할</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2+3">2+3 분할(5컷)</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x3">세로 6컷</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="3x2">가로 6컷</button>
                             </div>
                         </div>
                          <div>
-                           <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋</h3>
-                           <div id="themeButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋</h3>
+                            <div id="themeButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">⚙️ 디자인 상세 조절</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="frameMarginSlider" class="font-semibold text-gray-600">프레임 여백: <span id="frameMarginValue">5</span>%</label>
+                                    <input type="range" id="frameMarginSlider" min="0" max="20" value="5" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                 <div>
+                                    <label for="imagePaddingSlider" class="font-semibold text-gray-600">사진 간격: <span id="imagePaddingValue">5</span>%</label>
+                                    <input type="range" id="imagePaddingSlider" min="0" max="20" value="5" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
                         </div>
                         <div>
                            <h3 class="font-bold text-lg mb-2 text-gray-800">🌈 사용자 지정 색상</h3>
@@ -148,9 +137,20 @@
                         </div>
                     </div>
 
-                    <div id="tab-text" class="tab-content hidden space-y-4">
+                    <div id="tab-text" class="tab-content hidden space-y-6">
                          <h3 class="font-bold text-lg mb-4 text-gray-800">✏️ 문구 및 스타일</h3>
-                        <input type="text" id="customTextInput" placeholder="여기에 문구를 입력하세요" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        <input type="text" id="customTextInput" placeholder="여기에 메인 문구를 입력하세요" value="LIFE 4 CUTS" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        <input type="text" id="subTextInput" placeholder="날짜 등 부제목을 입력하세요" value="2025. 10. 05." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-gray-600">메인 문구 위치</h4>
+                            <div id="textPositionButtons" class="flex gap-2 sm:gap-4">
+                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="top">상단</button>
+                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="center">중앙</button>
+                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3 active" data-position="bottom">하단</button>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
                                 <label for="fontSelector" class="font-semibold text-gray-600">폰트</label>
@@ -171,17 +171,22 @@
                         </div>
                          <div>
                             <label for="fontSizeSlider" class="font-semibold text-gray-600">크기: <span id="fontSizeValue">50</span>px</label>
-                            <input type="range" id="fontSizeSlider" min="20" max="100" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                            <input type="range" id="fontSizeSlider" min="20" max="150" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                         </div>
                     </div>
                      <div id="tab-save" class="tab-content hidden space-y-4">
                         <p class="text-center text-gray-600 text-lg font-medium">✨ 결과물이 마음에 드시나요? <br>원하는 파일 형식으로 저장하세요!</p>
-                        <button id="downloadJpgBtn" class="w-full bg-gray-900 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-[1.01]">
-                            JPEG로 저장 (일반 화질)
-                        </button>
-                        <button id="downloadPngBtn" class="w-full bg-gray-700 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-600 transition-all duration-300 transform hover:scale-[1.01]">
+                        <button id="downloadPngBtn" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-blue-700 transition-all duration-300 transform hover:scale-[1.01]">
                             PNG로 저장 (고화질, 추천)
                         </button>
+                        <button id="downloadJpgBtn" class="w-full bg-gray-800 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-900 transition-all duration-300 transform hover:scale-[1.01]">
+                            JPEG로 저장 (일반 화질)
+                        </button>
+                        <div class="pt-4">
+                            <button id="resetBtn" class="w-full bg-red-500 text-white p-3 rounded-xl font-semibold text-base shadow-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-[1.01]">
+                                처음부터 다시 만들기
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -194,102 +199,121 @@
 
     <script>
         // --- 전역 변수 및 설정 ---
-        const MAX_IMAGES = 4;
+        const MAX_IMAGES = 6; // 최대 이미지 6장으로 확장
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
-        
-        // 테마 설정: 블랙/화이트 테마로 변경
+        let draggedItem = null;
+
         const themes = {
-            'bw-minimal': { name: '⚫️ 화이트/블랙', bg: '#f9f9f9', frame: '#ffffff', text: '#1f2937' },
-            'bw-classic': { name: '⚪️ 흑백 클래식', bg: '#EEEEEE', frame: '#ffffff', text: '#333333' },
+            'bw-minimal': { name: '⚫️ 화이트/블랙 (기본)', bg: '#f9f9f9', frame: '#ffffff', text: '#1f2937' },
             'dark-chic': { name: '🖤 다크 시크', bg: '#1f2937', frame: '#4b5563', text: '#f3f4f6' },
-            'sky-clean': { name: '✨ 스카이 클린', bg: '#f0f9ff', frame: '#ffffff', text: '#0ea5e9' },
+            'bw-classic': { name: '⚪️ 흑백 클래식', bg: '#EEEEEE', frame: '#ffffff', text: '#333333' },
+            'vivid-pink': { name: '🌸 비비드 핑크', bg: '#fee2e2', frame: '#fbcfe8', text: '#db2777' },
+            'ocean-blue': { name: '🌊 오션 블루', bg: '#e0f7fa', frame: '#b2ebf2', text: '#00bcd4' },
             'mint-fresh': { name: '🍃 민트 상큼', bg: '#ccfbf1', frame: '#ffffff', text: '#0d9488' },
             'vintage-sepia': { name: '🎞️ 빈티지 세피아', bg: '#f5e8d9', frame: '#fffbf5', text: '#7f5539' },
             'retro-pop': { name: '💖 레트로 팝', bg: '#ffedd5', frame: '#fca5a5', text: '#9333ea' },
-            'nature-green': { name: '🌿 자연 친화', bg: '#d1fae5', frame: '#a7f3d0', text: '#065f46' },
+            'spring-blossom': { name: '🌸 벚꽃 엔딩', bg: '#FFFAFF', frame: '#FFE4E1', text: '#DB7093' },
+            'summer-beach': { name: '☀️ 여름 해변', bg: '#F0E68C', frame: '#FFFFFF', text: '#1E90FF' },
+            'autumn-leaves': { name: '🍂 가을 단풍', bg: '#F5DEB3', frame: '#FFFFFF', text: '#8B4513' },
+            'winter-snow': { name: '❄️ 겨울 왕국', bg: '#F0F8FF', frame: '#FFFFFF', text: '#4682B4' },
+            'cozy-cafe': { name: '☕️ 포근한 카페', bg: '#F5F5DC', frame: '#FFFFFF', text: '#6B4F4E' },
+            'midnight-stroll': { name: '🌙 한밤의 산책', bg: '#2c3e50', frame: '#34495e', text: '#ecf0f1' },
+            'pastel-dream': { name: '🍬 파스텔 꿈', bg: '#e0dcfc', frame: '#f7f6fd', text: '#a195d1' },
+            'polaroid-classic': { name: '📷 즉석 사진', bg: '#f4f4f4', frame: '#ffffff', text: '#555555' }
         };
 
-        // 상태 관리 (기본 테마를 'bw-minimal'로 설정)
-        let config = {
+        let defaultConfig = {
             images: [], 
             layout: '1x4',
-            theme: 'bw-minimal', // 기본 테마 변경
+            theme: 'bw-minimal', 
             backgroundColor: themes['bw-minimal'].bg,
             frameColor: themes['bw-minimal'].frame,
-            customText: {
-                content: 'LIFE 4 CUTS',
-                font: 'Inter',
-                size: 50,
-                color: themes['bw-minimal'].text // 기본 텍스트 색상 변경
+            frameMargin: 5, // %
+            imagePadding: 5, // %
+            mainText: {
+                content: 'Photo Booth', font: 'Inter', size: 50,
+                color: themes['bw-minimal'].text, position: 'bottom'
+            },
+            subText: {
+                content: new Date().toISOString().slice(0, 10).replace(/-/g, '.'),
+                font: 'Inter', size: 25, color: themes['bw-minimal'].text,
             }
         };
+        let config = JSON.parse(JSON.stringify(defaultConfig));
         
-        let appState = {
-            activeTab: 'tab-photo'
-        };
-
         // --- 초기화 ---
         window.onload = () => {
             setupEventListeners();
             populateThemeButtons();
             updateUIFromConfig();
             setupTabs();
-            // 폰트 로드를 위한 짧은 지연 (Google Fonts 로딩 대기)
-            setTimeout(() => {
-                drawCanvas();
-            }, 500); 
+            setTimeout(() => drawCanvas(), 500); 
         };
 
         // --- 이벤트 리스너 설정 ---
         function setupEventListeners() {
+            // 이미지 업로드
+            const dropZone = document.getElementById('dropZone');
+            dropZone.addEventListener('click', () => document.getElementById('imageUpload').click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+            dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
             document.getElementById('imageUpload').addEventListener('change', (e) => handleFiles(e.target.files));
             document.getElementById('cameraUpload').addEventListener('change', (e) => handleFiles(e.target.files));
 
+            // 디자인
             document.getElementById('layoutButtons').addEventListener('click', (e) => {
                 let targetButton = e.target.closest('.control-btn');
-                if (targetButton) {
-                    config.layout = targetButton.dataset.layout;
-                    updateActiveButton(document.getElementById('layoutButtons'), targetButton);
-                    drawCanvas();
-                }
+                if (targetButton) { config.layout = targetButton.dataset.layout; updateActiveButton(document.getElementById('layoutButtons'), targetButton); drawCanvas(); }
             });
-            
+            document.getElementById('frameMarginSlider').addEventListener('input', (e) => { config.frameMargin = parseInt(e.target.value); document.getElementById('frameMarginValue').textContent = e.target.value; drawCanvas(); });
+            document.getElementById('imagePaddingSlider').addEventListener('input', (e) => { config.imagePadding = parseInt(e.target.value); document.getElementById('imagePaddingValue').textContent = e.target.value; drawCanvas(); });
             document.getElementById('backgroundColorPicker').addEventListener('input', (e) => { config.backgroundColor = e.target.value; drawCanvas(); });
             document.getElementById('frameColorPicker').addEventListener('input', (e) => { config.frameColor = e.target.value; drawCanvas(); });
             
-            document.getElementById('customTextInput').addEventListener('input', (e) => { config.customText.content = e.target.value; drawCanvas(); });
-            document.getElementById('fontSelector').addEventListener('change', (e) => { config.customText.font = e.target.value; drawCanvas(); });
+            // 텍스트
+            document.getElementById('textPositionButtons').addEventListener('click', (e) => {
+                let targetButton = e.target.closest('button');
+                if (targetButton && targetButton.dataset.position) { config.mainText.position = targetButton.dataset.position; updateActiveButton(document.getElementById('textPositionButtons'), targetButton); drawCanvas(); }
+            });
+            document.getElementById('customTextInput').addEventListener('input', (e) => { config.mainText.content = e.target.value; drawCanvas(); });
+            document.getElementById('subTextInput').addEventListener('input', (e) => { config.subText.content = e.target.value; drawCanvas(); });
+            document.getElementById('fontSelector').addEventListener('change', (e) => { config.mainText.font = e.target.value; config.subText.font = e.target.value; drawCanvas(); });
             document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
-                config.customText.size = parseInt(e.target.value);
+                config.mainText.size = parseInt(e.target.value);
+                config.subText.size = parseInt(e.target.value) / 2;
                 document.getElementById('fontSizeValue').textContent = e.target.value;
                 drawCanvas();
             });
-            document.getElementById('fontColorPicker').addEventListener('input', (e) => { config.customText.color = e.target.value; drawCanvas(); });
+            document.getElementById('fontColorPicker').addEventListener('input', (e) => { config.mainText.color = e.target.value; config.subText.color = e.target.value; drawCanvas(); });
 
+            // 저장
             document.getElementById('downloadJpgBtn').addEventListener('click', () => downloadImage('jpeg'));
             document.getElementById('downloadPngBtn').addEventListener('click', () => downloadImage('png'));
+            document.getElementById('resetBtn').addEventListener('click', () => { if(confirm('정말로 모든 작업을 초기화하시겠습니까?')) resetApp(); });
+        }
+
+        // --- 앱 초기화 ---
+        function resetApp() {
+            config = JSON.parse(JSON.stringify(defaultConfig));
+            updateUIFromConfig();
+            renderImagePreviews();
+            drawCanvas();
         }
 
         // --- 탭 시스템 ---
         function setupTabs() {
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
-
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const tabId = button.dataset.tab;
-                    appState.activeTab = tabId;
-
                     tabButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
-
-                    tabContents.forEach(content => {
-                        content.id === tabId ? content.classList.remove('hidden') : content.classList.add('hidden');
-                    });
+                    tabContents.forEach(content => content.id === tabId ? content.classList.remove('hidden') : content.classList.add('hidden'));
                 });
             });
-            document.querySelector(`.tab-btn[data-tab="${appState.activeTab}"]`).click();
         }
 
         // --- UI 업데이트 ---
@@ -298,16 +322,13 @@
             container.innerHTML = '';
             for (const [key, theme] of Object.entries(themes)) {
                 const button = document.createElement('button');
-                button.className = 'control-btn p-3 rounded-xl shadow-sm border border-gray-200 text-sm font-semibold transition-all duration-200 text-center bg-white hover:shadow-md';
-                button.innerHTML = `<div class="w-full h-4 rounded mb-2 border-2 border-dashed border-gray-300" style="background-color: ${theme.bg}; border-color: ${theme.frame === '#ffffff' ? '#e5e7eb' : theme.frame};"></div>${theme.name}`;
+                button.className = 'control-btn p-3 rounded-xl shadow-sm border text-sm font-semibold transition-all duration-200 text-center bg-white hover:shadow-md';
+                button.innerHTML = `<div class="w-full h-4 rounded mb-2 border-2 border-dashed" style="background-color: ${theme.bg}; border-color: ${theme.frame === '#ffffff' ? '#e5e7eb' : theme.frame};"></div>${theme.name}`;
                 button.dataset.theme = key;
                 button.addEventListener('click', () => {
-                    config.theme = key;
-                    config.backgroundColor = theme.bg;
-                    config.frameColor = theme.frame;
-                    config.customText.color = theme.text;
-                    updateUIFromConfig();
-                    drawCanvas();
+                    config.theme = key; config.backgroundColor = theme.bg; config.frameColor = theme.frame;
+                    config.mainText.color = theme.text; config.subText.color = theme.text;
+                    updateUIFromConfig(); drawCanvas();
                 });
                 container.appendChild(button);
             }
@@ -316,13 +337,21 @@
         function updateUIFromConfig() {
             updateActiveButton(document.getElementById('themeButtons'), document.querySelector(`[data-theme="${config.theme}"]`));
             updateActiveButton(document.getElementById('layoutButtons'), document.querySelector(`[data-layout="${config.layout}"]`));
+            updateActiveButton(document.getElementById('textPositionButtons'), document.querySelector(`[data-position="${config.mainText.position}"]`));
+            
             document.getElementById('backgroundColorPicker').value = config.backgroundColor;
             document.getElementById('frameColorPicker').value = config.frameColor;
-            document.getElementById('customTextInput').value = config.customText.content;
-            document.getElementById('fontSelector').value = config.customText.font;
-            document.getElementById('fontSizeSlider').value = config.customText.size;
-            document.getElementById('fontSizeValue').textContent = config.customText.size;
-            document.getElementById('fontColorPicker').value = config.customText.color;
+            document.getElementById('frameMarginSlider').value = config.frameMargin;
+            document.getElementById('frameMarginValue').textContent = config.frameMargin;
+            document.getElementById('imagePaddingSlider').value = config.imagePadding;
+            document.getElementById('imagePaddingValue').textContent = config.imagePadding;
+
+            document.getElementById('customTextInput').value = config.mainText.content;
+            document.getElementById('subTextInput').value = config.subText.content;
+            document.getElementById('fontSelector').value = config.mainText.font;
+            document.getElementById('fontSizeSlider').value = config.mainText.size;
+            document.getElementById('fontSizeValue').textContent = config.mainText.size;
+            document.getElementById('fontColorPicker').value = config.mainText.color;
         }
 
         function updateActiveButton(container, activeButton) {
@@ -338,21 +367,17 @@
                  return;
             }
             showLoader(true);
-            document.getElementById('fileStatus').textContent = `${fileList.length}개 이미지 로딩 중...`;
             for (const file of fileList) {
                 try {
                     const img = await loadImage(file);
                     config.images.push({ 
-                        id: Date.now() + Math.random(), 
-                        image: img,
-                        // 카메라로 촬영한 경우 (capture="user") 좌우 반전 기본값 true 설정
-                        flipped: file.name && file.name.includes('image') && document.getElementById('cameraUpload').files.length > 0 ? true : false
+                        id: Date.now() + Math.random(), image: img,
+                        flipped: file.name && file.name.includes('image') && document.getElementById('cameraUpload').files.length > 0 ? true : false,
+                        rotation: 0
                     });
                 } catch (error) { console.error("Image loading failed:", error); }
             }
-            renderImagePreviews();
-            drawCanvas();
-            showLoader(false);
+            renderImagePreviews(); drawCanvas(); showLoader(false);
             document.getElementById('imageUpload').value = null;
             document.getElementById('cameraUpload').value = null;
         }
@@ -374,248 +399,200 @@
                 const div = document.createElement('div');
                 div.className = 'preview-item relative group aspect-square transition-all duration-300';
                 div.dataset.index = index;
+                div.draggable = true;
 
                 const img = document.createElement('img');
                 img.src = imgData.image.src;
                 img.className = 'w-full h-full object-cover rounded-lg shadow-md';
-                if (imgData.flipped) {
-                    img.style.transform = 'scaleX(-1)'; 
-                    img.title = '좌우 반전됨';
-                }
+                img.style.transform = `scaleX(${imgData.flipped ? -1 : 1}) rotate(${imgData.rotation}deg)`;
                 
-                // 1. 좌우 반전 버튼 (Black Accent)
+                const btnContainer = document.createElement('div');
+                btnContainer.className = 'absolute top-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity z-10';
+
+                const leftBtns = document.createElement('div');
                 const flipBtn = document.createElement('button');
                 flipBtn.innerHTML = '↔️';
-                flipBtn.className = `absolute top-1 left-1 rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs z-10 
-                                     transition-all duration-200 
-                                     ${imgData.flipped ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-800 opacity-70 group-hover:opacity-100'}`;
+                flipBtn.className = `rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs transition-all duration-200 ${imgData.flipped ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`;
                 flipBtn.title = '좌우 반전';
-                flipBtn.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    flipImage(index); 
-                };
+                flipBtn.onclick = () => flipImage(index);
+                leftBtns.appendChild(flipBtn);
                 
-                // 2. 삭제 버튼
+                const rotateBtn = document.createElement('button');
+                rotateBtn.innerHTML = '🔄';
+                rotateBtn.className = 'bg-white text-gray-800 rounded-full w-7 h-7 ml-1 flex items-center justify-center font-bold text-xs';
+                rotateBtn.title = '90도 회전';
+                rotateBtn.onclick = () => rotateImage(index);
+                leftBtns.appendChild(rotateBtn);
+
                 const removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '&times;';
-                removeBtn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10';
-                removeBtn.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    removeImage(index); 
-                };
+                removeBtn.className = 'bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold';
+                removeBtn.onclick = () => removeImage(index);
                 
-                // 3. 순서 변경 (위/아래) 버튼 컨테이너 (Blue Accent 유지)
-                const moveContainer = document.createElement('div');
-                moveContainer.className = 'absolute bottom-1 right-1 bg-white bg-opacity-90 rounded-xl flex shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 overflow-hidden divide-x divide-gray-200';
-                
-                // 3a. 위로 버튼
-                const upBtn = document.createElement('button');
-                upBtn.innerHTML = '▲';
-                upBtn.disabled = (index === 0);
-                upBtn.title = '순서 위로';
-                upBtn.className = `w-7 h-7 flex items-center justify-center font-bold text-xs transition-colors 
-                                   ${index === 0 ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 hover:bg-gray-100'}`;
-                upBtn.onclick = (e) => { e.stopPropagation(); moveImage(index, -1); };
-                
-                // 3b. 아래로 버튼
-                const downBtn = document.createElement('button');
-                downBtn.innerHTML = '▼';
-                downBtn.disabled = (index === config.images.length - 1);
-                downBtn.title = '순서 아래로';
-                downBtn.className = `w-7 h-7 flex items-center justify-center font-bold text-xs transition-colors 
-                                     ${index === config.images.length - 1 ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 hover:bg-gray-100'}`;
-                downBtn.onclick = (e) => { e.stopPropagation(); moveImage(index, 1); };
-                
-                moveContainer.appendChild(upBtn);
-                moveContainer.appendChild(downBtn);
+                btnContainer.appendChild(leftBtns);
+                btnContainer.appendChild(removeBtn);
                 
                 div.appendChild(img);
-                div.appendChild(removeBtn);
-                div.appendChild(flipBtn);
-                div.appendChild(moveContainer); 
+                div.appendChild(btnContainer);
                 container.appendChild(div);
+            });
+
+            document.querySelectorAll('.preview-item').forEach(item => {
+                item.addEventListener('dragstart', (e) => { draggedItem = item; setTimeout(() => item.classList.add('dragging'), 0); });
+                item.addEventListener('dragend', (e) => { draggedItem.classList.remove('dragging'); draggedItem = null; });
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    if (afterElement == null) { container.appendChild(draggedItem); } 
+                    else { container.insertBefore(draggedItem, afterElement); }
+                });
+            });
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const newOrder = [...container.querySelectorAll('.preview-item')].map(item => config.images[parseInt(item.dataset.index)]);
+                config.images = newOrder;
+                renderImagePreviews(); drawCanvas();
             });
             document.getElementById('fileStatus').textContent = `${config.images.length} / ${MAX_IMAGES}장 업로드됨.`;
         }
-        
-        // --- 순서 변경 및 반전 로직 (유지) ---
-        function moveImage(index, direction) {
-            const newIndex = index + direction;
-            if (newIndex >= 0 && newIndex < config.images.length) {
-                [config.images[index], config.images[newIndex]] = [config.images[newIndex], config.images[index]];
-                renderImagePreviews(); 
-                drawCanvas(); 
-            }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.preview-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+                else { return closest; }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        function flipImage(index) {
-            if (index >= 0 && index < config.images.length) {
-                config.images[index].flipped = !config.images[index].flipped;
-                renderImagePreviews();
-                drawCanvas();
-            }
-        }
+        function flipImage(index) { config.images[index].flipped = !config.images[index].flipped; renderImagePreviews(); drawCanvas(); }
+        function rotateImage(index) { config.images[index].rotation = (config.images[index].rotation + 90) % 360; renderImagePreviews(); drawCanvas(); }
+        function removeImage(index) { config.images.splice(index, 1); renderImagePreviews(); drawCanvas(); }
 
-        function removeImage(index) {
-             config.images.splice(index, 1);
-             renderImagePreviews();
-             drawCanvas();
-        }
-
-
-        // --- 캔버스 그리기 (유지) ---
+        // --- 캔버스 그리기 ---
         function drawCanvas() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.parentElement.getBoundingClientRect();
             
+            let aspectRatio;
+            switch(config.layout) {
+                case '1x4': aspectRatio = 3; break;
+                case '2x2': aspectRatio = 1.5; break;
+                case '1+3': aspectRatio = 2; break;
+                case '2+3': aspectRatio = 1.8; break; // 5-cut
+                case '2x3': aspectRatio = 2.2; break; // 6-cut
+                case '3x2': aspectRatio = 1.2; break; // 6-cut
+                default: aspectRatio = 3;
+            }
+
             canvas.style.width = `${rect.width}px`;
-            const displayHeight = rect.width * (config.layout === '1x4' ? 3 : 1.5);
+            const displayHeight = rect.width * aspectRatio;
             canvas.style.height = `${displayHeight}px`;
 
-            const W = rect.width * dpr;
-            const H = displayHeight * dpr;
-            canvas.width = W;
-            canvas.height = H;
-            
+            const W = rect.width * dpr; const H = displayHeight * dpr;
+            canvas.width = W; canvas.height = H;
             ctx.scale(dpr, dpr);
+            const dW = rect.width; const dH = displayHeight;
 
-            const displayW = rect.width;
-            const displayH = displayHeight;
-
-            // 1. 배경색 채우기
-            ctx.fillStyle = config.backgroundColor;
-            ctx.fillRect(0, 0, displayW, displayH);
+            ctx.fillStyle = config.backgroundColor; ctx.fillRect(0, 0, dW, dH);
             
-            // 2. 프레임 영역 정의 및 채우기
-            const margin = displayW * 0.05;
-            const fx = margin, fy = margin, fw = displayW - 2 * margin, fh = displayH - 2 * margin;
-            ctx.fillStyle = config.frameColor;
-            ctx.fillRect(fx, fy, fw, fh);
+            const margin = dW * (config.frameMargin / 100);
+            const fx = margin, fy = margin, fw = dW - 2 * margin, fh = dH - 2 * margin;
+            ctx.fillStyle = config.frameColor; ctx.fillRect(fx, fy, fw, fh);
             
-            // 3. 사진 슬롯 그리기
-            const p = fw * 0.05; 
+            const p = fw * (config.imagePadding / 100);
             
             if (config.layout === '1x4') {
-                const photoW = fw - 2 * p; 
-                const photoH = (fh - 5 * p) / 4; 
-                for (let i = 0; i < 4; i++) {
-                    drawPhotoSlot(i, fx + p, fy + p + (i * (photoH + p)), photoW, photoH);
+                const photoW = fw - 2 * p; const photoH = (fh - 5 * p) / 4; 
+                for (let i = 0; i < 4; i++) drawPhotoSlot(i, fx + p, fy + p + i * (photoH + p), photoW, photoH);
+            } else if (config.layout === '2x2') {
+                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 3 * p) / 2;
+                drawPhotoSlot(0, fx + p, fy + p, photoW, photoH); drawPhotoSlot(1, fx + 2 * p + photoW, fy + p, photoW, photoH);
+                drawPhotoSlot(2, fx + p, fy + 2 * p + photoH, photoW, photoH); drawPhotoSlot(3, fx + 2 * p + photoW, fy + 2 * p + photoH, photoW, photoH);
+            } else if (config.layout === '1+3') {
+                const bigH = fh * 0.6 - p * 1.5; const smallH = fh * 0.4 - p * 1.5;
+                drawPhotoSlot(0, fx + p, fy + p, fw - 2 * p, bigH);
+                const smallW = (fw - 4 * p) / 3;
+                for (let i = 0; i < 3; i++) drawPhotoSlot(i + 1, fx + p + i * (smallW + p), fy + bigH + 2 * p, smallW, smallH);
+            } else if (config.layout === '2+3') { // 5-cut
+                const topH = fh * 0.45 - p * 1.5; const bottomH = fh * 0.55 - p * 1.5;
+                const topW = (fw - 3 * p) / 2;
+                const bottomW = (fw - 4 * p) / 3;
+                drawPhotoSlot(0, fx + p, fy + p, topW, topH);
+                drawPhotoSlot(1, fx + p * 2 + topW, fy + p, topW, topH);
+                for (let i = 0; i < 3; i++) drawPhotoSlot(i + 2, fx + p + i * (bottomW + p), fy + p * 2 + topH, bottomW, bottomH);
+            } else if (config.layout === '2x3') { // 6-cut
+                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 4 * p) / 3;
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 2); const col = i % 2;
+                    drawPhotoSlot(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
                 }
-            } else { // 2x2
-                const photoW = (fw - 3 * p) / 2; 
-                const photoH = (fh - 3 * p) / 2;
-                
-                drawPhotoSlot(0, fx + p, fy + p, photoW, photoH);
-                drawPhotoSlot(1, fx + 2 * p + photoW, fy + p, photoW, photoH);
-                drawPhotoSlot(2, fx + p, fy + 2 * p + photoH, photoW, photoH);
-                drawPhotoSlot(3, fx + 2 * p + photoW, fy + 2 * p + photoH, photoW, photoH);
+            } else if (config.layout === '3x2') { // 6-cut
+                const photoW = (fw - 4 * p) / 3; const photoH = (fh - 3 * p) / 2;
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 3); const col = i % 3;
+                    drawPhotoSlot(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
+                }
             }
             
-            // 4. 테마 효과 적용
-            applyThemeEffects(fx, fy, fw, fh);
-            
-            // 5. 텍스트 그리기
-            drawText(displayW, displayH, margin);
+            drawText(dW, dH, margin, p, fh);
         }
         
-        // drawPhotoSlot 함수: 좌우 반전(flipped) 로직 포함 (유지)
         function drawPhotoSlot(i, x, y, w, h) {
             if (i < config.images.length) {
-                const imgData = config.images[i];
-                const img = imgData.image; 
-                const isFlipped = imgData.flipped; 
-                
-                const imgRatio = img.width / img.height; 
-                const slotRatio = w / h;
-                
-                let sx, sy, sWidth, sHeight;
-                if (imgRatio > slotRatio) { 
-                    sHeight = img.height; 
-                    sWidth = sHeight * slotRatio; 
-                    sx = (img.width - sWidth) / 2; 
-                    sy = 0; 
-                } else { 
-                    sWidth = img.width; 
-                    sHeight = sWidth / slotRatio; 
-                    sx = 0; 
-                    sy = (img.height - sHeight) / 2; 
-                }
-                
+                const {image: img, flipped, rotation} = config.images[i];
+                const isGrayscale = (config.theme === 'bw-classic' || config.theme === 'dark-chic');
+                const isSepia = config.theme === 'vintage-sepia';
+                const imgRatio = img.width / img.height, slotRatio = w / h;
+                let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+                if (imgRatio > slotRatio) { sWidth = sHeight * slotRatio; sx = (img.width - sWidth) / 2; } 
+                else { sHeight = sWidth / slotRatio; sy = (img.height - sHeight) / 2; }
                 ctx.save();
-                
-                if (isFlipped) {
-                    ctx.translate(x + w, y);
-                    ctx.scale(-1, 1);
-                    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, w, h);
-                } else {
-                    ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
-                }
-                
+                if (isGrayscale) ctx.filter = 'grayscale(100%)';
+                if (isSepia) ctx.filter = 'sepia(100%)';
+                ctx.translate(x + w / 2, y + h / 2);
+                if (flipped) ctx.scale(-1, 1);
+                ctx.rotate(rotation * Math.PI / 180);
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
                 ctx.restore();
-
             } else {
                 ctx.fillStyle = '#e5e7eb'; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#9ca3af';
                 ctx.font = '30px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText(`+`, x + w / 2, y + h / 2);
             }
         }
-        function applyThemeEffects(fx, fy, fw, fh) { 
-            // 'bw-minimal' 테마는 흑백 효과를 적용하지 않습니다. 
-            // 'bw-classic' (사진만 흑백) 또는 'dark-chic' (전체 다크모드) 일 때만 적용합니다.
-            if(config.theme === 'bw-classic' || config.theme === 'dark-chic') applyGrayscale(fx, fy, fw, fh); 
-        }
-        function applyGrayscale(x, y, w, h) { 
-            const d = ctx.getImageData(x, y, w, h); 
-            for (let i = 0; i < d.data.length; i += 4) { 
-                const a = (d.data[i] + d.data[i+1] + d.data[i+2]) / 3; 
-                d.data[i] = d.data[i+1] = d.data[i+2] = a; 
-            } 
-            ctx.putImageData(d, x, y); 
-        }
         
-        function drawText(W, H, margin) {
-            const { content, font, size, color } = config.customText;
-            
-            ctx.fillStyle = color; 
-            ctx.font = `bold ${size}px "${font}"`; 
-            ctx.textAlign = 'center'; 
-            ctx.textBaseline = 'middle';
-            
-            const fw = W - 2 * margin; 
-            const fh = H - 2 * margin; 
-            const p = fw * 0.05; 
-            
-            let textY;
-            if(config.layout === '1x4'){
-                const photoH = (fh - 5 * p) / 4;
-                const lastPhotoY = margin + p + (3 * (photoH + p)) + photoH; 
-                textY = lastPhotoY + (H - margin - lastPhotoY) / 2;
-            } else { 
-                textY = H - (margin / 2); 
+        function drawText(W, H, margin, p, frameH) {
+            const { mainText, subText } = config;
+            if (mainText.content) {
+                ctx.fillStyle = mainText.color; ctx.font = `bold ${mainText.size}px "${mainText.font}"`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                let textY;
+                if (mainText.position === 'bottom') textY = H - margin - p - (mainText.size / 2);
+                else if (mainText.position === 'top') textY = margin + p + (mainText.size / 2);
+                else textY = H / 2;
+                ctx.fillText(mainText.content, W / 2, textY);
             }
-            if(content) ctx.fillText(content, W / 2, textY);
+            if (subText.content) {
+                ctx.fillStyle = subText.color; ctx.font = `normal ${subText.size}px "${subText.font}"`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                let subTextY = (mainText.position === 'top') ? H - margin - p - (subText.size / 2) : margin + p + (subText.size / 2);
+                ctx.fillText(subText.content, W / 2, subTextY);
+            }
         }
 
-        // --- 유틸리티 (유지) ---
         function downloadImage(format) {
             if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
             const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'; 
             const quality = format === 'jpeg' ? 0.95 : 1.0;
-            
             showLoader(true); 
-
             try {
                 const link = document.createElement('a');
                 link.href = canvas.toDataURL(mimeType, quality);
-                link.download = `inseng4cut_v3_${Date.now()}.${format}`;
-                document.body.appendChild(link); 
-                link.click(); 
-                document.body.removeChild(link);
-            } catch (e) {
-                 alert("이미지 다운로드에 실패했습니다. 다른 브라우저를 사용해보세요.");
-                 console.error("Download failed:", e);
-            }
-            
+                link.download = `photobooth_pro_${Date.now()}.${format}`;
+                link.click();
+            } catch (e) { alert("이미지 다운로드에 실패했습니다."); console.error(e); }
             showLoader(false); 
         }
         
