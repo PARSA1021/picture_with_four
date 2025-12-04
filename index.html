@@ -7,15 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body { overscroll-behavior-y: contain; }
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        #canvasContainer { width: 100%; max-width: 420px; margin: 0 auto; }
+        /* 캔버스 컨테이너에 position: relative; 추가 필수 (텍스트 드래그를 위해) */
+        #canvasContainer { width: 100%; max-width: 420px; margin: 0 auto; position: relative; } 
         #photoCanvas {
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb;
             display: block; width: 100%; height: auto; border-radius: 1rem;
         }
+        /* 드래그 오버레이 스타일 */
+        #mainTextOverlay, #subTextOverlay {
+            position: absolute; text-align: center; cursor: grab; user-select: none;
+            z-index: 50; padding: 5px 10px; border-radius: 5px;
+            transition: all 0.1s ease-out; 
+            top: 0;
+            left: 0;
+            white-space: nowrap; /* 텍스트 너비 고정 */
+        }
+        #mainTextOverlay:hover, #subTextOverlay:hover { background-color: rgba(255, 255, 255, 0.2); border: 1px dashed rgba(55, 65, 81, 0.5); }
         .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
         .control-btn {
              transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb;
@@ -52,13 +63,15 @@
                 </header>
                 <div id="canvasContainer">
                     <canvas id="photoCanvas"></canvas>
+                    <div id="mainTextOverlay"></div>
+                    <div id="subTextOverlay"></div>
                 </div>
             </div>
 
             <div class="w-full lg:w-3/5">
                 <nav class="flex border-b border-gray-200">
                     <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-photo">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 15H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
                         사진 관리
                     </button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-design">
@@ -107,7 +120,7 @@
                         </div>
                          <div>
                             <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋</h3>
-                            <div id="themeButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                            <div id="themeButtons" class="grid grid-cols-3 sm:grid-cols-4 gap-4"></div>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg mb-2 text-gray-800">⚙️ 디자인 상세 조절</h3>
@@ -139,39 +152,56 @@
 
                     <div id="tab-text" class="tab-content hidden space-y-6">
                          <h3 class="font-bold text-lg mb-4 text-gray-800">✏️ 문구 및 스타일</h3>
+                         <p class="text-sm text-blue-600 font-medium bg-blue-50 p-3 rounded-lg border border-blue-100">
+                             💡 캔버스 위의 문구를 터치/클릭한 채 드래그하여 **원하는 위치에 정확히** 배치할 수 있습니다.
+                         </p>
+
                         <input type="text" id="customTextInput" placeholder="여기에 메인 문구를 입력하세요" value="LIFE 4 CUTS" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
-                        <input type="text" id="subTextInput" placeholder="날짜 등 부제목을 입력하세요" value="2025. 10. 05." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        <input type="text" id="subTextInput" placeholder="날짜 등 부제목을 입력하세요" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
                         
                         <div class="space-y-3">
-                            <h4 class="font-semibold text-gray-600">메인 문구 위치</h4>
+                            <h4 class="font-semibold text-gray-600">초기 문구 위치 설정 (드래그로 미세 조정)</h4>
                             <div id="textPositionButtons" class="flex gap-2 sm:gap-4">
                                 <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="top">상단</button>
                                 <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="center">중앙</button>
                                 <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3 active" data-position="bottom">하단</button>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div>
-                                <label for="fontSelector" class="font-semibold text-gray-600">폰트</label>
-                                <select id="fontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300">
-                                    <option value="Inter">Inter (기본)</option>
-                                    <option value="Nanum Pen Script">나눔손글씨 펜</option>
-                                    <option value="Caveat">Caveat</option>
-                                    <option value="Lobster">Lobster</option>
-                                    <option value="Do Hyeon">도현</option>
-                                    <option value="Gothic A1">고딕 A1</option>
-                                    <option value="Permanent Marker">Permanent Marker</option>
-                                </select>
+                        
+                        <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
+                            <h4 class="font-bold text-md text-gray-700">메인 문구 스타일 [밑에거]</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="mainFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
+                                    <select id="mainFontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300"></select>
+                                </div>
+                                <div>
+                                    <label for="mainFontColorPicker" class="font-semibold text-gray-600 text-sm">색상</label>
+                                    <input type="color" id="mainFontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
+                                </div>
                             </div>
                             <div>
-                                <label for="fontColorPicker" class="font-semibold text-gray-600">색상</label>
-                                <input type="color" id="fontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
+                                <label for="mainFontSizeSlider" class="font-semibold text-gray-600">크기: <span id="mainFontSizeValue">50</span>px</label>
+                                <input type="range" id="mainFontSizeSlider" min="20" max="150" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                             </div>
                         </div>
-                         <div>
-                            <label for="fontSizeSlider" class="font-semibold text-gray-600">크기: <span id="fontSizeValue">50</span>px</label>
-                            <input type="range" id="fontSizeSlider" min="20" max="150" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+
+                        <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
+                            <h4 class="font-bold text-md text-gray-700">보조 문구 스타일 [위에거]</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="subFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
+                                    <select id="subFontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300"></select>
+                                </div>
+                                <div>
+                                    <label for="subFontColorPicker" class="font-semibold text-gray-600 text-sm">색상</label>
+                                    <input type="color" id="subFontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="subFontSizeSlider" class="font-semibold text-gray-600">크기: <span id="subFontSizeValue">25</span>px</label>
+                                <input type="range" id="subFontSizeSlider" min="10" max="75" value="25" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
                     </div>
                      <div id="tab-save" class="tab-content hidden space-y-4">
@@ -199,59 +229,109 @@
 
     <script>
         // --- 전역 변수 및 설정 ---
-        const MAX_IMAGES = 6; // 최대 이미지 6장으로 확장
+        const MAX_IMAGES = 6;
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
+        const mainTextOverlay = document.getElementById('mainTextOverlay');
+        const subTextOverlay = document.getElementById('subTextOverlay');
         let draggedItem = null;
+        let isDraggingText = false; // ✨ 수정: 텍스트 드래그 중인지 확인하는 플래그 추가
 
+        // 🎨 테마 프리셋 (상업적 디자인 기준 강화 및 크리스마스 추가)
         const themes = {
-            'bw-minimal': { name: '⚫️ 화이트/블랙 (기본)', bg: '#f9f9f9', frame: '#ffffff', text: '#1f2937' },
-            'dark-chic': { name: '🖤 다크 시크', bg: '#1f2937', frame: '#4b5563', text: '#f3f4f6' },
-            'bw-classic': { name: '⚪️ 흑백 클래식', bg: '#EEEEEE', frame: '#ffffff', text: '#333333' },
-            'vivid-pink': { name: '🌸 비비드 핑크', bg: '#fee2e2', frame: '#fbcfe8', text: '#db2777' },
-            'ocean-blue': { name: '🌊 오션 블루', bg: '#e0f7fa', frame: '#b2ebf2', text: '#00bcd4' },
-            'mint-fresh': { name: '🍃 민트 상큼', bg: '#ccfbf1', frame: '#ffffff', text: '#0d9488' },
-            'vintage-sepia': { name: '🎞️ 빈티지 세피아', bg: '#f5e8d9', frame: '#fffbf5', text: '#7f5539' },
-            'retro-pop': { name: '💖 레트로 팝', bg: '#ffedd5', frame: '#fca5a5', text: '#9333ea' },
-            'spring-blossom': { name: '🌸 벚꽃 엔딩', bg: '#FFFAFF', frame: '#FFE4E1', text: '#DB7093' },
-            'summer-beach': { name: '☀️ 여름 해변', bg: '#F0E68C', frame: '#FFFFFF', text: '#1E90FF' },
-            'autumn-leaves': { name: '🍂 가을 단풍', bg: '#F5DEB3', frame: '#FFFFFF', text: '#8B4513' },
-            'winter-snow': { name: '❄️ 겨울 왕국', bg: '#F0F8FF', frame: '#FFFFFF', text: '#4682B4' },
-            'cozy-cafe': { name: '☕️ 포근한 카페', bg: '#F5F5DC', frame: '#FFFFFF', text: '#6B4F4E' },
-            'midnight-stroll': { name: '🌙 한밤의 산책', bg: '#2c3e50', frame: '#34495e', text: '#ecf0f1' },
-            'pastel-dream': { name: '🍬 파스텔 꿈', bg: '#e0dcfc', frame: '#f7f6fd', text: '#a195d1' },
-            'polaroid-classic': { name: '📷 즉석 사진', bg: '#f4f4f4', frame: '#ffffff', text: '#555555' }
+            'modern-matte': { name: '✨ 모던 매트', bg: '#f7f7f7', frame: '#ffffff', text: '#333333', font: 'Noto Sans KR' },
+            'dark-edition': { name: '🌑 다크 에디션', bg: '#1A1A1A', frame: '#333333', text: '#EDEDED', font: 'Inter' },
+            'christmas-dream': { name: '🎄 크리스마스 드림', bg: '#F8F8F8', frame: '#C0392B', text: '#1E8449', font: 'Permanent Marker' },
+            'film-sepia': { name: '🎞️ 빈티지 필름', bg: '#E8D5C4', frame: '#fffaf2', text: '#584B3C', filter: 'sepia', font: 'Nanum Pen Script' },
+            'monochrome': { name: '⚫️ 모노크롬', bg: '#e5e5e5', frame: '#f9f9f9', text: '#0a0a0a', filter: 'grayscale', font: 'Gothic A1' },
+            'cozy-coffee': { name: '☕️ 포근한 카페', bg: '#F9F5E9', frame: '#FFFFFF', text: '#6D4C41', font: 'Caveat' },
+            'vibrant-retro': { name: '💖 네온 팝', bg: '#FFE3E3', frame: '#F0F0FF', text: '#8A2BE2', font: 'Jua' },
+            'spring-blossom': { name: '🌸 벚꽃 에디션', bg: '#FFFAFF', frame: '#FFE4E1', text: '#DB7093', font: 'Gothic A1' },
+            'deep-ocean': { name: '🌊 딥 오션', bg: '#004D73', frame: '#FFFFFF', text: '#FFC300', font: 'Lobster' },
+            'korean-classic': { name: '🇰🇷 한국의 미', bg: '#F3EFE9', frame: '#FFFFFF', text: '#3C583C', font: 'Do Hyeon' },
+            'travel-blue': { name: '✈️ 트래블 블루', bg: '#ADD8E6', frame: '#FFFFFF', text: '#004D73', font: 'Inter' },
+            'summer-vivid': { name: '☀️ 써머 비비드', bg: '#00bcd4', frame: '#FFFFFF', text: '#facc15', font: 'Jua' },
+            'earth-tone': { name: '🍂 얼스톤 무드', bg: '#DBC3A0', frame: '#FFFFFF', text: '#4A4E69', font: 'Gothic A1' },
+            'cyber-punk': { name: '👾 사이버 펑크', bg: '#231942', frame: '#5E548E', text: '#9F86C0', font: 'Inter' },
+            'pastel-lavender': { name: '💜 파스텔 라벤더', bg: '#EBEBF8', frame: '#F0F0F8', text: '#6A5ACD', font: 'Noto Sans KR' },
         };
+        
+        // --- 날짜 포맷 함수 ---
+        function getCurrentDateFormatted() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // 0-indexed
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}. ${month}. ${day}.`;
+        }
 
         let defaultConfig = {
             images: [], 
             layout: '1x4',
-            theme: 'bw-minimal', 
-            backgroundColor: themes['bw-minimal'].bg,
-            frameColor: themes['bw-minimal'].frame,
+            theme: 'modern-matte', 
+            backgroundColor: themes['modern-matte'].bg,
+            frameColor: themes['modern-matte'].frame,
             frameMargin: 5, // %
             imagePadding: 5, // %
             mainText: {
-                content: 'Photo Booth', font: 'Inter', size: 50,
-                color: themes['bw-minimal'].text, position: 'bottom'
+                content: 'LIFE 4 CUTS', font: 'Noto Sans KR', size: 50, 
+                color: themes['modern-matte'].text, position: 'bottom', x: 0.5, y: 0 
             },
             subText: {
-                content: new Date().toISOString().slice(0, 10).replace(/-/g, '.'),
-                font: 'Inter', size: 25, color: themes['bw-minimal'].text,
+                // 현재 날짜로 자동 설정
+                content: getCurrentDateFormatted(), 
+                font: 'Noto Sans KR', size: 25, color: themes['modern-matte'].text, x: 0.5, y: 0 
             }
         };
         let config = JSON.parse(JSON.stringify(defaultConfig));
         
+        // --- 폰트 목록 (JS로 관리, 트렌디 폰트 추가) ---
+        const fontList = [
+            { value: 'Inter', name: 'Inter (기본 영문)' },
+            { value: 'Noto Sans KR', name: '본고딕 (깔끔/모던)' },
+            { value: 'Jua', name: '주아 (굵은 제목)' },
+            { value: 'Nanum Pen Script', name: '나눔손글씨 펜' },
+            { value: 'Gothic A1', name: '고딕 A1 (모던)' },
+            { value: 'Do Hyeon', name: '도현 (한국적)' },
+            { value: 'Caveat', name: 'Caveat (필기체)' },
+            { value: 'Lobster', name: 'Lobster (영문 제목)' },
+            { value: 'Permanent Marker', name: 'Permanent Marker' },
+        ];
+
+
         // --- 초기화 ---
         window.onload = () => {
             setupEventListeners();
             populateThemeButtons();
+            populateFontSelectors(); 
             updateUIFromConfig();
             setupTabs();
-            setTimeout(() => drawCanvas(), 500); 
+            // 캔버스 초기 크기 설정 후 드로잉
+            setTimeout(() => {
+                resizeCanvas();
+                if (config.mainText.y === 0) initializeTextPositions();
+                drawCanvas(); 
+            }, 500); 
         };
 
-        // --- 이벤트 리스너 설정 ---
+        // --- 폰트 셀렉터 채우기 ---
+        function populateFontSelectors() {
+            const mainSelector = document.getElementById('mainFontSelector');
+            const subSelector = document.getElementById('subFontSelector');
+            
+            // 기존 옵션 제거
+            mainSelector.innerHTML = '';
+            subSelector.innerHTML = '';
+
+            fontList.forEach(font => {
+                const mainOption = new Option(font.name, font.value);
+                const subOption = new Option(font.name, font.value);
+                mainSelector.add(mainOption);
+                subSelector.add(subOption);
+            });
+        }
+
+        // --- 이벤트 리스너 설정 (텍스트 독립 제어 및 드래그 재설정) ---
         function setupEventListeners() {
             // 이미지 업로드
             const dropZone = document.getElementById('dropZone');
@@ -265,40 +345,117 @@
             // 디자인
             document.getElementById('layoutButtons').addEventListener('click', (e) => {
                 let targetButton = e.target.closest('.control-btn');
-                if (targetButton) { config.layout = targetButton.dataset.layout; updateActiveButton(document.getElementById('layoutButtons'), targetButton); drawCanvas(); }
+                if (targetButton) { 
+                    config.layout = targetButton.dataset.layout; 
+                    updateActiveButton(document.getElementById('layoutButtons'), targetButton); 
+                    resizeCanvas(); 
+                    initializeTextPositions(); 
+                    drawCanvas(); 
+                }
             });
             document.getElementById('frameMarginSlider').addEventListener('input', (e) => { config.frameMargin = parseInt(e.target.value); document.getElementById('frameMarginValue').textContent = e.target.value; drawCanvas(); });
             document.getElementById('imagePaddingSlider').addEventListener('input', (e) => { config.imagePadding = parseInt(e.target.value); document.getElementById('imagePaddingValue').textContent = e.target.value; drawCanvas(); });
             document.getElementById('backgroundColorPicker').addEventListener('input', (e) => { config.backgroundColor = e.target.value; drawCanvas(); });
             document.getElementById('frameColorPicker').addEventListener('input', (e) => { config.frameColor = e.target.value; drawCanvas(); });
             
-            // 텍스트
+            // 텍스트 위치 설정
             document.getElementById('textPositionButtons').addEventListener('click', (e) => {
                 let targetButton = e.target.closest('button');
-                if (targetButton && targetButton.dataset.position) { config.mainText.position = targetButton.dataset.position; updateActiveButton(document.getElementById('textPositionButtons'), targetButton); drawCanvas(); }
+                if (targetButton && targetButton.dataset.position) { 
+                    config.mainText.position = targetButton.dataset.position; 
+                    updateActiveButton(document.getElementById('textPositionButtons'), targetButton); 
+                    initializeTextPositions(); 
+                    drawCanvas(); 
+                }
             });
-            document.getElementById('customTextInput').addEventListener('input', (e) => { config.mainText.content = e.target.value; drawCanvas(); });
-            document.getElementById('subTextInput').addEventListener('input', (e) => { config.subText.content = e.target.value; drawCanvas(); });
-            document.getElementById('fontSelector').addEventListener('change', (e) => { config.mainText.font = e.target.value; config.subText.font = e.target.value; drawCanvas(); });
-            document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
+            document.getElementById('customTextInput').addEventListener('input', (e) => { config.mainText.content = e.target.value; updateTextOverlay(); drawCanvas(); });
+            document.getElementById('subTextInput').addEventListener('input', (e) => { config.subText.content = e.target.value; updateTextOverlay(); drawCanvas(); });
+            
+            
+            // --- 메인 문구 전용 리스너 ---
+            document.getElementById('mainFontSelector').addEventListener('change', (e) => { 
+                config.mainText.font = e.target.value; 
+                updateTextOverlay(); drawCanvas(); 
+            });
+            document.getElementById('mainFontSizeSlider').addEventListener('input', (e) => {
                 config.mainText.size = parseInt(e.target.value);
-                config.subText.size = parseInt(e.target.value) / 2;
-                document.getElementById('fontSizeValue').textContent = e.target.value;
-                drawCanvas();
+                document.getElementById('mainFontSizeValue').textContent = e.target.value;
+                updateTextOverlay(); drawCanvas();
             });
-            document.getElementById('fontColorPicker').addEventListener('input', (e) => { config.mainText.color = e.target.value; config.subText.color = e.target.value; drawCanvas(); });
+            document.getElementById('mainFontColorPicker').addEventListener('input', (e) => { 
+                config.mainText.color = e.target.value; 
+                updateTextOverlay(); drawCanvas(); 
+            });
+
+            // --- 보조 문구 전용 리스너 ---
+            document.getElementById('subFontSelector').addEventListener('change', (e) => { 
+                config.subText.font = e.target.value; 
+                updateTextOverlay(); drawCanvas(); 
+            });
+            document.getElementById('subFontSizeSlider').addEventListener('input', (e) => {
+                config.subText.size = parseInt(e.target.value);
+                document.getElementById('subFontSizeValue').textContent = e.target.value;
+                updateTextOverlay(); drawCanvas();
+            });
+            document.getElementById('subFontColorPicker').addEventListener('input', (e) => { 
+                config.subText.color = e.target.value; 
+                updateTextOverlay(); drawCanvas(); 
+            });
 
             // 저장
             document.getElementById('downloadJpgBtn').addEventListener('click', () => downloadImage('jpeg'));
             document.getElementById('downloadPngBtn').addEventListener('click', () => downloadImage('png'));
             document.getElementById('resetBtn').addEventListener('click', () => { if(confirm('정말로 모든 작업을 초기화하시겠습니까?')) resetApp(); });
+
+            // 텍스트 드래그 이벤트 리스너 추가
+            addTextDragListeners(mainTextOverlay, 'mainText');
+            addTextDragListeners(subTextOverlay, 'subText');
         }
+
+        // --- UI 업데이트 ---
+        function updateUIFromConfig() {
+            // 테마 및 레이아웃, 위치 버튼 활성화
+            updateActiveButton(document.getElementById('themeButtons'), document.querySelector(`[data-theme="${config.theme}"]`));
+            updateActiveButton(document.getElementById('layoutButtons'), document.querySelector(`[data-layout="${config.layout}"]`));
+            updateActiveButton(document.getElementById('textPositionButtons'), document.querySelector(`[data-position="${config.mainText.position}"]`));
+            
+            // 색상 및 마진 슬라이더
+            document.getElementById('backgroundColorPicker').value = config.backgroundColor;
+            document.getElementById('frameColorPicker').value = config.frameColor;
+            document.getElementById('frameMarginSlider').value = config.frameMargin;
+            document.getElementById('frameMarginValue').textContent = config.frameMargin;
+            document.getElementById('imagePaddingSlider').value = config.imagePadding;
+            document.getElementById('imagePaddingValue').textContent = config.imagePadding;
+
+            // 텍스트 내용
+            document.getElementById('customTextInput').value = config.mainText.content;
+            document.getElementById('subTextInput').value = config.subText.content; // 현재 날짜로 초기화된 값 사용
+            
+            // 메인 텍스트 UI 업데이트
+            document.getElementById('mainFontSelector').value = config.mainText.font;
+            document.getElementById('mainFontSizeSlider').value = config.mainText.size;
+            document.getElementById('mainFontSizeValue').textContent = config.mainText.size;
+            document.getElementById('mainFontColorPicker').value = config.mainText.color;
+            
+            // 보조 텍스트 UI 업데이트
+            document.getElementById('subFontSelector').value = config.subText.font;
+            document.getElementById('subFontSizeSlider').value = config.subText.size;
+            document.getElementById('subFontSizeValue').textContent = config.subText.size;
+            document.getElementById('subFontColorPicker').value = config.subText.color;
+            
+            updateTextOverlay(); // 오버레이 위치/스타일 업데이트
+        }
+
 
         // --- 앱 초기화 ---
         function resetApp() {
+            // 리셋 시에도 현재 날짜로 초기화
+            defaultConfig.subText.content = getCurrentDateFormatted(); 
             config = JSON.parse(JSON.stringify(defaultConfig));
             updateUIFromConfig();
             renderImagePreviews();
+            resizeCanvas();
+            initializeTextPositions();
             drawCanvas();
         }
 
@@ -316,47 +473,218 @@
             });
         }
 
-        // --- UI 업데이트 ---
+        // --- UI 업데이트 (테마 로직 업데이트) ---
         function populateThemeButtons() {
             const container = document.getElementById('themeButtons');
             container.innerHTML = '';
             for (const [key, theme] of Object.entries(themes)) {
                 const button = document.createElement('button');
                 button.className = 'control-btn p-3 rounded-xl shadow-sm border text-sm font-semibold transition-all duration-200 text-center bg-white hover:shadow-md';
-                button.innerHTML = `<div class="w-full h-4 rounded mb-2 border-2 border-dashed" style="background-color: ${theme.bg}; border-color: ${theme.frame === '#ffffff' ? '#e5e7eb' : theme.frame};"></div>${theme.name}`;
+                // 테마 색상을 더 잘 보여주기 위해 프레임 색상이 흰색일 경우 테두리를 지정
+                const frameBorderColor = theme.frame === '#ffffff' || theme.frame === '#f9f9f9' || theme.frame === '#fffaf2' || theme.frame === '#F0F0F8' ? '#d1d5db' : theme.frame;
+                button.innerHTML = `<div class="w-full h-4 rounded mb-2 border-2" style="background-color: ${theme.bg}; border-color: ${frameBorderColor};"></div>${theme.name}`;
                 button.dataset.theme = key;
                 button.addEventListener('click', () => {
-                    config.theme = key; config.backgroundColor = theme.bg; config.frameColor = theme.frame;
-                    config.mainText.color = theme.text; config.subText.color = theme.text;
-                    updateUIFromConfig(); drawCanvas();
+                    config.theme = key; 
+                    config.backgroundColor = theme.bg; 
+                    config.frameColor = theme.frame;
+                    config.mainText.color = theme.text; 
+                    config.subText.color = theme.text;
+                    
+                    if(theme.font) {
+                        config.mainText.font = theme.font;
+                        config.subText.font = theme.font;
+                    } else { // 폰트가 지정되지 않은 경우 기본 폰트를 사용
+                        config.mainText.font = 'Noto Sans KR';
+                        config.subText.font = 'Noto Sans KR';
+                    }
+                    
+                    // 필터 설정
+                    const newFilter = theme.filter || null;
+                    config.images = config.images.map(img => ({...img, filter: newFilter}));
+                    
+                    updateUIFromConfig(); 
+                    drawCanvas();
+                    renderImagePreviews(); // 미리보기에도 필터를 적용해야 하므로 호출
                 });
                 container.appendChild(button);
             }
         }
         
-        function updateUIFromConfig() {
-            updateActiveButton(document.getElementById('themeButtons'), document.querySelector(`[data-theme="${config.theme}"]`));
-            updateActiveButton(document.getElementById('layoutButtons'), document.querySelector(`[data-layout="${config.layout}"]`));
-            updateActiveButton(document.getElementById('textPositionButtons'), document.querySelector(`[data-position="${config.mainText.position}"]`));
-            
-            document.getElementById('backgroundColorPicker').value = config.backgroundColor;
-            document.getElementById('frameColorPicker').value = config.frameColor;
-            document.getElementById('frameMarginSlider').value = config.frameMargin;
-            document.getElementById('frameMarginValue').textContent = config.frameMargin;
-            document.getElementById('imagePaddingSlider').value = config.imagePadding;
-            document.getElementById('imagePaddingValue').textContent = config.imagePadding;
-
-            document.getElementById('customTextInput').value = config.mainText.content;
-            document.getElementById('subTextInput').value = config.subText.content;
-            document.getElementById('fontSelector').value = config.mainText.font;
-            document.getElementById('fontSizeSlider').value = config.mainText.size;
-            document.getElementById('fontSizeValue').textContent = config.mainText.size;
-            document.getElementById('fontColorPicker').value = config.mainText.color;
-        }
-
         function updateActiveButton(container, activeButton) {
             container.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
             if (activeButton) activeButton.classList.add('active');
+        }
+
+        // --- 캔버스 크기 조절 함수 ---
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            let aspectRatio;
+            switch(config.layout) {
+                case '1x4': aspectRatio = 3; break;
+                case '2x2': aspectRatio = 1.5; break;
+                case '1+3': aspectRatio = 2; break; 
+                case '2+3': aspectRatio = 1.8; break; 
+                case '2x3': aspectRatio = 2.2; break; 
+                case '3x2': aspectRatio = 1.2; break; 
+                default: aspectRatio = 3;
+            }
+
+            canvas.style.width = `${rect.width}px`;
+            const displayHeight = rect.width * aspectRatio;
+            canvas.style.height = `${displayHeight}px`;
+            
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr; 
+            canvas.height = displayHeight * dpr;
+            ctx.scale(dpr, dpr); // DPR 스케일링을 여기에 적용
+        }
+
+
+        // --- 텍스트 초기 위치 설정 ---
+        function initializeTextPositions() {
+            const W = canvas.parentElement.getBoundingClientRect().width;
+            const H = canvas.parentElement.getBoundingClientRect().height;
+            const margin = W * (config.frameMargin / 100);
+            const p = W * (config.imagePadding / 100); 
+
+            let mainY, subY;
+            
+            // 텍스트 크기를 캔버스 크기에 맞춰 비율로 환산
+            const scaleFactor = W / canvas.width; // 캔버스 실제 크기 대비 디스플레이 크기 비율
+            const mainTextHeightEst = config.mainText.size * 1.2 * scaleFactor; 
+            const subTextHeightEst = config.subText.size * 1.2 * scaleFactor; 
+
+            if (config.mainText.position === 'bottom') {
+                mainY = H - margin - p - (mainTextHeightEst / 2);
+                subY = margin + p + (subTextHeightEst / 2); 
+            } else if (config.mainText.position === 'top') {
+                mainY = margin + p + (mainTextHeightEst / 2);
+                subY = H - margin - p - (subTextHeightEst / 2); 
+            } else { // center
+                mainY = H / 2 - subTextHeightEst;
+                subY = H / 2 + mainTextHeightEst; 
+            }
+            
+            // 위치를 비율(0.0 ~ 1.0)로 저장
+            config.mainText.x = 0.5;
+            config.mainText.y = mainY / H; 
+            config.subText.x = 0.5;
+            config.subText.y = subY / H; 
+            
+            updateTextOverlay(); 
+        }
+
+        // --- 텍스트 오버레이(드래그용) 업데이트 ---
+        function updateTextOverlay() {
+            const { mainText, subText } = config;
+            const { width: dW, height: dH } = canvas.getBoundingClientRect();
+            
+            mainTextOverlay.textContent = mainText.content;
+            mainTextOverlay.style.color = mainText.color;
+            mainTextOverlay.style.fontFamily = mainText.font;
+            mainTextOverlay.style.fontSize = `${mainText.size}px`;
+            mainTextOverlay.style.fontWeight = 'bold';
+            
+            const mainTextWidth = mainTextOverlay.offsetWidth;
+            const mainTextHeight = mainTextOverlay.offsetHeight;
+            
+            mainTextOverlay.style.left = `${(dW * mainText.x) - (mainTextWidth / 2)}px`;
+            mainTextOverlay.style.top = `${(dH * mainText.y) - (mainTextHeight / 2)}px`;
+
+            subTextOverlay.textContent = subText.content;
+            subTextOverlay.style.color = subText.color;
+            subTextOverlay.style.fontFamily = subText.font;
+            subTextOverlay.style.fontSize = `${subText.size}px`;
+            subTextOverlay.style.fontWeight = 'normal';
+            
+            const subTextWidth = subTextOverlay.offsetWidth;
+            const subTextHeight = subTextOverlay.offsetHeight;
+            
+            subTextOverlay.style.left = `${(dW * subText.x) - (subTextWidth / 2)}px`;
+            subTextOverlay.style.top = `${(dH * subText.y) - (subTextHeight / 2)}px`;
+        }
+
+        // --- 텍스트 드래그 기능 ---
+        function addTextDragListeners(element, key) {
+            let isDragging = false;
+            let startClientX, startClientY; 
+            let startElementX, startElementY; 
+
+            const startDrag = (e) => {
+                e.preventDefault();
+                isDragging = true;
+                isDraggingText = true; // ✨ 수정: 드래그 시작 시 플래그 설정
+                drawCanvas(); // ✨ 수정: 캔버스 텍스트를 숨기기 위해 다시 그립니다.
+                
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                startClientX = clientX;
+                startClientY = clientY;
+                
+                const parentRect = element.parentElement.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect();
+                
+                startElementX = elementRect.left - parentRect.left;
+                startElementY = elementRect.top - parentRect.top;
+
+                element.style.cursor = 'grabbing';
+            };
+
+            const moveDrag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startClientX; 
+                const dy = clientY - startClientY;
+
+                let newX = startElementX + dx;
+                let newY = startElementY + dy;
+                
+                const parentRect = element.parentElement.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect(); 
+                const elementWidth = elementRect.width;
+                const elementHeight = elementRect.height;
+
+                const margin = parentRect.width * (config.frameMargin / 100);
+
+                // --- 경계값 처리 (캔버스 바깥으로 나가지 않도록) ---
+                newX = Math.max(newX, margin); 
+                newX = Math.min(newX, parentRect.width - elementWidth - margin);
+                newY = Math.max(newY, margin);
+                newY = Math.min(newY, parentRect.height - elementHeight - margin);
+                
+                element.style.left = `${newX}px`;
+                element.style.top = `${newY}px`;
+                
+                // --- 핵심: 텍스트의 "중앙" 비율을 저장하여 캔버스 렌더링과 동기화 ---
+                const centerX = newX + (elementWidth / 2);
+                const centerY = newY + (elementHeight / 2);
+
+                config[key].x = centerX / parentRect.width;
+                config[key].y = centerY / parentRect.height;
+            };
+
+            const endDrag = () => {
+                if (isDragging) {
+                    isDragging = false;
+                    isDraggingText = false; // ✨ 수정: 드래그 종료 시 플래그 해제
+                    element.style.cursor = 'grab';
+                    drawCanvas(); // ✨ 수정: 최종 위치에 캔버스 텍스트를 다시 그립니다.
+                }
+            };
+            
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('touchstart', startDrag, { passive: false });
+
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('touchmove', moveDrag, { passive: false });
+
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
         }
 
         // --- 이미지 처리 ---
@@ -367,13 +695,17 @@
                  return;
             }
             showLoader(true);
+            const currentTheme = themes[config.theme];
             for (const file of fileList) {
                 try {
                     const img = await loadImage(file);
                     config.images.push({ 
-                        id: Date.now() + Math.random(), image: img,
-                        flipped: file.name && file.name.includes('image') && document.getElementById('cameraUpload').files.length > 0 ? true : false,
-                        rotation: 0
+                        id: Date.now() + Math.random(), 
+                        image: img,
+                        // 카메라에서 찍은 사진의 경우 좌우 반전 기본 적용
+                        flipped: (file.name && file.name.includes('image') && document.getElementById('cameraUpload').files.length > 0) ? true : false,
+                        rotation: 0,
+                        filter: currentTheme.filter || null // 테마에 맞는 필터 적용
                     });
                 } catch (error) { console.error("Image loading failed:", error); }
             }
@@ -404,8 +736,13 @@
                 const img = document.createElement('img');
                 img.src = imgData.image.src;
                 img.className = 'w-full h-full object-cover rounded-lg shadow-md';
-                img.style.transform = `scaleX(${imgData.flipped ? -1 : 1}) rotate(${imgData.rotation}deg)`;
-                
+                let transform = `scaleX(${imgData.flipped ? -1 : 1}) rotate(${imgData.rotation}deg)`;
+                img.style.transform = transform;
+                // 필터 스타일 적용
+                if(imgData.filter === 'grayscale') img.style.filter = 'grayscale(100%)';
+                else if(imgData.filter === 'sepia') img.style.filter = 'sepia(100%)';
+                else img.style.filter = 'none';
+
                 const btnContainer = document.createElement('div');
                 btnContainer.className = 'absolute top-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity z-10';
 
@@ -437,6 +774,7 @@
                 container.appendChild(div);
             });
 
+            // 드래그 앤 드롭 재정렬 로직 
             document.querySelectorAll('.preview-item').forEach(item => {
                 item.addEventListener('dragstart', (e) => { draggedItem = item; setTimeout(() => item.classList.add('dragging'), 0); });
                 item.addEventListener('dragend', (e) => { draggedItem.classList.remove('dragging'); draggedItem = null; });
@@ -470,38 +808,24 @@
         function rotateImage(index) { config.images[index].rotation = (config.images[index].rotation + 90) % 360; renderImagePreviews(); drawCanvas(); }
         function removeImage(index) { config.images.splice(index, 1); renderImagePreviews(); drawCanvas(); }
 
+
         // --- 캔버스 그리기 ---
         function drawCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.parentElement.getBoundingClientRect();
+            // resizeCanvas에서 이미 dpr 스케일링을 설정했으므로, 여기서는 dpr을 다시 곱할 필요 없음
+            const { width: dW, height: dH } = canvas.getBoundingClientRect();
+
+            // 1. 배경색 채우기
+            ctx.fillStyle = config.backgroundColor; 
+            ctx.fillRect(0, 0, dW, dH);
             
-            let aspectRatio;
-            switch(config.layout) {
-                case '1x4': aspectRatio = 3; break;
-                case '2x2': aspectRatio = 1.5; break;
-                case '1+3': aspectRatio = 2; break;
-                case '2+3': aspectRatio = 1.8; break; // 5-cut
-                case '2x3': aspectRatio = 2.2; break; // 6-cut
-                case '3x2': aspectRatio = 1.2; break; // 6-cut
-                default: aspectRatio = 3;
-            }
-
-            canvas.style.width = `${rect.width}px`;
-            const displayHeight = rect.width * aspectRatio;
-            canvas.style.height = `${displayHeight}px`;
-
-            const W = rect.width * dpr; const H = displayHeight * dpr;
-            canvas.width = W; canvas.height = H;
-            ctx.scale(dpr, dpr);
-            const dW = rect.width; const dH = displayHeight;
-
-            ctx.fillStyle = config.backgroundColor; ctx.fillRect(0, 0, dW, dH);
-            
+            // 2. 프레임 영역 계산 및 그리기
             const margin = dW * (config.frameMargin / 100);
             const fx = margin, fy = margin, fw = dW - 2 * margin, fh = dH - 2 * margin;
-            ctx.fillStyle = config.frameColor; ctx.fillRect(fx, fy, fw, fh);
+            ctx.fillStyle = config.frameColor; 
+            ctx.fillRect(fx, fy, fw, fh);
             
-            const p = fw * (config.imagePadding / 100);
+            // 3. 사진 슬롯 계산 및 그리기
+            const p = fw * (config.imagePadding / 100); 
             
             if (config.layout === '1x4') {
                 const photoW = fw - 2 * p; const photoH = (fh - 5 * p) / 4; 
@@ -515,20 +839,20 @@
                 drawPhotoSlot(0, fx + p, fy + p, fw - 2 * p, bigH);
                 const smallW = (fw - 4 * p) / 3;
                 for (let i = 0; i < 3; i++) drawPhotoSlot(i + 1, fx + p + i * (smallW + p), fy + bigH + 2 * p, smallW, smallH);
-            } else if (config.layout === '2+3') { // 5-cut
+            } else if (config.layout === '2+3') { 
                 const topH = fh * 0.45 - p * 1.5; const bottomH = fh * 0.55 - p * 1.5;
                 const topW = (fw - 3 * p) / 2;
                 const bottomW = (fw - 4 * p) / 3;
                 drawPhotoSlot(0, fx + p, fy + p, topW, topH);
                 drawPhotoSlot(1, fx + p * 2 + topW, fy + p, topW, topH);
                 for (let i = 0; i < 3; i++) drawPhotoSlot(i + 2, fx + p + i * (bottomW + p), fy + p * 2 + topH, bottomW, bottomH);
-            } else if (config.layout === '2x3') { // 6-cut
+            } else if (config.layout === '2x3') { 
                 const photoW = (fw - 3 * p) / 2; const photoH = (fh - 4 * p) / 3;
                 for (let i = 0; i < 6; i++) {
                     const row = Math.floor(i / 2); const col = i % 2;
                     drawPhotoSlot(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
                 }
-            } else if (config.layout === '3x2') { // 6-cut
+            } else if (config.layout === '3x2') { 
                 const photoW = (fw - 4 * p) / 3; const photoH = (fh - 3 * p) / 2;
                 for (let i = 0; i < 6; i++) {
                     const row = Math.floor(i / 3); const col = i % 3;
@@ -536,24 +860,32 @@
                 }
             }
             
-            drawText(dW, dH, margin, p, fh);
+            // 4. 텍스트 그리기 - 드래그 중이 아닐 때만 캔버스에 그립니다.
+            if (!isDraggingText) {
+                drawTextOnCanvas(dW, dH);
+            }
+            
+            requestAnimationFrame(updateTextOverlay);
         }
         
         function drawPhotoSlot(i, x, y, w, h) {
             if (i < config.images.length) {
-                const {image: img, flipped, rotation} = config.images[i];
-                const isGrayscale = (config.theme === 'bw-classic' || config.theme === 'dark-chic');
-                const isSepia = config.theme === 'vintage-sepia';
+                const {image: img, flipped, rotation, filter} = config.images[i];
+                
                 const imgRatio = img.width / img.height, slotRatio = w / h;
                 let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
                 if (imgRatio > slotRatio) { sWidth = sHeight * slotRatio; sx = (img.width - sWidth) / 2; } 
                 else { sHeight = sWidth / slotRatio; sy = (img.height - sHeight) / 2; }
+                
                 ctx.save();
-                if (isGrayscale) ctx.filter = 'grayscale(100%)';
-                if (isSepia) ctx.filter = 'sepia(100%)';
+                if (filter === 'grayscale') ctx.filter = 'grayscale(100%)';
+                else if (filter === 'sepia') ctx.filter = 'sepia(100%)';
+                else ctx.filter = 'none';
+
                 ctx.translate(x + w / 2, y + h / 2);
                 if (flipped) ctx.scale(-1, 1);
                 ctx.rotate(rotation * Math.PI / 180);
+                
                 ctx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
                 ctx.restore();
             } else {
@@ -563,37 +895,190 @@
             }
         }
         
-        function drawText(W, H, margin, p, frameH) {
+        // --- 캔버스에 텍스트를 그리는 함수 (업데이트된 위치 사용) ---
+        function drawTextOnCanvas(W, H) {
             const { mainText, subText } = config;
+
+            // 메인 텍스트 그리기
             if (mainText.content) {
-                ctx.fillStyle = mainText.color; ctx.font = `bold ${mainText.size}px "${mainText.font}"`;
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                let textY;
-                if (mainText.position === 'bottom') textY = H - margin - p - (mainText.size / 2);
-                else if (mainText.position === 'top') textY = margin + p + (mainText.size / 2);
-                else textY = H / 2;
-                ctx.fillText(mainText.content, W / 2, textY);
+                const textX = W * mainText.x;
+                const textY = H * mainText.y;
+                
+                ctx.fillStyle = mainText.color; 
+                ctx.font = `bold ${mainText.size}px "${mainText.font}"`;
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle'; 
+                ctx.fillText(mainText.content, textX, textY);
             }
+
+            // 부제목 텍스트 그리기
             if (subText.content) {
-                ctx.fillStyle = subText.color; ctx.font = `normal ${subText.size}px "${subText.font}"`;
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                let subTextY = (mainText.position === 'top') ? H - margin - p - (subText.size / 2) : margin + p + (subText.size / 2);
-                ctx.fillText(subText.content, W / 2, subTextY);
+                const subTextX = W * subText.x;
+                const subTextY = H * subText.y;
+                
+                ctx.fillStyle = subText.color; 
+                ctx.font = `normal ${subText.size}px "${subText.font}"`;
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle'; 
+                ctx.fillText(subText.content, subTextX, subTextY);
             }
         }
 
+
         function downloadImage(format) {
             if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
+            // DPR을 고려한 원본 해상도로 저장
+            const tempCanvas = document.createElement('canvas');
+            const dpr = window.devicePixelRatio || 1;
+            const displayW = canvas.parentElement.getBoundingClientRect().width;
+            let aspectRatio;
+            switch(config.layout) {
+                case '1x4': aspectRatio = 3; break;
+                case '2x2': aspectRatio = 1.5; break;
+                case '1+3': aspectRatio = 2; break;
+                case '2+3': aspectRatio = 1.8; break;
+                case '2x3': aspectRatio = 2.2; break;
+                case '3x2': aspectRatio = 1.2; break;
+                default: aspectRatio = 3;
+            }
+            const displayH = displayW * aspectRatio;
+
+            // 고화질 출력을 위해 최소 1000px 너비 (dpr 무시) 또는 현재 화면 크기의 2배 해상도로 설정
+            const renderW = 1200; 
+            const renderH = renderW * aspectRatio;
+            
+            tempCanvas.width = renderW;
+            tempCanvas.height = renderH;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 임시 컨텍스트에 새로운 스케일 적용
+            const scaleX = renderW / displayW;
+            const scaleY = renderH / displayH;
+            tempCtx.scale(scaleX, scaleY);
+            
+            // 설정값을 임시 캔버스에 맞게 조정하여 그리기 (로직 재사용)
+            const oldConfig = JSON.parse(JSON.stringify(config));
+            const oldImages = config.images;
+            const oldMainText = oldConfig.mainText;
+            const oldSubText = oldConfig.subText;
+            
+            // 텍스트 위치 비율은 그대로 유지되지만, 폰트 사이즈는 해상도에 비례하여 조정 필요
+            const textScale = renderW / (displayW * dpr); // 렌더링 해상도 대비 폰트 크기 비율
+            oldMainText.size = oldMainText.size * scaleX; 
+            oldSubText.size = oldSubText.size * scaleX;
+            
+            // 기존 drawCanvas 로직을 임시 캔버스에 맞게 실행
+            drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
+
+
             const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'; 
             const quality = format === 'jpeg' ? 0.95 : 1.0;
             showLoader(true); 
             try {
                 const link = document.createElement('a');
-                link.href = canvas.toDataURL(mimeType, quality);
+                link.href = tempCanvas.toDataURL(mimeType, quality);
                 link.download = `photobooth_pro_${Date.now()}.${format}`;
                 link.click();
-            } catch (e) { alert("이미지 다운로드에 실패했습니다."); console.error(e); }
+            } catch (e) { alert("이미지 다운로드에 실패했습니다. (파일 용량 또는 권한 문제)"); console.error(e); }
             showLoader(false); 
+        }
+        
+        // 고화질 출력을 위한 보조 함수: 특정 컨텍스트에 그리기
+        function drawCanvasOnContext(targetCtx, dW, dH, tempConfig, tempImages) {
+            targetCtx.fillStyle = tempConfig.backgroundColor; 
+            targetCtx.fillRect(0, 0, dW, dH);
+            
+            const margin = dW * (tempConfig.frameMargin / 100);
+            const fx = margin, fy = margin, fw = dW - 2 * margin, fh = dH - 2 * margin;
+            targetCtx.fillStyle = tempConfig.frameColor; 
+            targetCtx.fillRect(fx, fy, fw, fh);
+            
+            const p = fw * (tempConfig.imagePadding / 100); 
+            
+            const drawSlotOnContext = (i, x, y, w, h) => {
+                if (i < tempImages.length) {
+                    const {image: img, flipped, rotation, filter} = tempImages[i];
+                    
+                    const imgRatio = img.width / img.height, slotRatio = w / h;
+                    let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+                    if (imgRatio > slotRatio) { sWidth = sHeight * slotRatio; sx = (img.width - sWidth) / 2; } 
+                    else { sHeight = sWidth / slotRatio; sy = (img.height - sHeight) / 2; }
+                    
+                    targetCtx.save();
+                    if (filter === 'grayscale') targetCtx.filter = 'grayscale(100%)';
+                    else if (filter === 'sepia') targetCtx.filter = 'sepia(100%)';
+                    else targetCtx.filter = 'none';
+
+                    targetCtx.translate(x + w / 2, y + h / 2);
+                    if (flipped) targetCtx.scale(-1, 1);
+                    targetCtx.rotate(rotation * Math.PI / 180);
+                    
+                    targetCtx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
+                    targetCtx.restore();
+                } else {
+                    targetCtx.fillStyle = '#e5e7eb'; targetCtx.fillRect(x, y, w, h); 
+                    targetCtx.fillStyle = '#9ca3af';
+                    targetCtx.font = '30px Inter'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+                    targetCtx.fillText(`+`, x + w / 2, y + h / 2);
+                }
+            };
+
+            // 레이아웃별 슬롯 그리기 로직 (기존 로직 재사용)
+            if (tempConfig.layout === '1x4') {
+                const photoW = fw - 2 * p; const photoH = (fh - 5 * p) / 4; 
+                for (let i = 0; i < 4; i++) drawSlotOnContext(i, fx + p, fy + p + i * (photoH + p), photoW, photoH);
+            } else if (tempConfig.layout === '2x2') {
+                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 3 * p) / 2;
+                drawSlotOnContext(0, fx + p, fy + p, photoW, photoH); drawSlotOnContext(1, fx + 2 * p + photoW, fy + p, photoW, photoH);
+                drawSlotOnContext(2, fx + p, fy + 2 * p + photoH, photoW, photoH); drawSlotOnContext(3, fx + 2 * p + photoW, fy + 2 * p + photoH, photoW, photoH);
+            } else if (tempConfig.layout === '1+3') {
+                const bigH = fh * 0.6 - p * 1.5; const smallH = fh * 0.4 - p * 1.5;
+                drawSlotOnContext(0, fx + p, fy + p, fw - 2 * p, bigH);
+                const smallW = (fw - 4 * p) / 3;
+                for (let i = 0; i < 3; i++) drawSlotOnContext(i + 1, fx + p + i * (smallW + p), fy + bigH + 2 * p, smallW, smallH);
+            } else if (tempConfig.layout === '2+3') { 
+                const topH = fh * 0.45 - p * 1.5; const bottomH = fh * 0.55 - p * 1.5;
+                const topW = (fw - 3 * p) / 2;
+                const bottomW = (fw - 4 * p) / 3;
+                drawSlotOnContext(0, fx + p, fy + p, topW, topH);
+                drawSlotOnContext(1, fx + p * 2 + topW, fy + p, topW, topH);
+                for (let i = 0; i < 3; i++) drawSlotOnContext(i + 2, fx + p + i * (bottomW + p), fy + p * 2 + topH, bottomW, bottomH);
+            } else if (tempConfig.layout === '2x3') { 
+                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 4 * p) / 3;
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 2); const col = i % 2;
+                    drawSlotOnContext(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
+                }
+            } else if (tempConfig.layout === '3x2') { 
+                const photoW = (fw - 4 * p) / 3; const photoH = (fh - 3 * p) / 2;
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 3); const col = i % 3;
+                    drawSlotOnContext(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
+                }
+            }
+            
+            // 텍스트 그리기 (폰트 크기 이미 스케일링됨)
+            if (tempConfig.mainText.content) {
+                const textX = dW * tempConfig.mainText.x;
+                const textY = dH * tempConfig.mainText.y;
+                
+                targetCtx.fillStyle = tempConfig.mainText.color; 
+                targetCtx.font = `bold ${tempConfig.mainText.size}px "${tempConfig.mainText.font}"`;
+                targetCtx.textAlign = 'center'; 
+                targetCtx.textBaseline = 'middle'; 
+                targetCtx.fillText(tempConfig.mainText.content, textX, textY);
+            }
+            if (tempConfig.subText.content) {
+                const subTextX = dW * tempConfig.subText.x;
+                const subTextY = dH * tempConfig.subText.y;
+                
+                targetCtx.fillStyle = tempConfig.subText.color; 
+                targetCtx.font = `normal ${tempConfig.subText.size}px "${tempConfig.subText.font}"`;
+                targetCtx.textAlign = 'center'; 
+                targetCtx.textBaseline = 'middle'; 
+                targetCtx.fillText(tempConfig.subText.content, subTextX, subTextY);
+            }
+
         }
         
         function showLoader(show) { 
@@ -601,7 +1086,11 @@
             document.getElementById('loader').classList.toggle('flex', show);
         }
         
-        window.addEventListener('resize', drawCanvas);
+        window.addEventListener('resize', () => {
+             resizeCanvas(); 
+             updateTextOverlay(); 
+             drawCanvas(); 
+        });
     </script>
 </body>
 </html>
