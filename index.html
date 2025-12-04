@@ -169,7 +169,7 @@
                         </div>
                         
                         <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
-                            <h4 class="font-bold text-md text-gray-700">메인 문구 스타일 [밑에거]</h4>
+                            <h4 class="font-bold text-md text-gray-700">메인 문구 스타일</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label for="mainFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
@@ -187,7 +187,7 @@
                         </div>
 
                         <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
-                            <h4 class="font-bold text-md text-gray-700">보조 문구 스타일 [위에거]</h4>
+                            <h4 class="font-bold text-md text-gray-700">보조 문구 스타일</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label for="subFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
@@ -235,7 +235,7 @@
         const mainTextOverlay = document.getElementById('mainTextOverlay');
         const subTextOverlay = document.getElementById('subTextOverlay');
         let draggedItem = null;
-        let isDraggingText = false; // ✨ 수정: 텍스트 드래그 중인지 확인하는 플래그 추가
+        let isDraggingText = false; // 텍스트 드래그 중인지 확인하는 플래그
 
         // 🎨 테마 프리셋 (상업적 디자인 기준 강화 및 크리스마스 추가)
         const themes = {
@@ -550,10 +550,9 @@
 
             let mainY, subY;
             
-            // 텍스트 크기를 캔버스 크기에 맞춰 비율로 환산
-            const scaleFactor = W / canvas.width; // 캔버스 실제 크기 대비 디스플레이 크기 비율
-            const mainTextHeightEst = config.mainText.size * 1.2 * scaleFactor; 
-            const subTextHeightEst = config.subText.size * 1.2 * scaleFactor; 
+            // ✨ 수정: 폰트 크기 추정치 계산 시 불필요한 스케일 팩터 제거 (W, H, size 모두 CSS 픽셀 단위)
+            const mainTextHeightEst = config.mainText.size * 1.2; 
+            const subTextHeightEst = config.subText.size * 1.2; 
 
             if (config.mainText.position === 'bottom') {
                 mainY = H - margin - p - (mainTextHeightEst / 2);
@@ -614,8 +613,8 @@
             const startDrag = (e) => {
                 e.preventDefault();
                 isDragging = true;
-                isDraggingText = true; // ✨ 수정: 드래그 시작 시 플래그 설정
-                drawCanvas(); // ✨ 수정: 캔버스 텍스트를 숨기기 위해 다시 그립니다.
+                isDraggingText = true; // 드래그 시작 시 플래그 설정
+                drawCanvas(); // 캔버스 텍스트를 숨기기 위해 다시 그립니다.
                 
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -671,9 +670,9 @@
             const endDrag = () => {
                 if (isDragging) {
                     isDragging = false;
-                    isDraggingText = false; // ✨ 수정: 드래그 종료 시 플래그 해제
+                    isDraggingText = false; // 드래그 종료 시 플래그 해제
                     element.style.cursor = 'grab';
-                    drawCanvas(); // ✨ 수정: 최종 위치에 캔버스 텍스트를 다시 그립니다.
+                    drawCanvas(); // 최종 위치에 캔버스 텍스트를 다시 그립니다.
                 }
             };
             
@@ -929,7 +928,6 @@
             if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
             // DPR을 고려한 원본 해상도로 저장
             const tempCanvas = document.createElement('canvas');
-            const dpr = window.devicePixelRatio || 1;
             const displayW = canvas.parentElement.getBoundingClientRect().width;
             let aspectRatio;
             switch(config.layout) {
@@ -943,7 +941,7 @@
             }
             const displayH = displayW * aspectRatio;
 
-            // 고화질 출력을 위해 최소 1000px 너비 (dpr 무시) 또는 현재 화면 크기의 2배 해상도로 설정
+            // 고화질 출력을 위해 최소 1200px 너비로 설정
             const renderW = 1200; 
             const renderH = renderW * aspectRatio;
             
@@ -951,7 +949,7 @@
             tempCanvas.height = renderH;
             const tempCtx = tempCanvas.getContext('2d');
             
-            // 임시 컨텍스트에 새로운 스케일 적용
+            // 임시 컨텍스트에 새로운 스케일 적용 (디스플레이 크기 -> 고화질 크기)
             const scaleX = renderW / displayW;
             const scaleY = renderH / displayH;
             tempCtx.scale(scaleX, scaleY);
@@ -959,15 +957,14 @@
             // 설정값을 임시 캔버스에 맞게 조정하여 그리기 (로직 재사용)
             const oldConfig = JSON.parse(JSON.stringify(config));
             const oldImages = config.images;
-            const oldMainText = oldConfig.mainText;
-            const oldSubText = oldConfig.subText;
             
-            // 텍스트 위치 비율은 그대로 유지되지만, 폰트 사이즈는 해상도에 비례하여 조정 필요
-            const textScale = renderW / (displayW * dpr); // 렌더링 해상도 대비 폰트 크기 비율
-            oldMainText.size = oldMainText.size * scaleX; 
-            oldSubText.size = oldSubText.size * scaleX;
+            // ✨ 수정: 폰트 크기에 대한 명시적인 스케일링을 제거합니다. 
+            // 캔버스 컨텍스트에 적용된 scaleX, scaleY가 이를 대신합니다.
+            // oldMainText.size = oldMainText.size * scaleX; 
+            // oldSubText.size = oldSubText.size * scaleX;
             
             // 기존 drawCanvas 로직을 임시 캔버스에 맞게 실행
+            // drawCanvasOnContext에 전달되는 dW, dH는 디스플레이 크기(CSS 픽셀)와 동일합니다.
             drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
 
 
@@ -984,6 +981,7 @@
         }
         
         // 고화질 출력을 위한 보조 함수: 특정 컨텍스트에 그리기
+        // dW, dH는 캔버스의 논리적 크기(displayW, displayH)를 의미합니다.
         function drawCanvasOnContext(targetCtx, dW, dH, tempConfig, tempImages) {
             targetCtx.fillStyle = tempConfig.backgroundColor; 
             targetCtx.fillRect(0, 0, dW, dH);
@@ -1058,6 +1056,7 @@
             }
             
             // 텍스트 그리기 (폰트 크기 이미 스케일링됨)
+            // tempConfig.mainText.size는 이제 원본 CSS 픽셀 크기이며, 컨텍스트 스케일링이 고해상도 처리를 담당합니다.
             if (tempConfig.mainText.content) {
                 const textX = dW * tempConfig.mainText.x;
                 const textY = dH * tempConfig.mainText.y;
