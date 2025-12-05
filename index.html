@@ -17,7 +17,7 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb;
             display: block; width: 100%; height: auto; border-radius: 1rem;
         }
-        /* 드래그 오버레이 스타일 */
+        /* 드래그 오버레이 스타일 (수정됨: 기본 투명) */
         #mainTextOverlay, #subTextOverlay {
             position: absolute; text-align: center; cursor: grab; user-select: none;
             z-index: 50; padding: 5px 10px; border-radius: 5px;
@@ -25,8 +25,23 @@
             top: 0;
             left: 0;
             white-space: nowrap; /* 텍스트 너비 고정 */
+            opacity: 0; /* NEW: 기본 상태에서는 투명 */
+            background-color: transparent; /* NEW: 기본 배경 투명 */
+            border: 1px dashed transparent; /* NEW: 기본 테두리 투명 */
         }
-        #mainTextOverlay:hover, #subTextOverlay:hover { background-color: rgba(255, 255, 255, 0.2); border: 1px dashed rgba(55, 65, 81, 0.5); }
+        /* 드래그 시작 시 적용되어 텍스트를 확실하게 보여줌 */
+        .text-overlay.dragging {
+            opacity: 1 !important; /* 드래그 중에는 항상 보이도록 */
+            background-color: rgba(255, 255, 255, 0.9); /* 드래그 시 배경색 추가 */
+            border: 1px dashed #374151; /* 드래그 시 테두리 추가 */
+        }
+        /* 마우스 오버 시 드래그 가능함을 보여줌 (드래그 중이 아닐 때만) */
+        .text-overlay:hover:not(.dragging) { 
+            background-color: rgba(255, 255, 255, 0.2); 
+            border: 1px dashed rgba(55, 65, 81, 0.5); 
+            opacity: 1; 
+        }
+
         .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
         .control-btn {
              transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb;
@@ -63,8 +78,8 @@
                 </header>
                 <div id="canvasContainer">
                     <canvas id="photoCanvas"></canvas>
-                    <div id="mainTextOverlay"></div>
-                    <div id="subTextOverlay"></div>
+                    <div id="mainTextOverlay" class="text-overlay"></div>
+                    <div id="subTextOverlay" class="text-overlay"></div>
                 </div>
             </div>
 
@@ -133,6 +148,10 @@
                                     <label for="imagePaddingSlider" class="font-semibold text-gray-600">사진 간격: <span id="imagePaddingValue">5</span>%</label>
                                     <input type="range" id="imagePaddingSlider" min="0" max="20" value="5" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
+                                <div>
+                                    <label for="imageRadiusSlider" class="font-semibold text-gray-600">사진 모서리 둥글기: <span id="imageRadiusValue">0</span>px</label>
+                                    <input type="range" id="imageRadiusSlider" min="0" max="50" value="0" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -178,6 +197,16 @@
                                 <div>
                                     <label for="mainFontColorPicker" class="font-semibold text-gray-600 text-sm">색상</label>
                                     <input type="color" id="mainFontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="mainTextStrokeColorPicker" class="font-semibold text-gray-600 text-sm">테두리 색상</label>
+                                    <input type="color" id="mainTextStrokeColorPicker" value="#FFFFFF" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
+                                </div>
+                                <div>
+                                    <label for="mainTextStrokeSlider" class="font-semibold text-gray-600 text-sm">테두리 두께: <span id="mainTextStrokeValue">0</span>px</label>
+                                    <input type="range" id="mainTextStrokeSlider" min="0" max="10" value="0" class="w-full mt-1 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
                             </div>
                             <div>
@@ -273,9 +302,12 @@
             frameColor: themes['modern-matte'].frame,
             frameMargin: 5, // %
             imagePadding: 5, // %
+            imageCornerRadius: 0, // NEW: 사진 모서리 둥글기 (px)
             mainText: {
                 content: 'LIFE 4 CUTS', font: 'Noto Sans KR', size: 50, 
-                color: themes['modern-matte'].text, position: 'bottom', x: 0.5, y: 0 
+                color: themes['modern-matte'].text, position: 'bottom', x: 0.5, y: 0,
+                strokeColor: '#FFFFFF', // NEW: 테두리 색상
+                strokeWidth: 0 // NEW: 테두리 두께
             },
             subText: {
                 // 현재 날짜로 자동 설정
@@ -355,6 +387,9 @@
             });
             document.getElementById('frameMarginSlider').addEventListener('input', (e) => { config.frameMargin = parseInt(e.target.value); document.getElementById('frameMarginValue').textContent = e.target.value; drawCanvas(); });
             document.getElementById('imagePaddingSlider').addEventListener('input', (e) => { config.imagePadding = parseInt(e.target.value); document.getElementById('imagePaddingValue').textContent = e.target.value; drawCanvas(); });
+            // NEW LISTENER: Image Corner Radius
+            document.getElementById('imageRadiusSlider').addEventListener('input', (e) => { config.imageCornerRadius = parseInt(e.target.value); document.getElementById('imageRadiusValue').textContent = e.target.value; drawCanvas(); });
+            
             document.getElementById('backgroundColorPicker').addEventListener('input', (e) => { config.backgroundColor = e.target.value; drawCanvas(); });
             document.getElementById('frameColorPicker').addEventListener('input', (e) => { config.frameColor = e.target.value; drawCanvas(); });
             
@@ -386,6 +421,17 @@
                 config.mainText.color = e.target.value; 
                 updateTextOverlay(); drawCanvas(); 
             });
+            // NEW LISTENER: Main Text Stroke
+            document.getElementById('mainTextStrokeColorPicker').addEventListener('input', (e) => { 
+                config.mainText.strokeColor = e.target.value; 
+                updateTextOverlay(); drawCanvas(); 
+            });
+            document.getElementById('mainTextStrokeSlider').addEventListener('input', (e) => {
+                config.mainText.strokeWidth = parseInt(e.target.value);
+                document.getElementById('mainTextStrokeValue').textContent = e.target.value;
+                updateTextOverlay(); drawCanvas();
+            });
+
 
             // --- 보조 문구 전용 리스너 ---
             document.getElementById('subFontSelector').addEventListener('change', (e) => { 
@@ -426,6 +472,9 @@
             document.getElementById('frameMarginValue').textContent = config.frameMargin;
             document.getElementById('imagePaddingSlider').value = config.imagePadding;
             document.getElementById('imagePaddingValue').textContent = config.imagePadding;
+            // NEW UI UPDATE: Image Corner Radius
+            document.getElementById('imageRadiusSlider').value = config.imageCornerRadius;
+            document.getElementById('imageRadiusValue').textContent = config.imageCornerRadius;
 
             // 텍스트 내용
             document.getElementById('customTextInput').value = config.mainText.content;
@@ -436,6 +485,10 @@
             document.getElementById('mainFontSizeSlider').value = config.mainText.size;
             document.getElementById('mainFontSizeValue').textContent = config.mainText.size;
             document.getElementById('mainFontColorPicker').value = config.mainText.color;
+            // NEW UI UPDATE: Main Text Stroke
+            document.getElementById('mainTextStrokeColorPicker').value = config.mainText.strokeColor;
+            document.getElementById('mainTextStrokeSlider').value = config.mainText.strokeWidth;
+            document.getElementById('mainTextStrokeValue').textContent = config.mainText.strokeWidth;
             
             // 보조 텍스트 UI 업데이트
             document.getElementById('subFontSelector').value = config.subText.font;
@@ -585,6 +638,18 @@
             mainTextOverlay.style.fontSize = `${mainText.size}px`;
             mainTextOverlay.style.fontWeight = 'bold';
             
+            // NEW: Simulate stroke with text-shadow for overlay
+            let shadow = 'none';
+            if (mainText.strokeWidth > 0) {
+                const sw = mainText.strokeWidth;
+                const sc = mainText.strokeColor;
+                // Multi-directional shadow to simulate stroke
+                // For a good effect, we use four directions
+                shadow = `${sc} ${sw}px 0, ${sc} ${-sw}px 0, ${sc} 0 ${sw}px, ${sc} 0 ${-sw}px`;
+            }
+            mainTextOverlay.style.textShadow = shadow;
+
+
             const mainTextWidth = mainTextOverlay.offsetWidth;
             const mainTextHeight = mainTextOverlay.offsetHeight;
             
@@ -604,7 +669,7 @@
             subTextOverlay.style.top = `${(dH * subText.y) - (subTextHeight / 2)}px`;
         }
 
-        // --- 텍스트 드래그 기능 ---
+        // --- 텍스트 드래그 기능 (수정됨: 드래그 클래스 토글) ---
         function addTextDragListeners(element, key) {
             let isDragging = false;
             let startClientX, startClientY; 
@@ -614,6 +679,7 @@
                 e.preventDefault();
                 isDragging = true;
                 isDraggingText = true; // 드래그 시작 시 플래그 설정
+                element.classList.add('dragging'); // NEW: 드래그 시 클래스 추가
                 drawCanvas(); // 캔버스 텍스트를 숨기기 위해 다시 그립니다.
                 
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -671,6 +737,7 @@
                 if (isDragging) {
                     isDragging = false;
                     isDraggingText = false; // 드래그 종료 시 플래그 해제
+                    element.classList.remove('dragging'); // NEW: 드래그 종료 시 클래스 제거
                     element.style.cursor = 'grab';
                     drawCanvas(); // 최종 위치에 캔버스 텍스트를 다시 그립니다.
                 }
@@ -806,7 +873,19 @@
         function flipImage(index) { config.images[index].flipped = !config.images[index].flipped; renderImagePreviews(); drawCanvas(); }
         function rotateImage(index) { config.images[index].rotation = (config.images[index].rotation + 90) % 360; renderImagePreviews(); drawCanvas(); }
         function removeImage(index) { config.images.splice(index, 1); renderImagePreviews(); drawCanvas(); }
-
+        
+        // --- NEW HELPER: Rounded Rectangle Drawing Function ---
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
 
         // --- 캔버스 그리기 ---
         function drawCanvas() {
@@ -868,6 +947,7 @@
         }
         
         function drawPhotoSlot(i, x, y, w, h) {
+            const r = config.imageCornerRadius; // NEW: Get radius
             if (i < config.images.length) {
                 const {image: img, flipped, rotation, filter} = config.images[i];
                 
@@ -881,6 +961,10 @@
                 else if (filter === 'sepia') ctx.filter = 'sepia(100%)';
                 else ctx.filter = 'none';
 
+                // NEW: Clipping path for rounded corners
+                drawRoundedRect(ctx, x, y, w, h, r); 
+                ctx.clip(); // Apply the clip path
+
                 ctx.translate(x + w / 2, y + h / 2);
                 if (flipped) ctx.scale(-1, 1);
                 ctx.rotate(rotation * Math.PI / 180);
@@ -888,7 +972,11 @@
                 ctx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
                 ctx.restore();
             } else {
-                ctx.fillStyle = '#e5e7eb'; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#9ca3af';
+                ctx.fillStyle = '#e5e7eb'; 
+                drawRoundedRect(ctx, x, y, w, h, r); // NEW: Use rounded rect for placeholder
+                ctx.fill();
+                
+                ctx.fillStyle = '#9ca3af';
                 ctx.font = '30px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText(`+`, x + w / 2, y + h / 2);
             }
@@ -903,10 +991,20 @@
                 const textX = W * mainText.x;
                 const textY = H * mainText.y;
                 
-                ctx.fillStyle = mainText.color; 
                 ctx.font = `bold ${mainText.size}px "${mainText.font}"`;
                 ctx.textAlign = 'center'; 
                 ctx.textBaseline = 'middle'; 
+                
+                // NEW: Draw Stroke first if present
+                if (mainText.strokeWidth > 0) {
+                    ctx.strokeStyle = mainText.strokeColor;
+                    // Stroke width is multiplied by 2 for better visibility/thickness
+                    ctx.lineWidth = mainText.strokeWidth * 2; 
+                    ctx.strokeText(mainText.content, textX, textY);
+                }
+
+                // Draw Fill
+                ctx.fillStyle = mainText.color; 
                 ctx.fillText(mainText.content, textX, textY);
             }
 
@@ -958,13 +1056,7 @@
             const oldConfig = JSON.parse(JSON.stringify(config));
             const oldImages = config.images;
             
-            // ✨ 수정: 폰트 크기에 대한 명시적인 스케일링을 제거합니다. 
-            // 캔버스 컨텍스트에 적용된 scaleX, scaleY가 이를 대신합니다.
-            // oldMainText.size = oldMainText.size * scaleX; 
-            // oldSubText.size = oldSubText.size * scaleX;
-            
             // 기존 drawCanvas 로직을 임시 캔버스에 맞게 실행
-            // drawCanvasOnContext에 전달되는 dW, dH는 디스플레이 크기(CSS 픽셀)와 동일합니다.
             drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
 
 
@@ -994,6 +1086,7 @@
             const p = fw * (tempConfig.imagePadding / 100); 
             
             const drawSlotOnContext = (i, x, y, w, h) => {
+                const r = tempConfig.imageCornerRadius; // NEW: Get radius
                 if (i < tempImages.length) {
                     const {image: img, flipped, rotation, filter} = tempImages[i];
                     
@@ -1007,6 +1100,10 @@
                     else if (filter === 'sepia') targetCtx.filter = 'sepia(100%)';
                     else targetCtx.filter = 'none';
 
+                    // NEW: Clipping path for rounded corners
+                    drawRoundedRect(targetCtx, x, y, w, h, r);
+                    targetCtx.clip(); // Apply the clip path
+
                     targetCtx.translate(x + w / 2, y + h / 2);
                     if (flipped) targetCtx.scale(-1, 1);
                     targetCtx.rotate(rotation * Math.PI / 180);
@@ -1014,7 +1111,10 @@
                     targetCtx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
                     targetCtx.restore();
                 } else {
-                    targetCtx.fillStyle = '#e5e7eb'; targetCtx.fillRect(x, y, w, h); 
+                    targetCtx.fillStyle = '#e5e7eb'; 
+                    drawRoundedRect(targetCtx, x, y, w, h, r); // NEW: Use rounded rect for placeholder
+                    targetCtx.fill();
+                    
                     targetCtx.fillStyle = '#9ca3af';
                     targetCtx.font = '30px Inter'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
                     targetCtx.fillText(`+`, x + w / 2, y + h / 2);
@@ -1056,15 +1156,22 @@
             }
             
             // 텍스트 그리기 (폰트 크기 이미 스케일링됨)
-            // tempConfig.mainText.size는 이제 원본 CSS 픽셀 크기이며, 컨텍스트 스케일링이 고해상도 처리를 담당합니다.
             if (tempConfig.mainText.content) {
                 const textX = dW * tempConfig.mainText.x;
                 const textY = dH * tempConfig.mainText.y;
                 
-                targetCtx.fillStyle = tempConfig.mainText.color; 
                 targetCtx.font = `bold ${tempConfig.mainText.size}px "${tempConfig.mainText.font}"`;
                 targetCtx.textAlign = 'center'; 
                 targetCtx.textBaseline = 'middle'; 
+
+                 // NEW: Draw Stroke first if present (High-res)
+                if (tempConfig.mainText.strokeWidth > 0) {
+                    targetCtx.strokeStyle = tempConfig.mainText.strokeColor;
+                    targetCtx.lineWidth = tempConfig.mainText.strokeWidth * 2; 
+                    targetCtx.strokeText(tempConfig.mainText.content, textX, textY);
+                }
+                
+                targetCtx.fillStyle = tempConfig.mainText.color; 
                 targetCtx.fillText(tempConfig.mainText.content, textX, textY);
             }
             if (tempConfig.subText.content) {
