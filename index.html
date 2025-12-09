@@ -9,14 +9,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        html, body { overscroll-behavior-y: contain; }
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        /* [업그레이드] 뷰포트 높이 문제 해결 및 기본 폰트 크기 조정 */
+        html, body { 
+            overscroll-behavior-y: contain; 
+            height: 100%; /* 전체 높이 확보 */
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; 
+            min-height: 100vh; /* 기본 높이 설정 */
+        }
+        /* 💡 iOS 등의 동적 뷰포트 높이(dvh)를 사용하여 주소창/도구 모음 영향을 최소화 */
+        body {
+            min-height: 100dvh; 
+        }
+        
         /* 캔버스 컨테이너에 position: relative; 추가 필수 (텍스트 드래그를 위해) */
         #canvasContainer { width: 100%; max-width: 420px; margin: 0 auto; position: relative; } 
         #photoCanvas {
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb;
             display: block; width: 100%; height: auto; border-radius: 1rem;
         }
+        
         /* 드래그 오버레이 스타일 (수정됨: 기본 투명) */
         #mainTextOverlay, #subTextOverlay {
             position: absolute; text-align: center; cursor: grab; user-select: none;
@@ -29,23 +43,18 @@
             background-color: transparent; /* NEW: 기본 배경 투명 */
             border: 1px dashed transparent; /* NEW: 기본 테두리 투명 */
         }
+        
         /* 드래그 시작 시 적용되어 텍스트를 확실하게 보여줌 */
         .text-overlay.dragging {
             opacity: 1 !important; /* 드래그 중에는 항상 보이도록 */
             background-color: rgba(255, 255, 255, 0.9); /* 드래그 시 배경색 추가 */
             border: 1px dashed #374151; /* 드래그 시 테두리 추가 */
         }
-        /* 마우스 오버 시 드래그 가능함을 보여줌 (드래그 중이 아닐 때만) */
-        .text-overlay:hover:not(.dragging) { 
-            background-color: rgba(255, 255, 255, 0.2); 
-            border: 1px dashed rgba(55, 65, 81, 0.5); 
-            opacity: 1; 
-        }
-
+        
         .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
         .control-btn {
-             transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb;
-             padding: 1rem; min-width: 100px; text-align: center;
+            transition: all 0.2s ease-in-out; border: 1px solid #e5e7eb;
+            padding: 1rem; min-width: 100px; text-align: center;
         }
         .control-btn.active {
             transform: scale(1.0); box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.7);
@@ -58,6 +67,24 @@
         #dropZone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
         /* 이미지 미리보기 드래그 스타일 */
         .preview-item.dragging { opacity: 0.5; transform: scale(0.95); }
+        
+        /* 🚨 [추가] 모바일 최적화를 위한 미디어 쿼리 */
+        @media (max-width: 640px) {
+            /* 컨트롤 버튼 패딩 조정 */
+            .control-btn {
+                padding: 0.75rem; /* 버튼 영역을 넉넉하게 */
+                min-width: 80px; 
+            }
+        }
+
+        /* 🚨 [추가] 마우스 오버 스타일은 PC 환경에 한정 (모바일 터치 충돌 방지) */
+        @media (hover: hover) and (pointer: fine) {
+            .text-overlay:hover:not(.dragging) { 
+                background-color: rgba(255, 255, 255, 0.2); 
+                border: 1px dashed rgba(55, 65, 81, 0.5); 
+                opacity: 1; 
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -449,10 +476,21 @@
             });
 
             // 저장
+            // 💡 [업그레이드] PNG 버튼: 모바일 환경에서 갤러리 저장 시도
+            document.getElementById('downloadPngBtn').addEventListener('click', async () => {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    await saveToGallery('png');
+                } else {
+                    downloadImage('png');
+                }
+            });
+            
+            // 💡 [업그레이드] JPEG 버튼: 모바일 환경에서 갤러리 저장 시도
             document.getElementById('downloadJpgBtn').addEventListener('click', async () => {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) {
-                    await saveToGallery('jpeg');
+                    await saveToGallery('jpeg'); 
                 } else {
                     downloadImage('jpeg');
                 }
@@ -1062,11 +1100,93 @@
             // 설정값을 임시 캔버스에 맞게 조정하여 그리기 (로직 재사용)
             const oldConfig = JSON.parse(JSON.stringify(config));
             const oldImages = config.images;
+
+        // Blob을 파일로 다운로드하는 헬퍼 함수
+        // Web Share API를 지원하지 않거나 실패했을 때 대체(Fallback)로 사용됩니다.
+        function downloadBlobAsFile(blob, filename) {
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 💡 모바일 환경에서 갤러리 저장을 유도하는 핵심 함수 (Web Share API 사용)
+        async function saveToGallery(format) {
+            if (config.images.length === 0) { 
+                alert("사진을 먼저 1장 이상 업로드해주세요!"); 
+                return; 
+            }
+
+            // 고화질 렌더링을 위한 임시 캔버스 생성 및 설정 로직 (기존 downloadImage와 동일)
+            const tempCanvas = document.createElement('canvas');
+            const displayW = canvas.parentElement.getBoundingClientRect().width;
+            let aspectRatio;
+            switch(config.layout) {
+                case '1x4': aspectRatio = 3; break;
+                case '2x2': aspectRatio = 1.5; break;
+                case '1+3': aspectRatio = 2; break;
+                case '2+3': aspectRatio = 1.8; break;
+                case '2x3': aspectRatio = 2.2; break;
+                case '3x2': aspectRatio = 1.2; break;
+                default: aspectRatio = 3;
+            }
+            const displayH = displayW * aspectRatio;
+            const renderW = 1200; 
+            const renderH = renderW * aspectRatio;
+            
+            tempCanvas.width = renderW;
+            tempCanvas.height = renderH;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            const scaleX = renderW / displayW;
+            const scaleY = renderH / displayH;
+            tempCtx.scale(scaleX, scaleY);
+            
+            const oldConfig = JSON.parse(JSON.stringify(config));
+            const oldImages = config.images;
+            
+            drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
+
+            showLoader(true);
+            try {
+                // Canvas를 Blob (이진 데이터)으로 변환
+                tempCanvas.toBlob(async (blob) => {
+                    try {
+                        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+                        // Blob을 Web Share API가 요구하는 File 객체로 변환
+                        const file = new File([blob], `photobooth_${Date.now()}.${format}`, { type: mimeType });
+
+                        // Web Share API 지원 여부 및 파일 공유 가능 여부 확인
+                        if (navigator.share && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: '프레임 다이어리 결과물',
+                                text: '캔버스 결과물을 갤러리에 저장하거나 공유해보세요.'
+                            });
+                            alert('✅ 공유 메뉴가 열렸습니다. 갤러리에 저장하거나 공유할 수 있습니다.');
+                        } else {
+                            // Fallback: 일반 다운로드 (Web Share API 미지원 시)
+                            downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
+                            alert('✅ Web Share API가 지원되지 않습니다. 파일을 다운로드합니다.');
+                        }
+                    } catch (error) {
+                        console.error('Share error:', error);
+                        // 에러 발생 시 다운로드 시도
+                        downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
+                        alert('저장 기능 실행에 실패했습니다. 파일을 다운로드합니다.');
+                    }
+                }, format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1.0);
+            } catch (e) { 
+                alert("이미지 저장에 실패했습니다."); 
+                console.error(e); 
+            }
+            showLoader(false); 
+        }
             
             // 기존 drawCanvas 로직을 임시 캔버스에 맞게 실행
             drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
-
-
             const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'; 
             const quality = format === 'jpeg' ? 0.95 : 1.0;
             showLoader(true); 
