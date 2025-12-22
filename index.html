@@ -312,7 +312,8 @@
             'pastel-lavender': { name: '💜 파스텔 라벤더', bg: '#EBEBF8', frame: '#F0F0F8', text: '#6A5ACD', font: 'Noto Sans KR' },
         };
         
-        // --- 날짜 포맷 함수 ---
+        // === getCurrentDateFormatted ===
+        // 오늘 날짜를 "2025. 12. 22."처럼 예쁘게 만들어 주는 함수예요. 앱을 처음 켜거나 새로 시작할 때 날짜를 자동으로 넣어줘요.
         function getCurrentDateFormatted() {
             const now = new Date();
             const year = now.getFullYear();
@@ -373,7 +374,8 @@
             }, 500); 
         };
 
-        // --- 폰트 셀렉터 채우기 ---
+        // === populateFontSelectors ===
+        // 글씨체 고르는 메뉴(드롭다운)를 채워주는 함수예요. 메인 글자와 작은 글자 모두 같은 글씨체 목록을 보여줘요.
         function populateFontSelectors() {
             const mainSelector = document.getElementById('mainFontSelector');
             const subSelector = document.getElementById('subFontSelector');
@@ -390,7 +392,8 @@
             });
         }
 
-        // --- 이벤트 리스너 설정 (텍스트 독립 제어 및 드래그 재설정) ---
+        // === setupEventListeners ===
+        // 앱에서 버튼 누르기, 사진 올리기, 슬라이더 움직이기, 글자 쓰기 등 모든 동작을 감지해서 "이걸 누르면 이 일이 일어나!"라고 연결해 주는 큰 함수예요.
         function setupEventListeners() {
             // 이미지 업로드
             const dropZone = document.getElementById('dropZone');
@@ -502,7 +505,8 @@
             addTextDragListeners(subTextOverlay, 'subText');
         }
 
-        // --- UI 업데이트 ---
+        // === updateUIFromConfig ===
+        // 지금 설정한 모든 것(색깔, 글씨 크기, 위치 등)을 화면의 버튼과 슬라이더에 똑같이 보여주는 함수예요. 설정 바꾸면 바로 화면도 바뀌게 해줘요.
         function updateUIFromConfig() {
             // 테마 및 레이아웃, 위치 버튼 활성화
             updateActiveButton(document.getElementById('themeButtons'), document.querySelector(`[data-theme="${config.theme}"]`));
@@ -544,7 +548,8 @@
         }
 
 
-        // --- 앱 초기화 ---
+        // === resetApp ===
+        // "처음으로!" 버튼처럼 모든 걸 깨끗이 지우고 처음 상태로 돌려놓는 함수예요. 사진도 없애고 날짜도 오늘로 다시 넣어요.
         function resetApp() {
             // 리셋 시에도 현재 날짜로 초기화
             defaultConfig.subText.content = getCurrentDateFormatted(); 
@@ -556,7 +561,8 @@
             drawCanvas();
         }
 
-        // --- 탭 시스템 ---
+        // === setupTabs ===
+        // 위에 있는 탭(사진 관리, 디자인, 텍스트, 저장)을 누르면 해당 페이지만 보여주고 나머지는 숨기는 함수예요.
         function setupTabs() {
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -570,7 +576,8 @@
             });
         }
 
-        // --- UI 업데이트 (테마 로직 업데이트) ---
+        // === populateThemeButtons ===
+        // 예쁜 테마(색 조합) 버튼들을 자동으로 만들어 주는 함수예요. 버튼 누르면 배경색, 글자색, 프레임색이 한 번에 바뀌어요.
         function populateThemeButtons() {
             const container = document.getElementById('themeButtons');
             container.innerHTML = '';
@@ -638,7 +645,8 @@
         }
 
 
-        // --- 텍스트 초기 위치 설정 ---
+        // === initializeTextPositions ===
+        // 글자를 처음에 어디에 둘지(위쪽, 가운데, 아래쪽) 정해주는 함수예요. 나중에 직접 끌어서 옮길 수 있지만 처음 위치를 잡아줘요.
         function initializeTextPositions() {
             const W = canvas.parentElement.getBoundingClientRect().width;
             const H = canvas.parentElement.getBoundingClientRect().height;
@@ -713,7 +721,8 @@
             subTextOverlay.style.top = `${(dH * subText.y) - (subTextHeight / 2)}px`;
         }
 
-        // --- 텍스트 드래그 기능 (수정됨: 드래그 클래스 토글) ---
+        // === addTextDragListeners ===
+        // 글자 상자를 마우스나 손가락으로 잡고 끌 수 있게 해 주는 함수예요. 끌면서 위치가 바뀌면 그 위치를 기억해 둬요.
         function addTextDragListeners(element, key) {
             let isDragging = false;
             let startClientX, startClientY; 
@@ -798,7 +807,8 @@
             document.addEventListener('touchend', endDrag);
         }
 
-        // --- 이미지 처리 ---
+        // === handleFiles ===
+        // "사진 골라!" 하면 선택한 사진들을 읽어서 앱 안에 넣어주는 함수예요. 바로 미리보기와 큰 판에 보여줘요.
         async function handleFiles(files) {
             const fileList = Array.from(files).slice(0, MAX_IMAGES - config.images.length);
             if (fileList.length === 0) {
@@ -834,6 +844,8 @@
             });
         }
         
+        // === renderImagePreviews ===
+        // 아래쪽에 작은 사진 썸네일들을 보여주고, 순서 바꾸기·좌우 뒤집기·회전하기·지우기를 할 수 있게 해 주는 함수예요.
         function renderImagePreviews() {
             const container = document.getElementById('imagePreviews');
             container.innerHTML = '';
@@ -905,6 +917,8 @@
             document.getElementById('fileStatus').textContent = `${config.images.length} / ${MAX_IMAGES}장 업로드됨.`;
         }
 
+        // === getDragAfterElement ===
+        // 작은 사진들을 드래그로 순서 바꿀 때 "여기에 넣자!" 위치를 정확히 찾아주는 도우미 함수예요.
         function getDragAfterElement(container, y) {
             const draggableElements = [...container.querySelectorAll('.preview-item:not(.dragging)')];
             return draggableElements.reduce((closest, child) => {
@@ -919,7 +933,8 @@
         function rotateImage(index) { config.images[index].rotation = (config.images[index].rotation + 90) % 360; renderImagePreviews(); drawCanvas(); }
         function removeImage(index) { config.images.splice(index, 1); renderImagePreviews(); drawCanvas(); }
         
-        // --- NEW HELPER: Rounded Rectangle Drawing Function ---
+        // === drawRoundedRect ===
+        // 모서리를 동그랗게 만드는 사각형을 그려주는 도우미 함수예요. 사진 모서리를 둥글게 할 때 써요.
         function drawRoundedRect(ctx, x, y, w, h, r) {
             if (w < 2 * r) r = w / 2;
             if (h < 2 * r) r = h / 2;
@@ -932,7 +947,8 @@
             ctx.closePath();
         }
 
-        // --- 캔버스 그리기 ---
+        // === resizeCanvas ===
+        // 화면 크기가 바뀌거나 레이아웃을 바꿀 때 사진 넣는 큰 판(캔버스)을 딱 맞게 크기 조정해 주는 함수예요.
         function drawCanvas() {
             // resizeCanvas에서 이미 dpr 스케일링을 설정했으므로, 여기서는 dpr을 다시 곱할 필요 없음
             const { width: dW, height: dH } = canvas.getBoundingClientRect();
@@ -991,6 +1007,8 @@
             requestAnimationFrame(updateTextOverlay);
         }
         
+        // === drawPhotoSlot ===
+        // 한 칸 한 칸 사진 넣는 곳에 사진을 예쁘게(필터·뒤집기·회전·모서리 둥글게) 넣거나, 사진 없을 때는 "+" 표시 넣어주는 함수예요.
         function drawPhotoSlot(i, x, y, w, h) {
             const r = config.imageCornerRadius; // NEW: Get radius
             if (i < config.images.length) {
@@ -1027,7 +1045,8 @@
             }
         }
         
-        // --- 캔버스에 텍스트를 그리는 함수 (업데이트된 위치 사용) ---
+        // === drawTextOnCanvas ===
+        // 큰 판에 메인 글자와 작은 글자를 정확한 위치·색·크기·테두리로 그려주는 함수예요.
         function drawTextOnCanvas(W, H) {
             const { mainText, subText } = config;
 
@@ -1067,6 +1086,8 @@
         }
 
 
+        // === downloadImage ===
+        // 컴퓨터에서 "저장!" 누르면 예쁘고 큰 사이즈의 완성 사진을 파일로 내려받게 해 주는 함수예요.
         function downloadImage(format) {
             if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
             // DPR을 고려한 원본 해상도로 저장
@@ -1101,6 +1122,8 @@
             const oldConfig = JSON.parse(JSON.stringify(config));
             const oldImages = config.images;
 
+        // === downloadBlobAsFile ===
+        // 사진 데이터를 실제 파일로 내려받게 해 주는 작은 도우미 함수예요.
         // Blob을 파일로 다운로드하는 헬퍼 함수
         // Web Share API를 지원하지 않거나 실패했을 때 대체(Fallback)로 사용됩니다.
         function downloadBlobAsFile(blob, filename) {
@@ -1112,7 +1135,8 @@
             URL.revokeObjectURL(url);
         }
 
-        // 💡 모바일 환경에서 갤러리 저장을 유도하는 핵심 함수 (Web Share API 사용)
+        // === saveToGallery ===
+        // 핸드폰에서 "저장!" 누르면 갤러리에 바로 저장하거나 공유할 수 있게 도와주는 함수예요. 안 되면 그냥 내려받게 해줘요.
         async function saveToGallery(format) {
             if (config.images.length === 0) { 
                 alert("사진을 먼저 1장 이상 업로드해주세요!"); 
@@ -1272,7 +1296,8 @@ function downloadBlobAsFile(blob, filename) {
     link.click();
     URL.revokeObjectURL(url);
 }
-        
+        // === drawCanvasOnContext ===
+        // 아주 큰 사이즈로 저장할 때 쓰는 임시 판에 똑같이 예쁘게 그려주는 함수예요.
         // 고화질 출력을 위한 보조 함수: 특정 컨텍스트에 그리기
         // dW, dH는 캔버스의 논리적 크기(displayW, displayH)를 의미합니다.
         function drawCanvasOnContext(targetCtx, dW, dH, tempConfig, tempImages) {
@@ -1388,6 +1413,8 @@ function downloadBlobAsFile(blob, filename) {
 
         }
         
+        // === showLoader ===
+        // 사진 올리거나 저장할 때 "기다려주세요~" 돌아가는 동그라미를 보여주거나 숨기는 함수예요.
         function showLoader(show) { 
             document.getElementById('loader').classList.toggle('hidden', !show);
             document.getElementById('loader').classList.toggle('flex', show);
