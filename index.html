@@ -9,46 +9,53 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* [업그레이드] 뷰포트 높이 문제 해결 및 기본 폰트 크기 조정 */
         html, body { 
             overscroll-behavior-y: contain; 
-            height: 100%; /* 전체 높이 확보 */
+            height: 100%;
         }
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #f3f4f6; 
-            min-height: 100vh; /* 기본 높이 설정 */
+            min-height: 100vh;
         }
-        /* 💡 iOS 등의 동적 뷰포트 높이(dvh)를 사용하여 주소창/도구 모음 영향을 최소화 */
         body {
             min-height: 100dvh; 
         }
         
-        /* 캔버스 컨테이너에 position: relative; 추가 필수 (텍스트 드래그를 위해) */
         #canvasContainer { width: 100%; max-width: 420px; margin: 0 auto; position: relative; } 
         #photoCanvas {
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb;
             display: block; width: 100%; height: auto; border-radius: 1rem;
         }
         
-        /* 드래그 오버레이 스타일 (수정됨: 기본 투명) */
         #mainTextOverlay, #subTextOverlay {
             position: absolute; text-align: center; cursor: grab; user-select: none;
             z-index: 50; padding: 5px 10px; border-radius: 5px;
             transition: all 0.1s ease-out; 
             top: 0;
             left: 0;
-            white-space: nowrap; /* 텍스트 너비 고정 */
-            opacity: 0; /* NEW: 기본 상태에서는 투명 */
-            background-color: transparent; /* NEW: 기본 배경 투명 */
-            border: 1px dashed transparent; /* NEW: 기본 테두리 투명 */
+            white-space: nowrap;
+            opacity: 0;
+            background-color: transparent;
+            border: 1px dashed transparent;
         }
         
-        /* 드래그 시작 시 적용되어 텍스트를 확실하게 보여줌 */
         .text-overlay.dragging {
-            opacity: 1 !important; /* 드래그 중에는 항상 보이도록 */
-            background-color: rgba(255, 255, 255, 0.9); /* 드래그 시 배경색 추가 */
-            border: 1px dashed #374151; /* 드래그 시 테두리 추가 */
+            opacity: 1 !important;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px dashed #374151;
+        }
+
+        /* 드래그 중인 아이템 스타일 */
+        .preview-item.dragging {
+            opacity: 0.4;
+            border: 2px solid #3b82f6;
+        }
+        /* 모바일에서 롱프레스 시 선택되는 것 방지 */
+        .preview-item {
+            user-select: none;
+            -webkit-user-drag: none;
+            touch-action: none; /* 모바일 드래그를 위해 필요 */
         }
         
         .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
@@ -63,21 +70,16 @@
         #textPositionButtons .control-btn.active { box-shadow: 0 0 0 2px rgba(55, 65, 81, 0.7); }
         #loader { backdrop-filter: blur(4px); }
         h1, h2, h3 { word-break: keep-all; }
-        /* 드래그 앤 드롭 스타일 */
         #dropZone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
-        /* 이미지 미리보기 드래그 스타일 */
         .preview-item.dragging { opacity: 0.5; transform: scale(0.95); }
         
-        /* 🚨 [추가] 모바일 최적화를 위한 미디어 쿼리 */
         @media (max-width: 640px) {
-            /* 컨트롤 버튼 패딩 조정 */
             .control-btn {
-                padding: 0.75rem; /* 버튼 영역을 넉넉하게 */
+                padding: 0.75rem;
                 min-width: 80px; 
             }
         }
 
-        /* 🚨 [추가] 마우스 오버 스타일은 PC 환경에 한정 (모바일 터치 충돌 방지) */
         @media (hover: hover) and (pointer: fine) {
             .text-overlay:hover:not(.dragging) { 
                 background-color: rgba(255, 255, 255, 0.2); 
@@ -93,7 +95,7 @@
         
         <header class="text-center py-6 border-b border-gray-100 lg:hidden">
             <h1 class="text-3xl font-black text-gray-900">Frame Diary</h1>
-            <p class="text-gray-400 text-sm">멀티 레이아웃 확장</p>
+            <p class="text-gray-400 text-sm">나만의 추억을 담은 포토북</p>
         </header>
         
         <main class="flex flex-col lg:flex-row lg:gap-12 lg:p-10">
@@ -101,7 +103,7 @@
             <div class="w-full lg:w-2/5 p-4 lg:p-0 lg:sticky lg:top-10 self-start">
                 <header class="hidden lg:block mb-8 mt-4">
                     <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">Frame Diary</h1>
-                    <p class="text-xl text-gray-500 mt-1">한 장 한 장, 오늘의 감정을 채우다</p>
+                    <p class="text-xl text-gray-500 mt-1">사진으로 특별한 순간을 담다</p>
                 </header>
                 <div id="canvasContainer">
                     <canvas id="photoCanvas"></canvas>
@@ -114,31 +116,31 @@
                 <nav class="flex border-b border-gray-200">
                     <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-photo">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 15H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
-                        사진 관리
+                        사진 추가
                     </button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-design">
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
-                        디자인
+                        레이아웃 & 스타일
                     </button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-text">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v1H7V5zm0 2h2v1H7V7z" clip-rule="evenodd" /></svg>
-                        텍스트
+                        텍스트 꾸미기
                     </button>
                      <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 flex items-center justify-center gap-2" data-tab="tab-save">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        저장 및 공유
+                        저장하기
                     </button>
                 </nav>
 
                 <div class="p-6 space-y-8">
                     <div id="tab-photo" class="tab-content space-y-4">
                         <div id="dropZone" class="w-full p-6 border-2 border-dashed border-gray-300 rounded-2xl text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-colors">
-                            <p class="font-bold text-gray-600">이곳에 이미지를 드래그 앤 드롭하세요</p>
-                            <p class="text-sm text-gray-400 mt-1">또는 아래 버튼을 눌러 선택</p>
+                            <p class="font-bold text-gray-600">👇 사진을 여기에 끌어서 놓으세요</p>
+                            <p class="text-sm text-gray-400 mt-1">또는 아래 버튼으로 선택해주세요</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <label for="imageUpload" class="w-full bg-gray-900 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-800 transition-colors shadow-lg transform hover:scale-[1.01]">갤러리에서 선택</label>
-                            <label for="cameraUpload" class="w-full bg-gray-700 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-600 transition-colors shadow-lg transform hover:scale-[1.01]">즉시 사진 촬영</label>
+                            <label for="imageUpload" class="w-full bg-gray-900 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-800 transition-colors shadow-lg transform hover:scale-[1.01]">📱 휴대폰에서 선택</label>
+                            <label for="cameraUpload" class="w-full bg-gray-700 text-white p-4 rounded-2xl font-bold text-center cursor-pointer hover:bg-gray-600 transition-colors shadow-lg transform hover:scale-[1.01]">📸 지금 바로 촬영</label>
                             <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
                             <input type="file" id="cameraUpload" accept="image/*" capture="user" class="hidden">
                         </div>
@@ -150,46 +152,46 @@
 
                     <div id="tab-design" class="tab-content hidden space-y-6">
                         <div>
-                           <h3 class="font-bold text-lg mb-2 text-gray-800">📐 레이아웃 선택</h3>
+                           <h3 class="font-bold text-lg mb-2 text-gray-800">📐 사진 배치 방식</h3>
                            <div id="layoutButtons" class="grid grid-cols-3 gap-4">
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md active" data-layout="1x4">세로 4컷</button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x2">정사각 4컷</button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="1+3">1+3 분할</button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2+3">2+3 분할(5컷)</button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x3">세로 6컷</button>
-                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="3x2">가로 6컷</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md active" data-layout="1x4">세로<br/>4장</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x2">정사각<br/>4장</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="1+3">큼+작음<br/>4장</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2+3">혼합<br/>5장</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="2x3">세로<br/>6장</button>
+                                <button class="control-btn p-3 rounded-xl shadow-sm border font-semibold bg-white flex flex-col items-center justify-center text-sm hover:shadow-md" data-layout="3x2">가로<br/>6장</button>
                             </div>
                         </div>
                          <div>
-                            <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋</h3>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">🎨 테마 프리셋 (원클릭 스타일)</h3>
                             <div id="themeButtons" class="grid grid-cols-3 sm:grid-cols-4 gap-4"></div>
                         </div>
                         <div>
-                            <h3 class="font-bold text-lg mb-2 text-gray-800">⚙️ 디자인 상세 조절</h3>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">⚙️ 상세 옵션</h3>
                             <div class="space-y-4">
                                 <div>
-                                    <label for="frameMarginSlider" class="font-semibold text-gray-600">프레임 여백: <span id="frameMarginValue">5</span>%</label>
+                                    <label for="frameMarginSlider" class="font-semibold text-gray-600">바깥쪽 여백: <span id="frameMarginValue">5</span>%</label>
                                     <input type="range" id="frameMarginSlider" min="0" max="20" value="5" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
                                  <div>
-                                    <label for="imagePaddingSlider" class="font-semibold text-gray-600">사진 간격: <span id="imagePaddingValue">5</span>%</label>
+                                    <label for="imagePaddingSlider" class="font-semibold text-gray-600">사진 사이 간격: <span id="imagePaddingValue">5</span>%</label>
                                     <input type="range" id="imagePaddingSlider" min="0" max="20" value="5" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
                                 <div>
-                                    <label for="imageRadiusSlider" class="font-semibold text-gray-600">사진 모서리 둥글기: <span id="imageRadiusValue">0</span>px</label>
+                                    <label for="imageRadiusSlider" class="font-semibold text-gray-600">사진 모서리 곡선: <span id="imageRadiusValue">0</span>px</label>
                                     <input type="range" id="imageRadiusSlider" min="0" max="50" value="0" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
                             </div>
                         </div>
                         <div>
-                           <h3 class="font-bold text-lg mb-2 text-gray-800">🌈 사용자 지정 색상</h3>
+                           <h3 class="font-bold text-lg mb-2 text-gray-800">🌈 색상 조정</h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="backgroundColorPicker" class="font-semibold text-gray-600 text-sm">배경색</label>
+                                    <label for="backgroundColorPicker" class="font-semibold text-gray-600 text-sm">배경 색</label>
                                     <input type="color" id="backgroundColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
                                 </div>
                                 <div>
-                                    <label for="frameColorPicker" class="font-semibold text-gray-600 text-sm">프레임색</label>
+                                    <label for="frameColorPicker" class="font-semibold text-gray-600 text-sm">테두리 색</label>
                                     <input type="color" id="frameColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
                                 </div>
                             </div>
@@ -197,80 +199,80 @@
                     </div>
 
                     <div id="tab-text" class="tab-content hidden space-y-6">
-                         <h3 class="font-bold text-lg mb-4 text-gray-800">✏️ 문구 및 스타일</h3>
+                         <h3 class="font-bold text-lg mb-4 text-gray-800">✏️ 제목과 설명 글귀</h3>
                          <p class="text-sm text-blue-600 font-medium bg-blue-50 p-3 rounded-lg border border-blue-100">
-                             💡 캔버스 위의 문구를 터치/클릭한 채 드래그하여 **원하는 위치에 정확히** 배치할 수 있습니다.
+                             💡 캔버스에서 글귀를 눌러 드래그하면 원하는 위치로 자유롭게 옮길 수 있어요.
                          </p>
 
-                        <input type="text" id="customTextInput" placeholder="여기에 메인 문구를 입력하세요" value="LIFE 4 CUTS" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
-                        <input type="text" id="subTextInput" placeholder="날짜 등 부제목을 입력하세요" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        <input type="text" id="customTextInput" placeholder="제목을 입력하세요 (예: SUMMER MEMORIES)" value="LIFE 4 CUTS" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
+                        <input type="text" id="subTextInput" placeholder="날짜나 설명을 입력하세요 (예: 2024년 8월)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-500 transition-shadow">
                         
                         <div class="space-y-3">
-                            <h4 class="font-semibold text-gray-600">초기 문구 위치 설정 (드래그로 미세 조정)</h4>
+                            <h4 class="font-semibold text-gray-600">제목이 처음 나타날 위치 (클릭해서 드래그로 이동 가능)</h4>
                             <div id="textPositionButtons" class="flex gap-2 sm:gap-4">
-                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="top">상단</button>
+                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="top">위쪽</button>
                                 <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3" data-position="center">중앙</button>
-                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3 active" data-position="bottom">하단</button>
+                                <button class="control-btn p-2 rounded-xl shadow-sm font-semibold text-sm w-1/3 active" data-position="bottom">아래쪽</button>
                             </div>
                         </div>
                         
                         <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
-                            <h4 class="font-bold text-md text-gray-700">메인 문구 스타일</h4>
+                            <h4 class="font-bold text-md text-gray-700">📝 제목 스타일</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="mainFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
+                                    <label for="mainFontSelector" class="font-semibold text-gray-600 text-sm">글꼴</label>
                                     <select id="mainFontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300"></select>
                                 </div>
                                 <div>
-                                    <label for="mainFontColorPicker" class="font-semibold text-gray-600 text-sm">색상</label>
+                                    <label for="mainFontColorPicker" class="font-semibold text-gray-600 text-sm">글자 색</label>
                                     <input type="color" id="mainFontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="mainTextStrokeColorPicker" class="font-semibold text-gray-600 text-sm">테두리 색상</label>
+                                    <label for="mainTextStrokeColorPicker" class="font-semibold text-gray-600 text-sm">테두리 색</label>
                                     <input type="color" id="mainTextStrokeColorPicker" value="#FFFFFF" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
                                 </div>
                                 <div>
-                                    <label for="mainTextStrokeSlider" class="font-semibold text-gray-600 text-sm">테두리 두께: <span id="mainTextStrokeValue">0</span>px</label>
+                                    <label for="mainTextStrokeSlider" class="font-semibold text-gray-600 text-sm">테두리 굵기: <span id="mainTextStrokeValue">0</span>px</label>
                                     <input type="range" id="mainTextStrokeSlider" min="0" max="10" value="0" class="w-full mt-1 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                                 </div>
                             </div>
                             <div>
-                                <label for="mainFontSizeSlider" class="font-semibold text-gray-600">크기: <span id="mainFontSizeValue">50</span>px</label>
+                                <label for="mainFontSizeSlider" class="font-semibold text-gray-600">글자 크기: <span id="mainFontSizeValue">50</span>px</label>
                                 <input type="range" id="mainFontSizeSlider" min="20" max="150" value="50" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                             </div>
                         </div>
 
                         <div class="p-4 border rounded-xl space-y-4 bg-gray-50">
-                            <h4 class="font-bold text-md text-gray-700">보조 문구 스타일</h4>
+                            <h4 class="font-bold text-md text-gray-700">📌 설명 글 스타일</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="subFontSelector" class="font-semibold text-gray-600 text-sm">폰트</label>
+                                    <label for="subFontSelector" class="font-semibold text-gray-600 text-sm">글꼴</label>
                                     <select id="subFontSelector" class="w-full p-2 mt-1 border rounded-md focus:ring-2 focus:ring-gray-300"></select>
                                 </div>
                                 <div>
-                                    <label for="subFontColorPicker" class="font-semibold text-gray-600 text-sm">색상</label>
+                                    <label for="subFontColorPicker" class="font-semibold text-gray-600 text-sm">글자 색</label>
                                     <input type="color" id="subFontColorPicker" class="w-full h-10 p-1 mt-1 border rounded-md cursor-pointer hover:shadow-md">
                                 </div>
                             </div>
                             <div>
-                                <label for="subFontSizeSlider" class="font-semibold text-gray-600">크기: <span id="subFontSizeValue">25</span>px</label>
+                                <label for="subFontSizeSlider" class="font-semibold text-gray-600">글자 크기: <span id="subFontSizeValue">25</span>px</label>
                                 <input type="range" id="subFontSizeSlider" min="10" max="75" value="25" class="w-full mt-2 h-3 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                             </div>
                         </div>
                     </div>
                      <div id="tab-save" class="tab-content hidden space-y-4">
-                        <p class="text-center text-gray-600 text-lg font-medium">✨ 결과물이 마음에 드시나요? <br>원하는 파일 형식으로 저장하세요!</p>
+                        <p class="text-center text-gray-600 text-lg font-medium">✨ 작품이 완성되었어요!<br/>원하는 형식으로 저장하세요</p>
                         <button id="downloadPngBtn" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-blue-700 transition-all duration-300 transform hover:scale-[1.01]">
-                            PNG로 저장 (고화질, 추천)
+                            🖼️ PNG로 저장 (최고 화질 - 추천)
                         </button>
                         <button id="downloadJpgBtn" class="w-full bg-gray-800 text-white p-4 rounded-xl font-bold text-lg shadow-xl hover:bg-gray-900 transition-all duration-300 transform hover:scale-[1.01]">
-                            JPEG로 저장 (일반 화질)
+                            📷 JPEG로 저장 (일반 화질)
                         </button>
                         <div class="pt-4">
                             <button id="resetBtn" class="w-full bg-red-500 text-white p-3 rounded-xl font-semibold text-base shadow-lg hover:bg-red-600 transition-all duration-300 transform hover:scale-[1.01]">
-                                처음부터 다시 만들기
+                                🔄 처음부터 다시 시작하기
                             </button>
                         </div>
                     </div>
