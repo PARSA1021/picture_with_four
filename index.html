@@ -57,6 +57,17 @@
             -webkit-user-drag: none;
             touch-action: none; /* 모바일 드래그를 위해 필요 */
         }
+
+        .slot-overlay {
+            position: absolute;
+            cursor: grab;
+            border-radius: 8px;
+        }
+
+        .slot-overlay.dragging {
+            outline: 3px solid #6366f1;
+            cursor: grabbing;
+        }
         
         .tab-btn.active { border-color: #374151; color: #374151; font-weight: 700; }
         .control-btn {
@@ -107,6 +118,13 @@
                 </header>
                 <div id="canvasContainer">
                     <canvas id="photoCanvas"></canvas>
+
+                    <!-- 📸 사진 슬롯 드래그용 오버레이 -->
+                    <div id="slotOverlayContainer"
+                        style="position:absolute; inset:0; z-index:10;">
+                    </div>
+
+                    <!-- 기존 텍스트 오버레이 -->
                     <div id="mainTextOverlay" class="text-overlay"></div>
                     <div id="subTextOverlay" class="text-overlay"></div>
                 </div>
@@ -292,6 +310,7 @@
         const ctx = canvas.getContext('2d');
         const mainTextOverlay = document.getElementById('mainTextOverlay');
         const subTextOverlay = document.getElementById('subTextOverlay');
+        let imageSlots = [];      // 캔버스에 그려진 이미지 위치 정보
         let draggedItem = null;
         let isDraggingText = false; // 텍스트 드래그 중인지 확인하는 플래그
 
@@ -360,7 +379,12 @@
             { value: 'Permanent Marker', name: 'Permanent Marker' },
         ];
 
+        const slotOverlayCache = new Map(); // { index: DOM element }
+        let selectedSlotIndex = null;       // 프레임의 선택된 슬롯
+        let selectedPreviewIndex = null;    // 미리보기의 선택된 사진
+        let isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);  // 모바일 판정
 
+        
         // --- 초기화 ---
         window.onload = () => {
             setupEventListeners();
@@ -556,6 +580,7 @@
             // 리셋 시에도 현재 날짜로 초기화
             defaultConfig.subText.content = getCurrentDateFormatted(); 
             config = JSON.parse(JSON.stringify(defaultConfig));
+            slotOverlayCache.clear();
             updateUIFromConfig();
             renderImagePreviews();
             resizeCanvas();
@@ -622,6 +647,18 @@
             if (activeButton) activeButton.classList.add('active');
         }
 
+        function moveImage(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= config.images.length) return;
+
+            // 배열 swap
+            [config.images[index], config.images[newIndex]] =
+            [config.images[newIndex], config.images[index]];
+
+            renderImagePreviews();
+            drawCanvas();
+            }
+
         // --- 캔버스 크기 조절 함수 ---
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
@@ -636,14 +673,25 @@
                 default: aspectRatio = 3;
             }
 
+            // ✅ 1단계: CSS 크기 설정 (화면에 보이는 크기)
             canvas.style.width = `${rect.width}px`;
             const displayHeight = rect.width * aspectRatio;
             canvas.style.height = `${displayHeight}px`;
             
+            // ✅ 2단계: DPR 값 얻기 (고해상도 디바이스 대응)
             const dpr = window.devicePixelRatio || 1;
+            
+            // ✅ 3단계: 물리적 픽셀 크기 설정 (DPR 포함)
+            // 예: iPhone의 DPR이 2이면, CSS 350px = 물리 700px
             canvas.width = rect.width * dpr; 
             canvas.height = displayHeight * dpr;
-            ctx.scale(dpr, dpr); // DPR 스케일링을 여기에 적용
+            ctx.scale(dpr, dpr); 
+            
+            // ✅ 4단계: 다른 함수에서도 사용할 수 있도록 canvas에 저장
+            //         drawCanvas()에서 이 값들을 사용!
+            canvas.displayWidth = rect.width;        // CSS 픽셀 너비
+            canvas.displayHeight = displayHeight;    // CSS 픽셀 높이
+            canvas.dpr = dpr;                        // 디바이스 픽셀 비율
         }
 
 
@@ -684,38 +732,69 @@
         // --- 텍스트 오버레이(드래그용) 업데이트 ---
         function updateTextOverlay() {
             const { mainText, subText } = config;
-            const { width: dW, height: dH } = canvas.getBoundingClientRect();
             
+            // ✅ 1단계: canvasContainer를 기준점으로 설정
+            //          (이게 텍스트 오버레이의 부모 요소)
+            const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            const dW = containerRect.width;   // canvasContainer의 너비
+            const dH = containerRect.height;  // canvasContainer의 높이
+            
+            // ========================================================
+            // 메인 텍스트 설정
+            // ========================================================
+            
+            // ✅ 2단계: 메인 텍스트 콘텐츠 업데이트
             mainTextOverlay.textContent = mainText.content;
             mainTextOverlay.style.color = mainText.color;
             mainTextOverlay.style.fontFamily = mainText.font;
             mainTextOverlay.style.fontSize = `${mainText.size}px`;
             mainTextOverlay.style.fontWeight = 'bold';
             
-            // NEW: Simulate stroke with text-shadow for overlay
+            // ✅ 3단계: 스트로크 (테두리) 효과 추가
+            //          기존: 4방향만 → 문제: 테두리가 약함
+            //          개선: 8방향으로 → 더 진한 테두리
             let shadow = 'none';
             if (mainText.strokeWidth > 0) {
                 const sw = mainText.strokeWidth;
                 const sc = mainText.strokeColor;
-                // Multi-directional shadow to simulate stroke
-                // For a good effect, we use four directions
-                shadow = `${sc} ${sw}px 0, ${sc} ${-sw}px 0, ${sc} 0 ${sw}px, ${sc} 0 ${-sw}px`;
+                
+                // 8방향으로 확장된 텍스트 섀도우
+                // 오른쪽, 왼쪽, 위, 아래, 대각선 4개 방향
+                shadow = `
+                    ${sc} ${sw}px 0,        /* 오른쪽 */
+                    ${sc} ${-sw}px 0,       /* 왼쪽 */
+                    ${sc} 0 ${sw}px,        /* 아래 */
+                    ${sc} 0 ${-sw}px,       /* 위 */
+                    ${sc} ${sw}px ${sw}px,     /* 오른쪽 아래 대각선 */
+                    ${sc} ${-sw}px ${-sw}px,   /* 왼쪽 위 대각선 */
+                    ${sc} ${sw}px ${-sw}px,    /* 오른쪽 위 대각선 */
+                    ${sc} ${-sw}px ${sw}px     /* 왼쪽 아래 대각선 */
+                `;
             }
             mainTextOverlay.style.textShadow = shadow;
 
-
-            const mainTextWidth = mainTextOverlay.offsetWidth;
-            const mainTextHeight = mainTextOverlay.offsetHeight;
+            // ✅ 4단계: 메인 텍스트 위치 계산
+            const mainTextWidth = mainTextOverlay.offsetWidth;    // 렌더된 텍스트의 실제 너비
+            const mainTextHeight = mainTextOverlay.offsetHeight;  // 렌더된 텍스트의 실제 높이
             
+            // 중앙 정렬 계산:
+            // (dW * mainText.x) = 컨테이너에서 텍스트 중심의 X 좌표
+            // (mainTextWidth / 2) = 텍스트 크기의 절반을 빼서 텍스트가 중앙에 오도록
             mainTextOverlay.style.left = `${(dW * mainText.x) - (mainTextWidth / 2)}px`;
             mainTextOverlay.style.top = `${(dH * mainText.y) - (mainTextHeight / 2)}px`;
 
+            // ========================================================
+            // 서브 텍스트(날짜/설명) 설정
+            // ========================================================
+            
+            // ✅ 5단계: 서브 텍스트 콘텐츠 업데이트
             subTextOverlay.textContent = subText.content;
             subTextOverlay.style.color = subText.color;
             subTextOverlay.style.fontFamily = subText.font;
             subTextOverlay.style.fontSize = `${subText.size}px`;
             subTextOverlay.style.fontWeight = 'normal';
             
+            // ✅ 6단계: 서브 텍스트 위치 계산
             const subTextWidth = subTextOverlay.offsetWidth;
             const subTextHeight = subTextOverlay.offsetHeight;
             
@@ -854,15 +933,24 @@
             
             config.images.forEach((imgData, index) => {
                 const div = document.createElement('div');
-                div.className = 'preview-item relative group aspect-square transition-all duration-300';
+                div.className = 'preview-item relative group aspect-square transition-all duration-300 cursor-pointer';
                 div.dataset.index = index;
                 div.draggable = true;
+                
+                // ✅ 선택된 미리보기에 파란 테두리 표시
+                if (selectedPreviewIndex === index) {
+                    div.classList.add('selected');
+                    div.style.outline = '3px solid #3b82f6';
+                    div.style.outlineOffset = '2px';
+                    div.style.boxShadow = '0 0 0 1px #3b82f6';
+                }
 
                 const img = document.createElement('img');
                 img.src = imgData.image.src;
-                img.className = 'w-full h-full object-cover rounded-lg shadow-md';
+                img.className = 'w-full h-full object-cover rounded-lg shadow-md pointer-events-none';
                 let transform = `scaleX(${imgData.flipped ? -1 : 1}) rotate(${imgData.rotation}deg)`;
                 img.style.transform = transform;
+                
                 // 필터 스타일 적용
                 if(imgData.filter === 'grayscale') img.style.filter = 'grayscale(100%)';
                 else if(imgData.filter === 'sepia') img.style.filter = 'sepia(100%)';
@@ -872,19 +960,32 @@
                 btnContainer.className = 'absolute top-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity z-10';
 
                 const leftBtns = document.createElement('div');
+                
                 const flipBtn = document.createElement('button');
                 flipBtn.innerHTML = '↔️';
                 flipBtn.className = `rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs transition-all duration-200 ${imgData.flipped ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'}`;
                 flipBtn.title = '좌우 반전';
                 flipBtn.onclick = () => flipImage(index);
                 leftBtns.appendChild(flipBtn);
-                
+
                 const rotateBtn = document.createElement('button');
                 rotateBtn.innerHTML = '🔄';
                 rotateBtn.className = 'bg-white text-gray-800 rounded-full w-7 h-7 ml-1 flex items-center justify-center font-bold text-xs';
                 rotateBtn.title = '90도 회전';
                 rotateBtn.onclick = () => rotateImage(index);
                 leftBtns.appendChild(rotateBtn);
+
+                const upBtn = document.createElement('button');
+                upBtn.textContent = '⬆';
+                upBtn.className = 'bg-white rounded-full w-7 h-7 text-xs';
+                upBtn.onclick = () => moveImage(index, -1);
+                leftBtns.appendChild(upBtn);
+
+                const downBtn = document.createElement('button');
+                downBtn.textContent = '⬇';
+                downBtn.className = 'bg-white rounded-full w-7 h-7 text-xs ml-1';
+                downBtn.onclick = () => moveImage(index, 1);
+                leftBtns.appendChild(downBtn);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '&times;';
@@ -896,26 +997,166 @@
                 
                 div.appendChild(img);
                 div.appendChild(btnContainer);
+                
+                // ========================================================
+                // ✅ 미리보기 터치/클릭 이벤트 (PC/모바일 통합)
+                // ========================================================
+                
+                let tapTimer = null;
+                let isTouchStarted = false;
+                
+                // 터치/마우스 다운
+                div.addEventListener('pointerdown', (e) => {
+                    isTouchStarted = true;
+                    
+                    // 이미 드래그가 시작되었으면 무시
+                    if (e.pointerType === 'touch' && draggedItem !== null) {
+                        return;
+                    }
+                    
+                    // 버튼을 클릭했으면 무시
+                    if (e.target.closest('button')) {
+                        return;
+                    }
+                    
+                    // 더블탭 감지 (모바일에서 의도치 않은 선택 방지)
+                    if (tapTimer) {
+                        clearTimeout(tapTimer);
+                        tapTimer = null;
+                        // 더블탭 무시
+                        return;
+                    }
+                    
+                    // 싱글탭 대기
+                    tapTimer = setTimeout(() => {
+                        if (!isTouchStarted) {
+                            tapTimer = null;
+                            return;
+                        }
+                        
+                        e.stopPropagation();
+                        
+                        // 경우 1: 슬롯이 선택된 상태에서 미리보기 클릭/터치
+                        if (selectedSlotIndex !== null) {
+                            // 교환 실행
+                            [config.images[selectedSlotIndex], config.images[index]] =
+                            [config.images[index], config.images[selectedSlotIndex]];
+                            
+                            selectedSlotIndex = null;
+                            selectedPreviewIndex = null;
+                            
+                            renderImagePreviews();
+                            drawCanvas();
+                            
+                            // 피드백: 짧은 진동
+                            if (navigator.vibrate) {
+                                navigator.vibrate(100);
+                            }
+                            
+                            tapTimer = null;
+                            isTouchStarted = false;
+                            return;
+                        }
+                        
+                        // 경우 2: 같은 미리보기를 다시 클릭/터치하면 선택 해제
+                        if (selectedPreviewIndex === index) {
+                            selectedPreviewIndex = null;
+                            renderImagePreviews();
+                            
+                            tapTimer = null;
+                            isTouchStarted = false;
+                            return;
+                        }
+                        
+                        // 경우 3: 미리보기 선택
+                        selectedPreviewIndex = index;
+                        selectedSlotIndex = null;
+                        renderImagePreviews();
+                        
+                        // 피드백: 짧은 진동 (모바일)
+                        if (navigator.vibrate) {
+                            navigator.vibrate(80);
+                        }
+                        
+                        tapTimer = null;
+                        isTouchStarted = false;
+                    }, isMobileDevice ? 300 : 150);  // 모바일은 좀 더 기다렸다가 (드래그 vs 탭 구분)
+                });
+                
+                // 터치/마우스 업
+                div.addEventListener('pointerup', (e) => {
+                    isTouchStarted = false;
+                    // 타이머는 유지 (싱글탭 vs 더블탭 판정을 위해)
+                });
+                
+                // 터치/마우스 취소
+                div.addEventListener('pointercancel', (e) => {
+                    if (tapTimer) {
+                        clearTimeout(tapTimer);
+                        tapTimer = null;
+                    }
+                    isTouchStarted = false;
+                });
+                
                 container.appendChild(div);
             });
 
-            // 드래그 앤 드롭 재정렬 로직 
-            document.querySelectorAll('.preview-item').forEach(item => {
-                item.addEventListener('dragstart', (e) => { draggedItem = item; setTimeout(() => item.classList.add('dragging'), 0); });
-                item.addEventListener('dragend', (e) => { draggedItem.classList.remove('dragging'); draggedItem = null; });
+            // ========================================================
+            // 2단계: 드래그 앤 드롭 (기존 코드)
+            // ========================================================
+            const items = container.querySelectorAll('.preview-item');
+            
+            items.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = item;
+                    setTimeout(() => item.classList.add('dragging'), 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    item.classList.remove('dragging');
+                    draggedItem = null;
+                });
+
                 item.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    const afterElement = getDragAfterElement(container, e.clientY);
-                    if (afterElement == null) { container.appendChild(draggedItem); } 
-                    else { container.insertBefore(draggedItem, afterElement); }
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    if (draggedItem && draggedItem !== item) {
+                        const rect1 = draggedItem.getBoundingClientRect();
+                        const rect2 = item.getBoundingClientRect();
+                        
+                        if (rect1.left + rect1.width / 2 < rect2.left + rect2.width / 2) {
+                            item.parentNode.insertBefore(draggedItem, item);
+                        } else {
+                            item.parentNode.insertBefore(item, draggedItem);
+                        }
+                    }
                 });
             });
+
+            // ========================================================
+            // 3단계: 드롭 이벤트 (배열 재정렬)
+            // ========================================================
+            
             container.addEventListener('drop', (e) => {
                 e.preventDefault();
-                const newOrder = [...container.querySelectorAll('.preview-item')].map(item => config.images[parseInt(item.dataset.index)]);
+                
+                const newOrder = Array.from(container.querySelectorAll('.preview-item'))
+                    .map((item) => {
+                        const oldIndex = parseInt(item.dataset.index);
+                        return config.images[oldIndex];
+                    });
+                
                 config.images = newOrder;
-                renderImagePreviews(); drawCanvas();
+                
+                selectedSlotIndex = null;
+                selectedPreviewIndex = null;
+                
+                renderImagePreviews();
+                drawCanvas();
             });
+
             document.getElementById('fileStatus').textContent = `${config.images.length} / ${MAX_IMAGES}장 업로드됨.`;
         }
 
@@ -949,70 +1190,349 @@
             ctx.closePath();
         }
 
+        function renderSlotOverlays() {
+            const container = document.getElementById('slotOverlayContainer');
+            const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            
+            // ========================================================
+            // 1단계: 현재 필요한 슬롯들을 처리
+            // ========================================================
+            imageSlots.forEach(slot => {
+                let el = slotOverlayCache.get(slot.index);
+                
+                // ✅ 2-1단계: 슬롯이 처음 생성되는 경우 (캐시에 없음)
+                if (!el) {
+                    // 새 DOM 요소 생성
+                    el = document.createElement('div');
+                    el.className = 'slot-overlay';
+                    el.dataset.index = slot.index;
+                    
+                    // 컨테이너에 추가
+                    container.appendChild(el);
+                    
+                    // 캐시에 저장 (다음번에 재사용하기 위해)
+                    slotOverlayCache.set(slot.index, el);
+                    
+                    // ⚠️ 중요: 이벤트 리스너는 여기서만 등록!
+                    //         (처음 한 번만, 이후로는 생성 안 함)
+                    addDragEvents(el);
+                }
+                
+                // ✅ 2-2단계: 위치만 업데이트 (매 프레임마다)
+                //            DOM 요소는 재사용하므로 position만 변경
+                el.style.left = (containerRect.left + slot.x) + 'px';
+                el.style.top = (containerRect.top + slot.y) + 'px';
+                el.style.width = slot.w + 'px';
+                el.style.height = slot.h + 'px';
+            });
+            
+            // ========================================================
+            // 3단계: 더 이상 사용하지 않는 슬롯 제거
+            // ========================================================
+            // 예: 4장 레이아웃에서 6장 레이아웃으로 변경했을 때
+            //     슬롯 4, 5의 오버레이는 제거해야 함
+            
+            for (const [index, el] of slotOverlayCache.entries()) {
+                // imageSlots에 이 인덱스가 없으면 캐시에서 제거
+                if (!imageSlots.find(s => s.index === index)) {
+                    el.remove();                      // DOM에서 삭제
+                    slotOverlayCache.delete(index);   // 캐시에서 제거
+                }
+            }
+        }
+
+        function findSlotAtPosition(cx, cy) {
+            const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            
+            return imageSlots.find(slot => {
+                const x = containerRect.left + slot.x;
+                const y = containerRect.top + slot.y;
+                
+                return (
+                    cx > x &&
+                    cx < x + slot.w &&
+                    cy > y &&
+                    cy < y + slot.h
+                );
+            });
+        }
+
+        function addDragEvents(el) {
+            const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            
+            let draggingIndex = null;
+            let slotTapTimer = null;
+            let isSlotTouchStarted = false;
+
+            // ========================================================
+            // 드래그 로직 (기존)
+            // ========================================================
+            
+            el.addEventListener('pointerdown', e => {
+                draggingIndex = Number(el.dataset.index);
+                el.classList.add('dragging');
+                el.setPointerCapture(e.pointerId);
+            });
+
+            el.addEventListener('pointerup', e => {
+                el.releasePointerCapture(e.pointerId);
+                el.classList.remove('dragging');
+
+                const rect = el.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+
+                const target = imageSlots.find(slot => {
+                    const x = containerRect.left + slot.x;
+                    const y = containerRect.top + slot.y;
+                    
+                    return (
+                        cx > x &&
+                        cx < x + slot.w &&
+                        cy > y &&
+                        cy < y + slot.h
+                    );
+                });
+
+                if (target && target.index !== draggingIndex) {
+                    [config.images[draggingIndex], config.images[target.index]] =
+                    [config.images[target.index], config.images[draggingIndex]];
+                    
+                    drawCanvas();
+                }
+
+                draggingIndex = null;
+            });
+            
+            // ========================================================
+            // ✅ 추가: 터치/클릭 이벤트 (슬롯 선택)
+            // ========================================================
+            
+            el.addEventListener('pointerdown', (e) => {
+                if (e.pointerType !== 'touch' && e.pointerType !== 'mouse') {
+                    return;
+                }
+                
+                isSlotTouchStarted = true;
+                
+                if (slotTapTimer) {
+                    clearTimeout(slotTapTimer);
+                    slotTapTimer = null;
+                }
+                
+                slotTapTimer = setTimeout(() => {
+                    if (!isSlotTouchStarted) {
+                        slotTapTimer = null;
+                        return;
+                    }
+                    
+                    const slotIndex = Number(el.dataset.index);
+                    
+                    // 경우 1: 미리보기가 선택된 상태에서 슬롯 클릭/터치
+                    if (selectedPreviewIndex !== null) {
+                        [config.images[slotIndex], config.images[selectedPreviewIndex]] =
+                        [config.images[selectedPreviewIndex], config.images[slotIndex]];
+                        
+                        selectedSlotIndex = null;
+                        selectedPreviewIndex = null;
+                        
+                        renderImagePreviews();
+                        drawCanvas();
+                        
+                        // 피드백: 진동
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100]);  // 성공 패턴
+                        }
+                        
+                        slotTapTimer = null;
+                        isSlotTouchStarted = false;
+                        return;
+                    }
+                    
+                    // 경우 2: 같은 슬롯을 다시 클릭/터치하면 선택 해제
+                    if (selectedSlotIndex === slotIndex) {
+                        selectedSlotIndex = null;
+                        drawCanvas();
+                        
+                        slotTapTimer = null;
+                        isSlotTouchStarted = false;
+                        return;
+                    }
+                    
+                    // 경우 3: 슬롯 선택
+                    selectedSlotIndex = slotIndex;
+                    selectedPreviewIndex = null;
+                    drawCanvas();
+                    
+                    // 피드백: 진동
+                    if (navigator.vibrate) {
+                        navigator.vibrate(80);
+                    }
+                    
+                    slotTapTimer = null;
+                    isSlotTouchStarted = false;
+                }, isMobileDevice ? 300 : 150);
+            });
+            
+            el.addEventListener('pointerup', (e) => {
+                isSlotTouchStarted = false;
+            });
+            
+            el.addEventListener('pointercancel', (e) => {
+                if (slotTapTimer) {
+                    clearTimeout(slotTapTimer);
+                    slotTapTimer = null;
+                }
+                isSlotTouchStarted = false;
+            });
+        }
+
         // === resizeCanvas ===
         // 화면 크기가 바뀌거나 레이아웃을 바꿀 때 사진 넣는 큰 판(캔버스)을 딱 맞게 크기 조정해 주는 함수예요.
         function drawCanvas() {
             // resizeCanvas에서 이미 dpr 스케일링을 설정했으므로, 여기서는 dpr을 다시 곱할 필요 없음
-            const { width: dW, height: dH } = canvas.getBoundingClientRect();
+            const dW = canvas.displayWidth;
+            const dH = canvas.displayHeight;
 
             // 1. 배경색 채우기
-            ctx.fillStyle = config.backgroundColor; 
+            ctx.fillStyle = config.backgroundColor;
             ctx.fillRect(0, 0, dW, dH);
-            
+
             // 2. 프레임 영역 계산 및 그리기
             const margin = dW * (config.frameMargin / 100);
             const fx = margin, fy = margin, fw = dW - 2 * margin, fh = dH - 2 * margin;
-            ctx.fillStyle = config.frameColor; 
+            ctx.fillStyle = config.frameColor;
             ctx.fillRect(fx, fy, fw, fh);
-            
+
             // 3. 사진 슬롯 계산 및 그리기
-            const p = fw * (config.imagePadding / 100); 
-            
+            const p = fw * (config.imagePadding / 100);
+
+            // ⭐⭐⭐ 핵심: 슬롯 정보 초기화
+            imageSlots = [];
+
             if (config.layout === '1x4') {
-                const photoW = fw - 2 * p; const photoH = (fh - 5 * p) / 4; 
-                for (let i = 0; i < 4; i++) drawPhotoSlot(i, fx + p, fy + p + i * (photoH + p), photoW, photoH);
+                const photoW = fw - 2 * p;
+                const photoH = (fh - 5 * p) / 4;
+
+                for (let i = 0; i < 4; i++) {
+                    const x = fx + p;
+                    const y = fy + p + i * (photoH + p);
+
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    drawPhotoSlot(i, x, y, photoW, photoH);
+                }
+
             } else if (config.layout === '2x2') {
-                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 3 * p) / 2;
-                drawPhotoSlot(0, fx + p, fy + p, photoW, photoH); drawPhotoSlot(1, fx + 2 * p + photoW, fy + p, photoW, photoH);
-                drawPhotoSlot(2, fx + p, fy + 2 * p + photoH, photoW, photoH); drawPhotoSlot(3, fx + 2 * p + photoW, fy + 2 * p + photoH, photoW, photoH);
+                const photoW = (fw - 3 * p) / 2;
+                const photoH = (fh - 3 * p) / 2;
+
+                const slots = [
+                    { i: 0, x: fx + p,              y: fy + p },
+                    { i: 1, x: fx + 2 * p + photoW, y: fy + p },
+                    { i: 2, x: fx + p,              y: fy + 2 * p + photoH },
+                    { i: 3, x: fx + 2 * p + photoW, y: fy + 2 * p + photoH }
+                ];
+
+                slots.forEach(s => {
+                    imageSlots.push({ index: s.i, x: s.x, y: s.y, w: photoW, h: photoH });
+                    drawPhotoSlot(s.i, s.x, s.y, photoW, photoH);
+                });
+
             } else if (config.layout === '1+3') {
-                const bigH = fh * 0.6 - p * 1.5; const smallH = fh * 0.4 - p * 1.5;
+                const bigH = fh * 0.6 - p * 1.5;
+                const smallH = fh * 0.4 - p * 1.5;
+
+                // 큰 사진
+                imageSlots.push({
+                    index: 0,
+                    x: fx + p,
+                    y: fy + p,
+                    w: fw - 2 * p,
+                    h: bigH
+                });
                 drawPhotoSlot(0, fx + p, fy + p, fw - 2 * p, bigH);
+
+                // 작은 사진 3개
                 const smallW = (fw - 4 * p) / 3;
-                for (let i = 0; i < 3; i++) drawPhotoSlot(i + 1, fx + p + i * (smallW + p), fy + bigH + 2 * p, smallW, smallH);
-            } else if (config.layout === '2+3') { 
-                const topH = fh * 0.45 - p * 1.5; const bottomH = fh * 0.55 - p * 1.5;
+                for (let i = 0; i < 3; i++) {
+                    const x = fx + p + i * (smallW + p);
+                    const y = fy + bigH + 2 * p;
+
+                    imageSlots.push({ index: i + 1, x, y, w: smallW, h: smallH });
+                    drawPhotoSlot(i + 1, x, y, smallW, smallH);
+                }
+
+            } else if (config.layout === '2+3') {
+                const topH = fh * 0.45 - p * 1.5;
+                const bottomH = fh * 0.55 - p * 1.5;
                 const topW = (fw - 3 * p) / 2;
                 const bottomW = (fw - 4 * p) / 3;
-                drawPhotoSlot(0, fx + p, fy + p, topW, topH);
-                drawPhotoSlot(1, fx + p * 2 + topW, fy + p, topW, topH);
-                for (let i = 0; i < 3; i++) drawPhotoSlot(i + 2, fx + p + i * (bottomW + p), fy + p * 2 + topH, bottomW, bottomH);
-            } else if (config.layout === '2x3') { 
-                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 4 * p) / 3;
-                for (let i = 0; i < 6; i++) {
-                    const row = Math.floor(i / 2); const col = i % 2;
-                    drawPhotoSlot(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
+
+                // 위 2개
+                for (let i = 0; i < 2; i++) {
+                    const x = fx + p + i * (topW + p);
+                    const y = fy + p;
+
+                    imageSlots.push({ index: i, x, y, w: topW, h: topH });
+                    drawPhotoSlot(i, x, y, topW, topH);
                 }
-            } else if (config.layout === '3x2') { 
-                const photoW = (fw - 4 * p) / 3; const photoH = (fh - 3 * p) / 2;
+
+                // 아래 3개
+                for (let i = 0; i < 3; i++) {
+                    const x = fx + p + i * (bottomW + p);
+                    const y = fy + 2 * p + topH;
+
+                    imageSlots.push({ index: i + 2, x, y, w: bottomW, h: bottomH });
+                    drawPhotoSlot(i + 2, x, y, bottomW, bottomH);
+                }
+
+            } else if (config.layout === '2x3') {
+                const photoW = (fw - 3 * p) / 2;
+                const photoH = (fh - 4 * p) / 3;
+
                 for (let i = 0; i < 6; i++) {
-                    const row = Math.floor(i / 3); const col = i % 3;
-                    drawPhotoSlot(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
+                    const row = Math.floor(i / 2);
+                    const col = i % 2;
+
+                    const x = fx + p + col * (photoW + p);
+                    const y = fy + p + row * (photoH + p);
+
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    drawPhotoSlot(i, x, y, photoW, photoH);
+                }
+
+            } else if (config.layout === '3x2') {
+                const photoW = (fw - 4 * p) / 3;
+                const photoH = (fh - 3 * p) / 2;
+
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 3);
+                    const col = i % 3;
+
+                    const x = fx + p + col * (photoW + p);
+                    const y = fy + p + row * (photoH + p);
+
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    drawPhotoSlot(i, x, y, photoW, photoH);
                 }
             }
-            
-            // 4. 텍스트 그리기 - 드래그 중이 아닐 때만 캔버스에 그립니다.
+
+            // 4. 텍스트 그리기 - 드래그 중이 아닐 때만
             if (!isDraggingText) {
                 drawTextOnCanvas(dW, dH);
             }
-            
+
             requestAnimationFrame(updateTextOverlay);
+
+            // ⭐⭐⭐ 캔버스 드래그를 위한 overlay 생성
+            renderSlotOverlays();
         }
+
         
         // === drawPhotoSlot ===
         // 한 칸 한 칸 사진 넣는 곳에 사진을 예쁘게(필터·뒤집기·회전·모서리 둥글게) 넣거나, 사진 없을 때는 "+" 표시 넣어주는 함수예요.
         function drawPhotoSlot(i, x, y, w, h) {
-            const r = config.imageCornerRadius; // NEW: Get radius
+            const r = config.imageCornerRadius;
             if (i < config.images.length) {
                 const {image: img, flipped, rotation, filter} = config.images[i];
                 
@@ -1026,9 +1546,8 @@
                 else if (filter === 'sepia') ctx.filter = 'sepia(100%)';
                 else ctx.filter = 'none';
 
-                // NEW: Clipping path for rounded corners
                 drawRoundedRect(ctx, x, y, w, h, r); 
-                ctx.clip(); // Apply the clip path
+                ctx.clip();
 
                 ctx.translate(x + w / 2, y + h / 2);
                 if (flipped) ctx.scale(-1, 1);
@@ -1036,13 +1555,35 @@
                 
                 ctx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
                 ctx.restore();
+                
+                // ✅ 선택된 슬롯에 테두리 그리기
+                if (selectedSlotIndex === i) {
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 5;
+                    drawRoundedRect(ctx, x, y, w, h, r);
+                    ctx.stroke();
+                    
+                    // ✅ 선택 표시 (작은 체크마크)
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.beginPath();
+                    ctx.arc(x + w - 15, y + 15, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('✓', x + w - 15, y + 15);
+                }
             } else {
                 ctx.fillStyle = '#e5e7eb'; 
-                drawRoundedRect(ctx, x, y, w, h, r); // NEW: Use rounded rect for placeholder
+                drawRoundedRect(ctx, x, y, w, h, r);
                 ctx.fill();
                 
                 ctx.fillStyle = '#9ca3af';
-                ctx.font = '30px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.font = '30px Inter'; 
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle';
                 ctx.fillText(`+`, x + w / 2, y + h / 2);
             }
         }
@@ -1090,44 +1631,58 @@
 
         // === downloadImage ===
         // 컴퓨터에서 "저장!" 누르면 예쁘고 큰 사이즈의 완성 사진을 파일로 내려받게 해 주는 함수예요.
-        function downloadImage(format) {
-            if (config.images.length === 0) { alert("사진을 먼저 1장 이상 업로드해주세요!"); return; }
-            // DPR을 고려한 원본 해상도로 저장
-            const tempCanvas = document.createElement('canvas');
+        // ===== 헬퍼 함수: 레이아웃별 종횡비 계산 =====
+        function getAspectRatioByLayout(layout) {
+            const ratios = {
+                '1x4': 3,
+                '2x2': 1.5,
+                '1+3': 2,
+                '2+3': 1.8,
+                '2x3': 2.2,
+                '3x2': 1.2,
+            };
+            return ratios[layout] || 3;
+        }
+
+        // ===== 헬퍼 함수: 포맷별 설정 =====
+        function getFormatConfig(format) {
+            return {
+                mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
+                quality: format === 'jpeg' ? 0.95 : 1.0,
+                extension: format,
+            };
+        }
+
+        // ===== 헬퍼 함수: 고화질 캔버스 생성 =====
+        function createHighResCanvas(layout) {
             const displayW = canvas.parentElement.getBoundingClientRect().width;
-            let aspectRatio;
-            switch(config.layout) {
-                case '1x4': aspectRatio = 3; break;
-                case '2x2': aspectRatio = 1.5; break;
-                case '1+3': aspectRatio = 2; break;
-                case '2+3': aspectRatio = 1.8; break;
-                case '2x3': aspectRatio = 2.2; break;
-                case '3x2': aspectRatio = 1.2; break;
-                default: aspectRatio = 3;
-            }
+            const aspectRatio = getAspectRatioByLayout(layout);
             const displayH = displayW * aspectRatio;
 
             // 고화질 출력을 위해 최소 1200px 너비로 설정
-            const renderW = 1200; 
+            const renderW = 1200;
             const renderH = renderW * aspectRatio;
-            
+
+            const tempCanvas = document.createElement('canvas');
             tempCanvas.width = renderW;
             tempCanvas.height = renderH;
+
             const tempCtx = tempCanvas.getContext('2d');
-            
-            // 임시 컨텍스트에 새로운 스케일 적용 (디스플레이 크기 -> 고화질 크기)
             const scaleX = renderW / displayW;
             const scaleY = renderH / displayH;
             tempCtx.scale(scaleX, scaleY);
-            
-            // 설정값을 임시 캔버스에 맞게 조정하여 그리기 (로직 재사용)
-            const oldConfig = JSON.parse(JSON.stringify(config));
-            const oldImages = config.images;
 
-        // === downloadBlobAsFile ===
-        // 사진 데이터를 실제 파일로 내려받게 해 주는 작은 도우미 함수예요.
-        // Blob을 파일로 다운로드하는 헬퍼 함수
-        // Web Share API를 지원하지 않거나 실패했을 때 대체(Fallback)로 사용됩니다.
+            return {
+                canvas: tempCanvas,
+                ctx: tempCtx,
+                scaleX,
+                scaleY,
+                renderW,
+                renderH,
+            };
+        }
+
+        // ===== 헬퍼 함수: Blob을 파일로 다운로드 =====
         function downloadBlobAsFile(blob, filename) {
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -1137,295 +1692,427 @@
             URL.revokeObjectURL(url);
         }
 
-        // === saveToGallery ===
-        // 핸드폰에서 "저장!" 누르면 갤러리에 바로 저장하거나 공유할 수 있게 도와주는 함수예요. 안 되면 그냥 내려받게 해줘요.
-        async function saveToGallery(format) {
-            if (config.images.length === 0) { 
-                alert("사진을 먼저 1장 이상 업로드해주세요!"); 
-                return; 
+        // ===== 메인 함수: 컴퓨터에서 다운로드 =====
+        function downloadImage(format) {
+            if (config.images.length === 0) {
+                alert("사진을 먼저 1장 이상 업로드해주세요!");
+                return;
             }
-
-            // 고화질 렌더링을 위한 임시 캔버스 생성 및 설정 로직 (기존 downloadImage와 동일)
-            const tempCanvas = document.createElement('canvas');
-            const displayW = canvas.parentElement.getBoundingClientRect().width;
-            let aspectRatio;
-            switch(config.layout) {
-                case '1x4': aspectRatio = 3; break;
-                case '2x2': aspectRatio = 1.5; break;
-                case '1+3': aspectRatio = 2; break;
-                case '2+3': aspectRatio = 1.8; break;
-                case '2x3': aspectRatio = 2.2; break;
-                case '3x2': aspectRatio = 1.2; break;
-                default: aspectRatio = 3;
-            }
-            const displayH = displayW * aspectRatio;
-            const renderW = 1200; 
-            const renderH = renderW * aspectRatio;
-            
-            tempCanvas.width = renderW;
-            tempCanvas.height = renderH;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            const scaleX = renderW / displayW;
-            const scaleY = renderH / displayH;
-            tempCtx.scale(scaleX, scaleY);
-            
-            const oldConfig = JSON.parse(JSON.stringify(config));
-            const oldImages = config.images;
-            
-            drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
 
             showLoader(true);
+
             try {
-                // Canvas를 Blob (이진 데이터)으로 변환
+                // 고화질 캔버스 생성
+                const { canvas: tempCanvas, ctx: tempCtx, scaleX, scaleY, renderW, renderH } = 
+                    createHighResCanvas(config.layout);
+
+                // 설정 스냅샷
+                const configSnapshot = JSON.parse(JSON.stringify(config));
+
+                // 고화질 렌더링
+                drawCanvasOnContext(
+                    tempCtx,
+                    renderW / scaleX,
+                    renderH / scaleY,
+                    configSnapshot,
+                    config.images
+                );
+
+                // 포맷 설정
+                const { mimeType, quality } = getFormatConfig(format);
+
+                // 다운로드
+                const link = document.createElement('a');
+                link.href = tempCanvas.toDataURL(mimeType, quality);
+                link.download = `photobooth_${Date.now()}.${format}`;
+                link.click();
+
+                alert(`✅ 다운로드 완료! (${format.toUpperCase()})`);
+
+            } catch (error) {
+                console.error('Download error:', error);
+                alert("❌ 이미지 다운로드에 실패했습니다.\n(파일 크기가 크거나 시스템 권한 문제)");
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // ===== 메인 함수: 핸드폰에서 갤러리 저장 또는 공유 =====
+        async function saveToGallery(format) {
+            if (config.images.length === 0) {
+                alert("사진을 먼저 1장 이상 업로드해주세요!");
+                return;
+            }
+
+            showLoader(true);
+
+            try {
+                // 고화질 캔버스 생성
+                const { canvas: tempCanvas, ctx: tempCtx, scaleX, scaleY, renderW, renderH } = 
+                    createHighResCanvas(config.layout);
+
+                // 설정 스냅샷
+                const configSnapshot = JSON.parse(JSON.stringify(config));
+
+                // 고화질 렌더링
+                drawCanvasOnContext(
+                    tempCtx,
+                    renderW / scaleX,
+                    renderH / scaleY,
+                    configSnapshot,
+                    config.images
+                );
+
+                // 포맷 설정
+                const { mimeType, quality } = getFormatConfig(format);
+                const filename = `photobooth_${Date.now()}.${format}`;
+
+                // Blob으로 변환
                 tempCanvas.toBlob(async (blob) => {
                     try {
-                        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-                        // Blob을 Web Share API가 요구하는 File 객체로 변환
-                        const file = new File([blob], `photobooth_${Date.now()}.${format}`, { type: mimeType });
+                        const file = new File([blob], filename, { type: mimeType });
 
-                        // Web Share API 지원 여부 및 파일 공유 가능 여부 확인
+                        // Web Share API 시도 (모바일 갤러리 저장)
                         if (navigator.share && navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 files: [file],
                                 title: '프레임 다이어리 결과물',
-                                text: '캔버스 결과물을 갤러리에 저장하거나 공유해보세요.'
+                                text: '특별한 추억을 담은 포토 프레임입니다.',
                             });
-                            alert('✅ 공유 메뉴가 열렸습니다. 갤러리에 저장하거나 공유할 수 있습니다.');
+                            alert('✅ 갤러리에 저장되었습니다!');
                         } else {
-                            // Fallback: 일반 다운로드 (Web Share API 미지원 시)
-                            downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
-                            alert('✅ Web Share API가 지원되지 않습니다. 파일을 다운로드합니다.');
+                            // Fallback: 일반 다운로드
+                            downloadBlobAsFile(blob, filename);
+                            alert('✅ 파일이 다운로드되었습니다!');
                         }
+
                     } catch (error) {
                         console.error('Share error:', error);
-                        // 에러 발생 시 다운로드 시도
-                        downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
-                        alert('저장 기능 실행에 실패했습니다. 파일을 다운로드합니다.');
+                        // 에러 발생 시 다운로드로 대체
+                        downloadBlobAsFile(blob, filename);
                     }
-                }, format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1.0);
-            } catch (e) { 
-                alert("이미지 저장에 실패했습니다."); 
-                console.error(e); 
-            }
-            showLoader(false); 
-        }
-            
-            // 기존 drawCanvas 로직을 임시 캔버스에 맞게 실행
-            drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
-            const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'; 
-            const quality = format === 'jpeg' ? 0.95 : 1.0;
-            showLoader(true); 
-            try {
-                const link = document.createElement('a');
-                link.href = tempCanvas.toDataURL(mimeType, quality);
-                link.download = `photobooth_pro_${Date.now()}.${format}`;
-                link.click();
-            } catch (e) { alert("이미지 다운로드에 실패했습니다. (파일 용량 또는 권한 문제)"); console.error(e); }
-            showLoader(false); 
-        }
+                }, mimeType, quality);
 
-        async function saveToGallery(format) {
-    if (config.images.length === 0) { 
-        alert("사진을 먼저 1장 이상 업로드해주세요!"); 
-        return; 
-    }
-
-    // 기존 downloadImage와 동일한 로직으로 캔버스 생성
-    const tempCanvas = document.createElement('canvas');
-    const displayW = canvas.parentElement.getBoundingClientRect().width;
-    let aspectRatio;
-    switch(config.layout) {
-        case '1x4': aspectRatio = 3; break;
-        case '2x2': aspectRatio = 1.5; break;
-        case '1+3': aspectRatio = 2; break;
-        case '2+3': aspectRatio = 1.8; break;
-        case '2x3': aspectRatio = 2.2; break;
-        case '3x2': aspectRatio = 1.2; break;
-        default: aspectRatio = 3;
-    }
-    const displayH = displayW * aspectRatio;
-    const renderW = 1200; 
-    const renderH = renderW * aspectRatio;
-    
-    tempCanvas.width = renderW;
-    tempCanvas.height = renderH;
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    const scaleX = renderW / displayW;
-    const scaleY = renderH / displayH;
-    tempCtx.scale(scaleX, scaleY);
-    
-    const oldConfig = JSON.parse(JSON.stringify(config));
-    const oldImages = config.images;
-    
-    drawCanvasOnContext(tempCtx, renderW / scaleX, renderH / scaleY, oldConfig, oldImages);
-
-    showLoader(true);
-    try {
-        // Canvas를 Blob으로 변환
-        tempCanvas.toBlob(async (blob) => {
-            try {
-                // Canvas API를 사용한 갤러리 저장 시도
-                if (navigator.share && navigator.canShare({ files: [new File([blob], `photo.${format}`, { type: format === 'jpeg' ? 'image/jpeg' : 'image/png' })] })) {
-                    await navigator.share({
-                        files: [new File([blob], `photobooth_${Date.now()}.${format}`, { type: format === 'jpeg' ? 'image/jpeg' : 'image/png' })]
-                    });
-                    alert('✅ 갤러리에 저장되었습니다!');
-                } else {
-                    // Fallback: 일반 다운로드
-                    downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
-                    alert('✅ 파일이 다운로드되었습니다!');
-                }
             } catch (error) {
-                console.error('Share error:', error);
-                downloadBlobAsFile(blob, `photobooth_${Date.now()}.${format}`);
+                console.error('Save error:', error);
+                alert("❌ 이미지 저장에 실패했습니다.");
+            } finally {
+                showLoader(false);
             }
-        }, format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1.0);
-    } catch (e) { 
-        alert("이미지 저장에 실패했습니다."); 
-        console.error(e); 
-    }
-    showLoader(false); 
-}
-
-// Blob을 파일로 다운로드하는 헬퍼 함수
-function downloadBlobAsFile(blob, filename) {
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-}
-        // === drawCanvasOnContext ===
-        // 아주 큰 사이즈로 저장할 때 쓰는 임시 판에 똑같이 예쁘게 그려주는 함수예요.
-        // 고화질 출력을 위한 보조 함수: 특정 컨텍스트에 그리기
-        // dW, dH는 캔버스의 논리적 크기(displayW, displayH)를 의미합니다.
-        function drawCanvasOnContext(targetCtx, dW, dH, tempConfig, tempImages) {
-            targetCtx.fillStyle = tempConfig.backgroundColor; 
-            targetCtx.fillRect(0, 0, dW, dH);
-            
-            const margin = dW * (tempConfig.frameMargin / 100);
-            const fx = margin, fy = margin, fw = dW - 2 * margin, fh = dH - 2 * margin;
-            targetCtx.fillStyle = tempConfig.frameColor; 
-            targetCtx.fillRect(fx, fy, fw, fh);
-            
-            const p = fw * (tempConfig.imagePadding / 100); 
-            
-            const drawSlotOnContext = (i, x, y, w, h) => {
-                const r = tempConfig.imageCornerRadius; // NEW: Get radius
-                if (i < tempImages.length) {
-                    const {image: img, flipped, rotation, filter} = tempImages[i];
-                    
-                    const imgRatio = img.width / img.height, slotRatio = w / h;
-                    let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
-                    if (imgRatio > slotRatio) { sWidth = sHeight * slotRatio; sx = (img.width - sWidth) / 2; } 
-                    else { sHeight = sWidth / slotRatio; sy = (img.height - sHeight) / 2; }
-                    
-                    targetCtx.save();
-                    if (filter === 'grayscale') targetCtx.filter = 'grayscale(100%)';
-                    else if (filter === 'sepia') targetCtx.filter = 'sepia(100%)';
-                    else targetCtx.filter = 'none';
-
-                    // NEW: Clipping path for rounded corners
-                    drawRoundedRect(targetCtx, x, y, w, h, r);
-                    targetCtx.clip(); // Apply the clip path
-
-                    targetCtx.translate(x + w / 2, y + h / 2);
-                    if (flipped) targetCtx.scale(-1, 1);
-                    targetCtx.rotate(rotation * Math.PI / 180);
-                    
-                    targetCtx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
-                    targetCtx.restore();
-                } else {
-                    targetCtx.fillStyle = '#e5e7eb'; 
-                    drawRoundedRect(targetCtx, x, y, w, h, r); // NEW: Use rounded rect for placeholder
-                    targetCtx.fill();
-                    
-                    targetCtx.fillStyle = '#9ca3af';
-                    targetCtx.font = '30px Inter'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-                    targetCtx.fillText(`+`, x + w / 2, y + h / 2);
-                }
-            };
-
-            // 레이아웃별 슬롯 그리기 로직 (기존 로직 재사용)
-            if (tempConfig.layout === '1x4') {
-                const photoW = fw - 2 * p; const photoH = (fh - 5 * p) / 4; 
-                for (let i = 0; i < 4; i++) drawSlotOnContext(i, fx + p, fy + p + i * (photoH + p), photoW, photoH);
-            } else if (tempConfig.layout === '2x2') {
-                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 3 * p) / 2;
-                drawSlotOnContext(0, fx + p, fy + p, photoW, photoH); drawSlotOnContext(1, fx + 2 * p + photoW, fy + p, photoW, photoH);
-                drawSlotOnContext(2, fx + p, fy + 2 * p + photoH, photoW, photoH); drawSlotOnContext(3, fx + 2 * p + photoW, fy + 2 * p + photoH, photoW, photoH);
-            } else if (tempConfig.layout === '1+3') {
-                const bigH = fh * 0.6 - p * 1.5; const smallH = fh * 0.4 - p * 1.5;
-                drawSlotOnContext(0, fx + p, fy + p, fw - 2 * p, bigH);
-                const smallW = (fw - 4 * p) / 3;
-                for (let i = 0; i < 3; i++) drawSlotOnContext(i + 1, fx + p + i * (smallW + p), fy + bigH + 2 * p, smallW, smallH);
-            } else if (tempConfig.layout === '2+3') { 
-                const topH = fh * 0.45 - p * 1.5; const bottomH = fh * 0.55 - p * 1.5;
-                const topW = (fw - 3 * p) / 2;
-                const bottomW = (fw - 4 * p) / 3;
-                drawSlotOnContext(0, fx + p, fy + p, topW, topH);
-                drawSlotOnContext(1, fx + p * 2 + topW, fy + p, topW, topH);
-                for (let i = 0; i < 3; i++) drawSlotOnContext(i + 2, fx + p + i * (bottomW + p), fy + p * 2 + topH, bottomW, bottomH);
-            } else if (tempConfig.layout === '2x3') { 
-                const photoW = (fw - 3 * p) / 2; const photoH = (fh - 4 * p) / 3;
-                for (let i = 0; i < 6; i++) {
-                    const row = Math.floor(i / 2); const col = i % 2;
-                    drawSlotOnContext(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
-                }
-            } else if (tempConfig.layout === '3x2') { 
-                const photoW = (fw - 4 * p) / 3; const photoH = (fh - 3 * p) / 2;
-                for (let i = 0; i < 6; i++) {
-                    const row = Math.floor(i / 3); const col = i % 3;
-                    drawSlotOnContext(i, fx + p + col * (photoW + p), fy + p + row * (photoH + p), photoW, photoH);
-                }
-            }
-            
-            // 텍스트 그리기 (폰트 크기 이미 스케일링됨)
-            if (tempConfig.mainText.content) {
-                const textX = dW * tempConfig.mainText.x;
-                const textY = dH * tempConfig.mainText.y;
-                
-                targetCtx.font = `bold ${tempConfig.mainText.size}px "${tempConfig.mainText.font}"`;
-                targetCtx.textAlign = 'center'; 
-                targetCtx.textBaseline = 'middle'; 
-
-                 // NEW: Draw Stroke first if present (High-res)
-                if (tempConfig.mainText.strokeWidth > 0) {
-                    targetCtx.strokeStyle = tempConfig.mainText.strokeColor;
-                    targetCtx.lineWidth = tempConfig.mainText.strokeWidth * 2; 
-                    targetCtx.strokeText(tempConfig.mainText.content, textX, textY);
-                }
-                
-                targetCtx.fillStyle = tempConfig.mainText.color; 
-                targetCtx.fillText(tempConfig.mainText.content, textX, textY);
-            }
-            if (tempConfig.subText.content) {
-                const subTextX = dW * tempConfig.subText.x;
-                const subTextY = dH * tempConfig.subText.y;
-                
-                targetCtx.fillStyle = tempConfig.subText.color; 
-                targetCtx.font = `normal ${tempConfig.subText.size}px "${tempConfig.subText.font}"`;
-                targetCtx.textAlign = 'center'; 
-                targetCtx.textBaseline = 'middle'; 
-                targetCtx.fillText(tempConfig.subText.content, subTextX, subTextY);
-            }
-
         }
-        
-        // === showLoader ===
-        // 사진 올리거나 저장할 때 "기다려주세요~" 돌아가는 동그라미를 보여주거나 숨기는 함수예요.
-        function showLoader(show) { 
+
+        // ===== 헬퍼 함수: Blob을 파일로 다운로드 =====
+        function downloadBlobAsFile(blob, filename) {
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ===== 헬퍼 함수: 로더 표시/숨김 =====
+        function showLoader(show) {
             document.getElementById('loader').classList.toggle('hidden', !show);
             document.getElementById('loader').classList.toggle('flex', show);
         }
-        
+
+        // ===== 내부 함수: 레이아웃별 슬롯 그리기 =====
+        function drawLayoutSlots(targetCtx, layout, slots) {
+            const { fx, fy, fw, fh, p, drawSlot } = slots;
+            
+            // ========================================================
+            // 각 레이아웃별 슬롯 위치 계산 및 그리기
+            // ========================================================
+            
+            if (layout === '1x4') {
+                // ┌─────────┐
+                // │    0    │  세로 4개
+                // │    1    │
+                // │    2    │
+                // │    3    │
+                // └─────────┘
+                
+                const photoW = fw - 2 * p;
+                const photoH = (fh - 5 * p) / 4;
+                
+                for (let i = 0; i < 4; i++) {
+                    const x = fx + p;
+                    const y = fy + p + i * (photoH + p);
+                    
+                    // imageSlots에 저장 (드래그 용도)
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    
+                    // 실제로 그리기
+                    drawSlot(i, x, y, photoW, photoH);
+                }
+                
+            } else if (layout === '2x2') {
+                // ┌─────┬─────┐
+                // │  0  │  1  │  2x2 정사각형
+                // ├─────┼─────┤
+                // │  2  │  3  │
+                // └─────┴─────┘
+                
+                const photoW = (fw - 3 * p) / 2;
+                const photoH = (fh - 3 * p) / 2;
+                
+                const positions = [
+                    { i: 0, x: fx + p,              y: fy + p },
+                    { i: 1, x: fx + 2 * p + photoW, y: fy + p },
+                    { i: 2, x: fx + p,              y: fy + 2 * p + photoH },
+                    { i: 3, x: fx + 2 * p + photoW, y: fy + 2 * p + photoH }
+                ];
+                
+                positions.forEach(pos => {
+                    imageSlots.push({ index: pos.i, x: pos.x, y: pos.y, w: photoW, h: photoH });
+                    drawSlot(pos.i, pos.x, pos.y, photoW, photoH);
+                });
+                
+            } else if (layout === '1+3') {
+                // ┌──────────────┐
+                // │      0       │  큰 사진 1개
+                // ├─────┬─────┬─────┤
+                // │  1  │  2  │  3  │  작은 사진 3개
+                // └─────┴─────┴─────┘
+                
+                const bigH = fh * 0.6 - p * 1.5;
+                const smallH = fh * 0.4 - p * 1.5;
+                const smallW = (fw - 4 * p) / 3;
+                
+                // 큰 사진
+                imageSlots.push({ index: 0, x: fx + p, y: fy + p, w: fw - 2 * p, h: bigH });
+                drawSlot(0, fx + p, fy + p, fw - 2 * p, bigH);
+                
+                // 작은 사진 3개
+                for (let i = 0; i < 3; i++) {
+                    const x = fx + p + i * (smallW + p);
+                    const y = fy + bigH + 2 * p;
+                    
+                    imageSlots.push({ index: i + 1, x, y, w: smallW, h: smallH });
+                    drawSlot(i + 1, x, y, smallW, smallH);
+                }
+                
+            } else if (layout === '2+3') {
+                // ┌──────┬──────┐
+                // │  0   │  1   │  위 2개
+                // ├─────┬┴─────┬┤
+                // │  2  │  3   │  4  │  아래 3개
+                // └─────┴─────┴─────┘
+                
+                const topH = fh * 0.45 - p * 1.5;
+                const bottomH = fh * 0.55 - p * 1.5;
+                const topW = (fw - 3 * p) / 2;
+                const bottomW = (fw - 4 * p) / 3;
+                
+                // 위쪽 2개
+                for (let i = 0; i < 2; i++) {
+                    const x = fx + p + i * (topW + p);
+                    const y = fy + p;
+                    
+                    imageSlots.push({ index: i, x, y, w: topW, h: topH });
+                    drawSlot(i, x, y, topW, topH);
+                }
+                
+                // 아래쪽 3개
+                for (let i = 0; i < 3; i++) {
+                    const x = fx + p + i * (bottomW + p);
+                    const y = fy + 2 * p + topH;
+                    
+                    imageSlots.push({ index: i + 2, x, y, w: bottomW, h: bottomH });
+                    drawSlot(i + 2, x, y, bottomW, bottomH);
+                }
+                
+            } else if (layout === '2x3') {
+                // ┌────┬────┐
+                // │ 0  │ 1  │  세로 3줄
+                // ├────┼────┤
+                // │ 2  │ 3  │  가로 2칸
+                // ├────┼────┤
+                // │ 4  │ 5  │
+                // └────┴────┘
+                
+                const photoW = (fw - 3 * p) / 2;
+                const photoH = (fh - 4 * p) / 3;
+                
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 2);
+                    const col = i % 2;
+                    
+                    const x = fx + p + col * (photoW + p);
+                    const y = fy + p + row * (photoH + p);
+                    
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    drawSlot(i, x, y, photoW, photoH);
+                }
+                
+            } else if (layout === '3x2') {
+                // ┌────┬────┬────┐
+                // │ 0  │ 1  │ 2  │  세로 2줄
+                // ├────┼────┼────┤
+                // │ 3  │ 4  │ 5  │  가로 3칸
+                // └────┴────┴────┘
+                
+                const photoW = (fw - 4 * p) / 3;
+                const photoH = (fh - 3 * p) / 2;
+                
+                for (let i = 0; i < 6; i++) {
+                    const row = Math.floor(i / 3);
+                    const col = i % 3;
+                    
+                    const x = fx + p + col * (photoW + p);
+                    const y = fy + p + row * (photoH + p);
+                    
+                    imageSlots.push({ index: i, x, y, w: photoW, h: photoH });
+                    drawSlot(i, x, y, photoW, photoH);
+                }
+            }
+        }
+
+        // ===== 내부 함수: 사진 슬롯 그리기 =====
+        function drawSlotImage(targetCtx, imageIndex, x, y, w, h, tempImages, tempConfig) {
+            const r = tempConfig.imageCornerRadius;
+
+            if (imageIndex < tempImages.length) {
+                const { image: img, flipped, rotation, filter } = tempImages[imageIndex];
+
+                const imgRatio = img.width / img.height;
+                const slotRatio = w / h;
+
+                let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+                if (imgRatio > slotRatio) {
+                    sWidth = sHeight * slotRatio;
+                    sx = (img.width - sWidth) / 2;
+                } else {
+                    sHeight = sWidth / slotRatio;
+                    sy = (img.height - sHeight) / 2;
+                }
+
+                targetCtx.save();
+
+                // 필터 적용
+                if (filter === 'grayscale') targetCtx.filter = 'grayscale(100%)';
+                else if (filter === 'sepia') targetCtx.filter = 'sepia(100%)';
+                else targetCtx.filter = 'none';
+
+                // 둥근 모서리 클리핑
+                drawRoundedRect(targetCtx, x, y, w, h, r);
+                targetCtx.clip();
+
+                // 변환 적용
+                targetCtx.translate(x + w / 2, y + h / 2);
+                if (flipped) targetCtx.scale(-1, 1);
+                targetCtx.rotate((rotation * Math.PI) / 180);
+
+                targetCtx.drawImage(img, sx, sy, sWidth, sHeight, -w / 2, -h / 2, w, h);
+                targetCtx.restore();
+            } else {
+                // 플레이스홀더 (빈 슬롯)
+                targetCtx.fillStyle = '#e5e7eb';
+                drawRoundedRect(targetCtx, x, y, w, h, r);
+                targetCtx.fill();
+
+                targetCtx.fillStyle = '#9ca3af';
+                targetCtx.font = '30px Inter';
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+                targetCtx.fillText('+', x + w / 2, y + h / 2);
+            }
+        }
+
+        // ===== 내부 함수: 텍스트 그리기 =====
+        function drawTexts(targetCtx, tempConfig, dW, dH) {
+            // 메인 텍스트
+            if (tempConfig.mainText.content) {
+                const textX = dW * tempConfig.mainText.x;
+                const textY = dH * tempConfig.mainText.y;
+
+                targetCtx.font = `bold ${tempConfig.mainText.size}px "${tempConfig.mainText.font}"`;
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+
+                // 스트로크 (테두리)
+                if (tempConfig.mainText.strokeWidth > 0) {
+                    targetCtx.strokeStyle = tempConfig.mainText.strokeColor;
+                    targetCtx.lineWidth = tempConfig.mainText.strokeWidth * 2;
+                    targetCtx.strokeText(tempConfig.mainText.content, textX, textY);
+                }
+
+                // 텍스트 채우기
+                targetCtx.fillStyle = tempConfig.mainText.color;
+                targetCtx.fillText(tempConfig.mainText.content, textX, textY);
+            }
+
+            // 서브 텍스트
+            if (tempConfig.subText.content) {
+                const subTextX = dW * tempConfig.subText.x;
+                const subTextY = dH * tempConfig.subText.y;
+
+                targetCtx.fillStyle = tempConfig.subText.color;
+                targetCtx.font = `normal ${tempConfig.subText.size}px "${tempConfig.subText.font}"`;
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+                targetCtx.fillText(tempConfig.subText.content, subTextX, subTextY);
+            }
+        }
+
+        // ===== 메인 함수: 고화질 캔버스 렌더링 =====
+        function drawCanvasOnContext(targetCtx, dW, dH, tempConfig, tempImages) {
+            // ========================================================
+            // 1단계: 배경색 칠하기
+            // ========================================================
+            targetCtx.fillStyle = tempConfig.backgroundColor;
+            targetCtx.fillRect(0, 0, dW, dH);
+
+            // ========================================================
+            // 2단계: 프레임(테두리) 칠하기
+            // ========================================================
+            const margin = dW * (tempConfig.frameMargin / 100);
+            const fx = margin;           // 프레임 x
+            const fy = margin;           // 프레임 y
+            const fw = dW - 2 * margin;  // 프레임 width
+            const fh = dH - 2 * margin;  // 프레임 height
+
+            targetCtx.fillStyle = tempConfig.frameColor;
+            targetCtx.fillRect(fx, fy, fw, fh);
+
+            // ========================================================
+            // 3단계: 사진 간 패딩 계산
+            // ========================================================
+            const p = fw * (tempConfig.imagePadding / 100);
+
+            // ========================================================
+            // 4단계: imageSlots 배열 초기화 (새로 계산)
+            // ========================================================
+            // imageSlots는 여러 곳에서 사용되므로 매번 업데이트
+            imageSlots = [];
+
+            // ========================================================
+            // 5단계: 슬롯 객체 준비 (콜백 함수 포함)
+            // ========================================================
+            const slots = {
+                fx, fy, fw, fh, p,
+                // drawSlot 콜백: 각 슬롯에 사진을 그림
+                drawSlot: (i, x, y, w, h) => 
+                    drawSlotImage(targetCtx, i, x, y, w, h, tempImages, tempConfig),
+            };
+            
+            // ========================================================
+            // 6단계: 레이아웃에 따라 슬롯 배치 및 그리기
+            // ========================================================
+            drawLayoutSlots(targetCtx, tempConfig.layout, slots);
+
+            // ========================================================
+            // 7단계: 텍스트 그리기 (제목 + 날짜)
+            // ========================================================
+            drawTexts(targetCtx, tempConfig, dW, dH);
+        }
+
+        // ===== 이벤트: 창 리사이즈 감지 =====
         window.addEventListener('resize', () => {
-             resizeCanvas(); 
-             updateTextOverlay(); 
-             drawCanvas(); 
+            resizeCanvas();
+            updateTextOverlay();
+            drawCanvas();
         });
     </script>
 </body>
