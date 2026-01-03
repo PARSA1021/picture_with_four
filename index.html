@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Frame Diary - 완전한 기능</title>
+    <title>Frame Diary Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        * { box-sizing: border-box; }
         html, body { 
             overscroll-behavior-y: contain; 
             height: 100%;
-            touch-action: pan-y; 
+            touch-action: pan-y;
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -70,9 +71,18 @@
             touch-action: none;
             z-index: 40;
         }
+        
         .slot-overlay.selected {
             box-shadow: 0 0 0 3px #3b82f6 inset;
             background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .slot-overlay.manipulating {
+            cursor: grab;
+        }
+
+        .slot-overlay.manipulating:active {
+            cursor: grabbing;
         }
         
         .tab-btn.active { border-color: #111827; color: #111827; font-weight: 700; }
@@ -94,11 +104,90 @@
         #dropZone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
         .preview-item.dragging { opacity: 0.4; border: 2px solid #3b82f6; }
         
+        .image-edit-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .image-edit-modal.active {
+            display: flex;
+        }
+        
+        #editCanvasContainer {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        #editCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .edit-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+        
+        .edit-controls button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .edit-btn {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .edit-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .edit-cancel-btn {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .edit-slider-group {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: white;
+        }
+        
+        .edit-slider-group input {
+            width: 100%;
+            margin-top: 8px;
+        }
+        
         #resultModal {
             position: fixed; inset: 0; z-index: 100;
             background: rgba(0,0,0,0.8);
             display: none; align-items: center; justify-content: center;
-            flex-direction: column; padding: 4;
+            flex-direction: column; padding: 20px;
         }
         #resultModal img {
             max-height: 70vh; max-width: 90vw;
@@ -121,7 +210,7 @@
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
+            transition: opacity 0.3s;
         }
         #toast.show {
             visibility: visible;
@@ -139,15 +228,15 @@
     <div class="w-full max-w-7xl mx-auto bg-white lg:rounded-3xl lg:shadow-2xl lg:my-8 overflow-hidden min-h-screen lg:min-h-0">
         
         <header class="text-center py-4 border-b border-gray-100 lg:hidden">
-            <h1 class="text-2xl font-black text-gray-900">Frame Diary</h1>
+            <h1 class="text-2xl font-black text-gray-900">Frame Diary Pro</h1>
         </header>
         
         <main class="flex flex-col lg:flex-row lg:gap-12 lg:p-10">
             
             <div class="w-full lg:w-2/5 p-4 lg:p-0 lg:sticky lg:top-10 self-start">
                 <header class="hidden lg:block mb-8 mt-4">
-                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">Frame Diary</h1>
-                    <p class="text-xl text-gray-500 mt-1">나만의 네컷 사진 만들기</p>
+                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">Frame Diary Pro</h1>
+                    <p class="text-xl text-gray-500 mt-1">고급 네컷 사진 만들기</p>
                 </header>
                 
                 <div id="canvasContainer">
@@ -158,16 +247,16 @@
                 </div>
                 
                 <p class="text-center text-xs text-gray-400 mt-4">
-                    💡 <b>사진 편집:</b> 드래그로 이동, 휠/핀치로 확대축소, 터치로 순서변경
+                    💡 사진을 터치하여 선택 후 다른 사진을 누르면 위치가 바뀝니다. 선택된 사진은 손가락으로 확대/축소하거나 이동할 수 있습니다.
                 </p>
             </div>
 
             <div class="w-full lg:w-3/5 flex flex-col h-[calc(100vh-450px)] lg:h-auto">
-                <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-20">
-                    <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base" data-tab="tab-photo">사진</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base" data-tab="tab-design">디자인</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base" data-tab="tab-text">텍스트</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base" data-tab="tab-save">저장</button>
+                <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-20 overflow-x-auto">
+                    <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-photo">사진</button>
+                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-design">디자인</button>
+                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-text">텍스트</button>
+                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-save">저장</button>
                 </nav>
 
                 <div class="p-6 space-y-8 overflow-y-auto flex-1 pb-20">
@@ -196,6 +285,26 @@
                         <div>
                             <h3 class="font-bold text-sm mb-3 text-gray-800">🎨 컬러 테마</h3>
                             <div id="themeButtons" class="grid grid-cols-4 gap-2"></div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="font-bold text-sm mb-2 block text-gray-800">🖼️ 프레임 색상</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="frameColorPicker" class="w-14 h-14 p-1 border rounded cursor-pointer">
+                                    <div class="flex-1 p-3 bg-gray-50 rounded-lg flex items-center">
+                                        <span id="frameColorValue" class="text-sm font-mono">#ffffff</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="font-bold text-sm mb-2 block text-gray-800">🌈 배경 색상</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="bgColorPicker" class="w-14 h-14 p-1 border rounded cursor-pointer">
+                                    <div class="flex-1 p-3 bg-gray-50 rounded-lg flex items-center">
+                                        <span id="bgColorValue" class="text-sm font-mono">#f7f7f7</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-xl space-y-4">
                             <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-600">여백 크기</span><span id="frameMarginValue">5%</span></div><input type="range" id="frameMarginSlider" min="0" max="20" value="5" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"></div>
@@ -244,6 +353,34 @@
         </main>
     </div>
     
+    <!-- 이미지 편집 모달 -->
+    <div id="imageEditModal" class="image-edit-modal">
+        <h2 class="text-white text-xl font-bold mb-4">📸 사진 편집하기</h2>
+        <div id="editCanvasContainer">
+            <canvas id="editCanvas"></canvas>
+        </div>
+        
+        <div class="edit-slider-group">
+            <div>
+                <label class="text-sm font-semibold">🔍 확대/축소: <span id="zoomValue">100</span>%</label>
+                <input type="range" id="zoomSlider" min="50" max="200" value="100">
+            </div>
+            <div class="mt-4">
+                <label class="text-sm font-semibold">↔️ 좌우 이동: <span id="offsetXValue">0</span>px</label>
+                <input type="range" id="offsetXSlider" min="-100" max="100" value="0">
+            </div>
+            <div class="mt-4">
+                <label class="text-sm font-semibold">↕️ 상하 이동: <span id="offsetYValue">0</span>px</label>
+                <input type="range" id="offsetYSlider" min="-100" max="100" value="0">
+            </div>
+        </div>
+        
+        <div class="edit-controls">
+            <button class="edit-btn" id="editSaveBtn">💾 저장</button>
+            <button class="edit-cancel-btn" id="editCancelBtn">✕ 취소</button>
+        </div>
+    </div>
+    
     <div id="loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm hidden z-[9999] flex-col justify-center items-center">
         <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         <p class="mt-4 font-semibold text-gray-600 animate-pulse">처리 중입니다...</p>
@@ -266,13 +403,25 @@
         
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
+        const editCanvas = document.getElementById('editCanvas');
+        const editCtx = editCanvas.getContext('2d');
         
-        let imageSlots = []; 
+        let imageSlots = [];
         let selectedSlotIndex = null;
         let selectedPreviewIndex = null;
         let isDraggingText = false;
-        let isDraggingImage = false;
-        let initialPinchDistance = null;
+        let editingImageIndex = null;
+        let editState = { zoom: 100, offsetX: 0, offsetY: 0 };
+        
+        // 새로운 변수들: 이미지 조작을 위한
+        let manipulatingSlotIndex = null;
+        let isManipulating = false;
+        let lastPinchDist = 0;
+        let lastPanX = 0;
+        let lastPanY = 0;
+        let pinchStartZoom = 100;
+        let panStartOffsetX = 0;
+        let panStartOffsetY = 0;
         
         const defaultConfig = {
             images: [],
@@ -284,12 +433,12 @@
             imagePadding: 5,
             imageCornerRadius: 0,
             mainText: {
-                content: 'LIFE 4 CUTS', font: 'Noto Sans KR', size: 50, 
-                color: '#333333', x: 0.5, y: 0.92, 
+                content: 'LIFE 4 CUTS', font: 'Noto Sans KR', size: 50,
+                color: '#333333', x: 0.5, y: 0.92,
                 strokeColor: '#ffffff', strokeWidth: 0
             },
             subText: {
-                content: getFormattedDate(), font: 'Noto Sans KR', size: 25, 
+                content: getFormattedDate(), font: 'Noto Sans KR', size: 25,
                 color: '#333333', x: 0.5, y: 0.96
             }
         };
@@ -372,14 +521,25 @@
 
             const dropZone = document.getElementById('dropZone');
             dropZone.addEventListener('click', () => document.getElementById('imageUpload').click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                handleImageUpload({ target: { files: e.dataTransfer.files } });
+            });
+            
             document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
             
             document.getElementById('layoutButtons').addEventListener('click', e => {
                 const btn = e.target.closest('button');
                 if(btn) { 
-                    config.layout = btn.dataset.layout; 
-                    updateUIValues(); 
-                    renderRequest(); 
+                    config.layout = btn.dataset.layout;
+                    updateUIValues();
+                    renderRequest();
                 }
             });
 
@@ -394,9 +554,23 @@
                     config.subText.color = theme.text;
                     const filter = theme.filter || null;
                     config.images.forEach(img => img.filter = filter);
+                    document.getElementById('frameColorPicker').value = theme.frame;
+                    document.getElementById('bgColorPicker').value = theme.bg;
                     updateUIValues();
                     renderRequest();
                 }
+            });
+
+            document.getElementById('frameColorPicker').addEventListener('input', e => {
+                config.frameColor = e.target.value;
+                document.getElementById('frameColorValue').innerText = e.target.value;
+                renderRequest();
+            });
+
+            document.getElementById('bgColorPicker').addEventListener('input', e => {
+                config.backgroundColor = e.target.value;
+                document.getElementById('bgColorValue').innerText = e.target.value;
+                renderRequest();
             });
 
             const inputs = [
@@ -443,8 +617,12 @@
                 document.getElementById('resultModal').style.display = 'none';
             });
 
-            // 휠 이벤트 (확대/축소)
-            canvas.addEventListener('wheel', handleWheel, { passive: false });
+            // 이미지 편집 이벤트
+            document.getElementById('editSaveBtn').addEventListener('click', saveImageEdit);
+            document.getElementById('editCancelBtn').addEventListener('click', closeImageEdit);
+            document.getElementById('zoomSlider').addEventListener('input', updateEditPreview);
+            document.getElementById('offsetXSlider').addEventListener('input', updateEditPreview);
+            document.getElementById('offsetYSlider').addEventListener('input', updateEditPreview);
 
             initTextDrag(document.getElementById('mainTextOverlay'), 'mainText');
             initTextDrag(document.getElementById('subTextOverlay'), 'subText');
@@ -472,7 +650,7 @@
                         flipped: false,
                         rotation: 0,
                         filter: themes[config.theme].filter || null,
-                        scale: 1.0,
+                        zoom: 100,
                         offsetX: 0,
                         offsetY: 0
                     });
@@ -500,11 +678,11 @@
                             if (w > h) { h = Math.round(h * (MAX_IMAGE_SIZE / w)); w = MAX_IMAGE_SIZE; }
                             else { w = Math.round(w * (MAX_IMAGE_SIZE / h)); h = MAX_IMAGE_SIZE; }
                         }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = w; canvas.height = h;
-                        const ctx = canvas.getContext('2d');
+                        const c = document.createElement('canvas');
+                        c.width = w; c.height = h;
+                        const ctx = c.getContext('2d');
                         ctx.drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                        resolve(c.toDataURL('image/jpeg', 0.9));
                     };
                 };
             });
@@ -585,33 +763,36 @@
                 
                 targetCtx.save();
                 drawRoundedPath(targetCtx, slot.x, slot.y, slot.w, slot.h, config.imageCornerRadius);
-                targetCtx.clip(); 
+                targetCtx.clip();
 
                 if (imgData) {
-                    const { image, flipped, rotation, filter, scale, offsetX, offsetY } = imgData;
+                    const { image, flipped, rotation, filter, zoom, offsetX, offsetY } = imgData;
                     const imgRatio = image.width / image.height;
                     const slotRatio = slot.w / slot.h;
-                    let drawW, drawH, centerX, centerY;
+                    let drawW, drawH, offsetXImg, offsetYImg;
                     
                     if (imgRatio > slotRatio) {
                         drawH = slot.h; drawW = slot.h * imgRatio;
+                        offsetXImg = (slot.w - drawW) / 2; offsetYImg = 0;
                     } else {
                         drawW = slot.w; drawH = slot.w / imgRatio;
+                        offsetXImg = 0; offsetYImg = (slot.h - drawH) / 2;
                     }
 
-                    drawW *= scale;
-                    drawH *= scale;
+                    // 확대/축소 및 이동 적용
+                    const zoomFactor = zoom / 100;
+                    drawW *= zoomFactor;
+                    drawH *= zoomFactor;
+                    offsetXImg += offsetX;
+                    offsetYImg += offsetY;
 
-                    centerX = slot.x + slot.w/2 + offsetX;
-                    centerY = slot.y + slot.h/2 + offsetY;
-
-                    targetCtx.translate(centerX, centerY);
+                    targetCtx.translate(slot.x + slot.w/2, slot.y + slot.h/2);
                     if (flipped) targetCtx.scale(-1, 1);
                     targetCtx.rotate(rotation * Math.PI / 180);
                     
                     if (filter === 'sepia') targetCtx.filter = 'sepia(1)';
                     
-                    targetCtx.drawImage(image, -drawW/2, -drawH/2, drawW, drawH);
+                    targetCtx.drawImage(image, offsetXImg - drawW/2, offsetYImg - drawH/2, drawW, drawH);
                 } else {
                     targetCtx.fillStyle = '#eee';
                     targetCtx.fillRect(slot.x, slot.y, slot.w, slot.h);
@@ -737,85 +918,129 @@
             imageSlots.forEach(slot => {
                 const div = document.createElement('div');
                 div.className = 'slot-overlay';
-                if (selectedSlotIndex === slot.index) div.classList.add('selected');
+                if (selectedSlotIndex === slot.index) {
+                    div.classList.add('selected');
+                    if (config.images[slot.index]) {
+                        div.classList.add('manipulating'); // 조작 가능 상태 표시
+                    }
+                }
                 div.style.left = slot.x + 'px';
                 div.style.top = slot.y + 'px';
                 div.style.width = slot.w + 'px';
                 div.style.height = slot.h + 'px';
                 div.dataset.index = slot.index;
-                div.addEventListener('mousedown', (e) => startDragImage(e, slot.index));
-                div.addEventListener('touchstart', (e) => startDragImage(e, slot.index), { passive: false });
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleSlotClick(slot.index);
+                });
+                // 새로운 조작 이벤트 추가
+                setupImageManipulation(div, slot.index);
                 container.appendChild(div);
             });
         }
 
-        function handleWheel(e) {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const canvasX = (e.clientX - rect.left) / (rect.width / (canvas.width / (window.devicePixelRatio||1)));
-            const canvasY = (e.clientY - rect.top) / (rect.height / (canvas.height / (window.devicePixelRatio||1)));
+        // 새로운 함수: 이미지 조작 이벤트 설정
+        function setupImageManipulation(overlay, slotIndex) {
+            if (!config.images[slotIndex]) return;
 
-            const slotIndex = findSlotAt(canvasX, canvasY);
-            if (slotIndex !== -1 && config.images[slotIndex]) {
-                const img = config.images[slotIndex];
-                const delta = e.deltaY > 0 ? 0.9 : 1.1;
-                img.scale = Math.max(0.5, Math.min(5, img.scale * delta));
+            let startX, startY;
+            let isPanning = false;
+            let isPinching = false;
+
+            // 마우스 이벤트 (데스크톱)
+            overlay.addEventListener('mousedown', (e) => {
+                if (selectedSlotIndex !== slotIndex) return;
+                e.preventDefault();
+                isManipulating = true;
+                isPanning = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                panStartOffsetX = config.images[slotIndex].offsetX || 0;
+                panStartOffsetY = config.images[slotIndex].offsetY || 0;
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            });
+
+            overlay.addEventListener('wheel', (e) => {
+                if (selectedSlotIndex !== slotIndex) return;
+                e.preventDefault();
+                const zoomDelta = e.deltaY > 0 ? -5 : 5;
+                const newZoom = Math.max(50, Math.min(200, (config.images[slotIndex].zoom || 100) + zoomDelta));
+                config.images[slotIndex].zoom = newZoom;
                 renderRequest();
-            }
-        }
+            });
 
-        function findSlotAt(x, y) {
-            return imageSlots.findIndex(s => x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h);
-        }
+            const handleMouseMove = (e) => {
+                if (!isPanning || !isManipulating) return;
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                config.images[slotIndex].offsetX = panStartOffsetX + deltaX;
+                config.images[slotIndex].offsetY = panStartOffsetY + deltaY;
+                renderRequest();
+            };
 
-        function startDragImage(e, index) {
-            isDraggingImage = false;
-            const touch = e.touches ? e.touches[0] : e;
-            let lastTouchX = touch.clientX;
-            let lastTouchY = touch.clientY;
-            initialPinchDistance = null;
+            const handleMouseUp = () => {
+                isPanning = false;
+                isManipulating = false;
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
 
-            const onMove = (me) => {
-                const img = config.images[index];
-                if (!img) return;
-
-                if (me.touches && me.touches.length === 2) {
-                    const dist = Math.hypot(me.touches[0].clientX - me.touches[1].clientX, me.touches[0].clientY - me.touches[1].clientY);
-                    if (!initialPinchDistance) initialPinchDistance = dist;
-                    else {
-                        const delta = dist / initialPinchDistance;
-                        img.scale = Math.max(0.5, Math.min(5, img.scale * delta));
-                        initialPinchDistance = dist;
-                    }
-                    isDraggingImage = true;
-                } else {
-                    const mTouch = me.touches ? me.touches[0] : me;
-                    const dx = mTouch.clientX - lastTouchX;
-                    const dy = mTouch.clientY - lastTouchY;
-                    
-                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                        img.offsetX += dx;
-                        img.offsetY += dy;
-                        lastTouchX = mTouch.clientX;
-                        lastTouchY = mTouch.clientY;
-                        isDraggingImage = true;
-                    }
+            // 터치 이벤트 (모바일)
+            overlay.addEventListener('touchstart', (e) => {
+                if (selectedSlotIndex !== slotIndex) return;
+                e.preventDefault();
+                isManipulating = true;
+                const touches = e.touches;
+                if (touches.length === 1) {
+                    isPanning = true;
+                    startX = touches[0].clientX;
+                    startY = touches[0].clientY;
+                    panStartOffsetX = config.images[slotIndex].offsetX || 0;
+                    panStartOffsetY = config.images[slotIndex].offsetY || 0;
+                } else if (touches.length === 2) {
+                    isPinching = true;
+                    lastPinchDist = getDistance(touches[0], touches[1]);
+                    pinchStartZoom = config.images[slotIndex].zoom || 100;
                 }
-                renderRequest();
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('touchend', handleTouchEnd);
+            });
+
+            const handleTouchMove = (e) => {
+                if (!isManipulating) return;
+                e.preventDefault();
+                const touches = e.touches;
+                if (touches.length === 1 && isPanning) {
+                    const deltaX = touches[0].clientX - startX;
+                    const deltaY = touches[0].clientY - startY;
+                    config.images[slotIndex].offsetX = panStartOffsetX + deltaX;
+                    config.images[slotIndex].offsetY = panStartOffsetY + deltaY;
+                    renderRequest();
+                } else if (touches.length === 2 && isPinching) {
+                    const currentDist = getDistance(touches[0], touches[1]);
+                    const scale = currentDist / lastPinchDist;
+                    const newZoom = Math.max(50, Math.min(200, pinchStartZoom * scale));
+                    config.images[slotIndex].zoom = newZoom;
+                    renderRequest();
+                    lastPinchDist = currentDist;
+                }
             };
 
-            const onUp = () => {
-                if (!isDraggingImage) handleSlotClick(index);
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                document.removeEventListener('touchmove', onMove);
-                document.removeEventListener('touchend', onUp);
+            const handleTouchEnd = (e) => {
+                isPanning = false;
+                isPinching = false;
+                isManipulating = false;
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
             };
 
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('touchend', onUp);
+            // 거리 계산 헬퍼
+            function getDistance(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
         }
 
         function handleSlotClick(index) {
@@ -859,6 +1084,7 @@
                     <img src="${img.image.src}" class="w-full h-full object-cover rounded-lg bg-white shadow-sm">
                     <button onclick="removeImage(event, ${idx})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">×</button>
                     <div class="absolute bottom-0 left-0 right-0 bg-black/50 p-1 flex justify-center gap-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onclick="editImage(event, ${idx})" class="text-white text-xs" title="편집">✏️</button>
                          <button onclick="rotateImage(event, ${idx})" class="text-white text-xs">↻</button>
                          <button onclick="flipImage(event, ${idx})" class="text-white text-xs">↔</button>
                     </div>
@@ -876,9 +1102,82 @@
             renderPreviews();
             renderRequest();
         };
+
+        window.editImage = (e, idx) => {
+            e.stopPropagation();
+            editingImageIndex = idx;
+            editState = { 
+                zoom: config.images[idx].zoom || 100, 
+                offsetX: config.images[idx].offsetX || 0,
+                offsetY: config.images[idx].offsetY || 0
+            };
+            document.getElementById('zoomSlider').value = editState.zoom;
+            document.getElementById('offsetXSlider').value = editState.offsetX;
+            document.getElementById('offsetYSlider').value = editState.offsetY;
+            updateEditPreview();
+            document.getElementById('imageEditModal').classList.add('active');
+        };
+
         window.removeImage = (e, idx) => { e.stopPropagation(); config.images.splice(idx, 1); renderPreviews(); renderRequest(); };
         window.rotateImage = (e, idx) => { e.stopPropagation(); config.images[idx].rotation = (config.images[idx].rotation + 90) % 360; renderRequest(); };
         window.flipImage = (e, idx) => { e.stopPropagation(); config.images[idx].flipped = !config.images[idx].flipped; renderRequest(); };
+
+        function updateEditPreview() {
+            const zoom = parseInt(document.getElementById('zoomSlider').value);
+            const offsetX = parseInt(document.getElementById('offsetXSlider').value);
+            const offsetY = parseInt(document.getElementById('offsetYSlider').value);
+            
+            document.getElementById('zoomValue').innerText = zoom;
+            document.getElementById('offsetXValue').innerText = offsetX;
+            document.getElementById('offsetYValue').innerText = offsetY;
+            
+            editState = { zoom, offsetX, offsetY };
+            
+            if (editingImageIndex !== null) {
+                const img = config.images[editingImageIndex].image;
+                const w = editCanvas.width;
+                const h = editCanvas.height;
+                
+                editCtx.fillStyle = '#000';
+                editCtx.fillRect(0, 0, w, h);
+                
+                const imgRatio = img.width / img.height;
+                const containerRatio = w / h;
+                
+                let drawW, drawH, x, y;
+                if (imgRatio > containerRatio) {
+                    drawH = h;
+                    drawW = h * imgRatio;
+                } else {
+                    drawW = w;
+                    drawH = w / imgRatio;
+                }
+                
+                drawW = drawW * (zoom / 100);
+                drawH = drawH * (zoom / 100);
+                
+                x = (w - drawW) / 2 + offsetX;
+                y = (h - drawH) / 2 + offsetY;
+                
+                editCtx.drawImage(img, x, y, drawW, drawH);
+            }
+        }
+
+        function saveImageEdit() {
+            if (editingImageIndex !== null) {
+                config.images[editingImageIndex].zoom = editState.zoom;
+                config.images[editingImageIndex].offsetX = editState.offsetX;
+                config.images[editingImageIndex].offsetY = editState.offsetY;
+                showToast("사진이 저장되었습니다!");
+                closeImageEdit();
+                renderRequest();
+            }
+        }
+
+        function closeImageEdit() {
+            document.getElementById('imageEditModal').classList.remove('active');
+            editingImageIndex = null;
+        }
 
         function initTextDrag(el, configKey) {
             let startX, startY;
@@ -947,9 +1246,9 @@
                 const file = new File([blob], `framediary_${Date.now()}.png`, { type: 'image/png' });
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
-                        await navigator.share({ files: [file], title: 'Frame Diary', text: '나만의 네컷 사진' });
+                        await navigator.share({ files: [file], title: 'Frame Diary Pro', text: '나만의 네컷 사진' });
                         showLoader(false); return;
-                    } catch (e) { console.log('Share failed, trying download'); }
+                    } catch (e) { console.log('Share failed'); }
                 }
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -960,7 +1259,6 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } catch (err) {
-                console.error('Save failed:', err);
                 const url = exportCanvas.toDataURL('image/png');
                 const modal = document.getElementById('resultModal');
                 const img = document.getElementById('resultImage');
@@ -973,8 +1271,8 @@
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.innerText = message;
-            toast.className = 'show';
-            setTimeout(() => { toast.className = toast.className.replace('show', ''); }, 3000);
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
         function setNestedValue(obj, path, value) {
@@ -983,26 +1281,36 @@
             for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]];
             current[keys[keys.length - 1]] = value;
         }
+
         function updateUIValues() {
             updateActiveState('layoutButtons', 'data-layout', config.layout);
             updateActiveState('themeButtons', 'data-theme', config.theme);
             document.getElementById('frameMarginSlider').value = config.frameMargin;
             updateLabel('frameMarginSlider', config.frameMargin);
+            document.getElementById('frameColorPicker').value = config.frameColor;
+            document.getElementById('bgColorPicker').value = config.backgroundColor;
+            document.getElementById('frameColorValue').innerText = config.frameColor;
+            document.getElementById('bgColorValue').innerText = config.backgroundColor;
             document.getElementById('customTextInput').value = config.mainText.content;
             document.getElementById('subTextInput').value = config.subText.content;
         }
+
         function updateActiveState(parentId, dataAttr, value) {
             document.getElementById(parentId).querySelectorAll('.control-btn').forEach(btn => {
                 if(btn.getAttribute(dataAttr) === value) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
         }
+
         function updateLabel(inputId, val) {
             const labelId = inputId.replace('Slider', 'Value');
             const el = document.getElementById(labelId);
             if(el) el.innerText = inputId.includes('Radius') || inputId.includes('Size') || inputId.includes('Stroke') ? val + 'px' : val + '%';
         }
-        function showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
+
+        function showLoader(show) { 
+            document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
+        }
     </script>
 </body>
 </html>
