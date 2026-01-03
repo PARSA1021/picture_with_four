@@ -15,6 +15,7 @@
             overscroll-behavior-y: contain; 
             height: 100%;
             touch-action: pan-y;
+            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -83,6 +84,48 @@
 
         .slot-overlay.manipulating:active {
             cursor: grabbing;
+        }
+
+        /* 선택 취소 및 지시자 오버레이 */
+        .selection-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 60;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .selection-overlay.active {
+            display: flex;
+        }
+
+        .selection-overlay button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .selection-overlay button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .manipulation-hint {
+            font-size: 10px;
+            opacity: 0.8;
         }
         
         .tab-btn.active { border-color: #111827; color: #111827; font-weight: 700; }
@@ -218,8 +261,42 @@
             bottom: 50px;
         }
 
+        /* 모바일 스크롤 개선: nav 스와이프 지원 및 부드러운 스크롤 */
+        nav {
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        nav::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+        .tab-btn {
+            flex-shrink: 0; /* 탭 버튼이 축소되지 않게 */
+            min-width: 80px; /* 모바일 터치 영역 확대 */
+            padding: 1rem 0.5rem; /* 좌우 패딩 줄여 스와이프 쉽게 */
+        }
+
+        /* 모바일 버튼 터치 영역 확대 */
         @media (max-width: 640px) {
-            .control-btn { padding: 0.75rem; min-width: 60px; font-size: 0.875rem; }
+            .control-btn { 
+                padding: 1rem; /* 터치 영역 44px 이상 유지 */
+                min-height: 44px; 
+                min-width: 60px; 
+                font-size: 0.875rem; 
+            }
+            .tab-btn {
+                min-width: 70px;
+                padding: 1rem 0.75rem;
+            }
+            /* 스크롤 패딩 증가로 오른쪽 끝 문제 방지 */
+            .space-y-8 {
+                padding-bottom: 100px; /* pb-20 대신 더 여유롭게 */
+            }
+        }
+
+        /* 이미지 조작 성능 개선: transform 사용으로 GPU 가속 */
+        #photoCanvas {
+            will-change: transform;
         }
     </style>
 </head>
@@ -244,22 +321,29 @@
                     <div id="slotOverlayContainer" class="absolute inset-0 z-10"></div>
                     <div id="mainTextOverlay" class="text-overlay"></div>
                     <div id="subTextOverlay" class="text-overlay"></div>
+                    <!-- 선택 오버레이: 취소 버튼과 지시자 -->
+                    <div id="selectionOverlay" class="selection-overlay">
+                        <div class="manipulation-hint">손가락으로 이동/핀치 확대</div>
+                        <button id="cancelSelectionBtn">선택 취소</button>
+                    </div>
                 </div>
                 
                 <p class="text-center text-xs text-gray-400 mt-4">
-                    💡 사진을 터치하여 선택 후 다른 사진을 누르면 위치가 바뀝니다. 선택된 사진은 손가락으로 확대/축소하거나 이동할 수 있습니다.
+                    💡 사진을 터치하여 선택 후 다른 사진을 누르면 위치가 바뀝니다. 선택된 사진은 손가락으로 확대/축소하거나 이동할 수 있습니다. 캔버스 외부 터치로 선택 취소.
                 </p>
             </div>
 
             <div class="w-full lg:w-3/5 flex flex-col h-[calc(100vh-450px)] lg:h-auto">
-                <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-20 overflow-x-auto">
+                <!-- 스크롤 개선: nav에 스와이프 지원 및 sticky z-index 조정 -->
+                <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-20 overflow-x-auto snap-x snap-mandatory" style="scroll-behavior: smooth;">
                     <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-photo">사진</button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-design">디자인</button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-text">텍스트</button>
                     <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-save">저장</button>
                 </nav>
 
-                <div class="p-6 space-y-8 overflow-y-auto flex-1 pb-20">
+                <!-- 스크롤 컨테이너: 모바일에서 부드럽게 -->
+                <div class="p-6 space-y-8 overflow-y-auto flex-1 pb-32 lg:pb-20" style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
                     
                     <div id="tab-photo" class="tab-content space-y-4">
                         <div id="dropZone" class="w-full p-8 border-2 border-dashed border-gray-300 rounded-2xl text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-colors">
@@ -405,6 +489,8 @@
         const ctx = canvas.getContext('2d');
         const editCanvas = document.getElementById('editCanvas');
         const editCtx = editCanvas.getContext('2d');
+        const selectionOverlay = document.getElementById('selectionOverlay');
+        const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
         
         let imageSlots = [];
         let selectedSlotIndex = null;
@@ -422,6 +508,22 @@
         let pinchStartZoom = 100;
         let panStartOffsetX = 0;
         let panStartOffsetY = 0;
+        
+        // 성능 개선: throttle 함수
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+        
+        const throttledRender = throttle(renderRequest, 16); // ~60fps 제한
         
         const defaultConfig = {
             images: [],
@@ -510,6 +612,7 @@
         }
 
         function setupEvents() {
+            // 탭 이벤트: 모바일 스와이프 지원 추가
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -518,6 +621,22 @@
                     document.getElementById(btn.dataset.tab).classList.remove('hidden');
                 });
             });
+
+            // 모바일 스와이프 탭 전환 (옵션: 간단한 터치 스와이프)
+            let startX = 0;
+            const nav = document.querySelector('nav');
+            nav.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+            nav.addEventListener('touchend', (e) => {
+                const endX = e.changedTouches[0].clientX;
+                const diff = startX - endX;
+                if (Math.abs(diff) > 50) { // 스와이프 임계값
+                    const activeBtn = document.querySelector('.tab-btn.active');
+                    const buttons = Array.from(document.querySelectorAll('.tab-btn'));
+                    const currentIdx = buttons.indexOf(activeBtn);
+                    const nextIdx = diff > 0 ? Math.min(currentIdx + 1, buttons.length - 1) : Math.max(currentIdx - 1, 0);
+                    buttons[nextIdx].click();
+                }
+            }, { passive: true });
 
             const dropZone = document.getElementById('dropZone');
             dropZone.addEventListener('click', () => document.getElementById('imageUpload').click());
@@ -539,7 +658,7 @@
                 if(btn) { 
                     config.layout = btn.dataset.layout;
                     updateUIValues();
-                    renderRequest();
+                    throttledRender();
                 }
             });
 
@@ -557,20 +676,20 @@
                     document.getElementById('frameColorPicker').value = theme.frame;
                     document.getElementById('bgColorPicker').value = theme.bg;
                     updateUIValues();
-                    renderRequest();
+                    throttledRender();
                 }
             });
 
             document.getElementById('frameColorPicker').addEventListener('input', e => {
                 config.frameColor = e.target.value;
                 document.getElementById('frameColorValue').innerText = e.target.value;
-                renderRequest();
+                throttledRender();
             });
 
             document.getElementById('bgColorPicker').addEventListener('input', e => {
                 config.backgroundColor = e.target.value;
                 document.getElementById('bgColorValue').innerText = e.target.value;
-                renderRequest();
+                throttledRender();
             });
 
             const inputs = [
@@ -584,7 +703,7 @@
                     const val = parseInt(e.target.value);
                     setNestedValue(config, path, val);
                     updateLabel(id, val);
-                    renderRequest();
+                    throttledRender();
                 });
             });
             
@@ -595,14 +714,14 @@
             colorInputs.forEach(([id, path]) => {
                 document.getElementById(id).addEventListener('input', (e) => {
                     setNestedValue(config, path, e.target.value);
-                    renderRequest();
+                    throttledRender();
                 });
             });
 
-            document.getElementById('customTextInput').addEventListener('input', e => { config.mainText.content = e.target.value; renderRequest(); });
-            document.getElementById('subTextInput').addEventListener('input', e => { config.subText.content = e.target.value; renderRequest(); });
-            document.getElementById('mainFontSelector').addEventListener('change', e => { config.mainText.font = e.target.value; renderRequest(); });
-            document.getElementById('subFontSelector').addEventListener('change', e => { config.subText.font = e.target.value; renderRequest(); });
+            document.getElementById('customTextInput').addEventListener('input', e => { config.mainText.content = e.target.value; throttledRender(); });
+            document.getElementById('subTextInput').addEventListener('input', e => { config.subText.content = e.target.value; throttledRender(); });
+            document.getElementById('mainFontSelector').addEventListener('change', e => { config.mainText.font = e.target.value; throttledRender(); });
+            document.getElementById('subFontSelector').addEventListener('change', e => { config.subText.font = e.target.value; throttledRender(); });
 
             document.getElementById('downloadBtn').addEventListener('click', saveImage);
             document.getElementById('resetBtn').addEventListener('click', () => {
@@ -611,10 +730,22 @@
             document.getElementById('clearImagesBtn').addEventListener('click', () => {
                 config.images = [];
                 renderPreviews();
-                renderRequest();
+                throttledRender();
             });
             document.getElementById('closeModalBtn').addEventListener('click', () => {
                 document.getElementById('resultModal').style.display = 'none';
+            });
+
+            // 선택 취소 버튼 이벤트
+            cancelSelectionBtn.addEventListener('click', () => {
+                cancelSelection();
+            });
+
+            // 캔버스 컨테이너 클릭으로 선택 취소 (혼란 방지: 슬롯 외부 클릭)
+            document.getElementById('canvasContainer').addEventListener('click', (e) => {
+                if (selectedSlotIndex !== null && !e.target.closest('.slot-overlay')) {
+                    cancelSelection();
+                }
             });
 
             // 이미지 편집 이벤트
@@ -629,8 +760,16 @@
             
             window.addEventListener('resize', () => {
                 resizeCanvas();
-                renderRequest();
+                throttledRender();
             });
+        }
+
+        // 선택 취소 함수
+        function cancelSelection() {
+            selectedSlotIndex = null;
+            selectionOverlay.classList.remove('active');
+            showToast("선택이 취소되었습니다.");
+            throttledRender();
         }
 
         async function handleImageUpload(e) {
@@ -660,7 +799,7 @@
             }
             
             renderPreviews();
-            renderRequest();
+            throttledRender();
             showLoader(false);
             e.target.value = '';
         }
@@ -818,7 +957,7 @@
                     targetCtx.font = 'bold 16px sans-serif';
                     targetCtx.textAlign = 'center';
                     targetCtx.textBaseline = 'middle';
-                    targetCtx.fillText('✓', slot.x + slot.w - 20, slot.y + 20);
+                    targetCtx.fillText('✏️', slot.x + slot.w - 20, slot.y + 20); // 편집 아이콘으로 변경
                 }
             });
 
@@ -878,7 +1017,7 @@
             canvas.style.height = `${height}px`;
             ctx.scale(dpr, dpr);
             container.style.height = `${height}px`;
-            renderRequest();
+            throttledRender();
         }
 
         function renderRequest() {
@@ -939,7 +1078,7 @@
             });
         }
 
-        // 새로운 함수: 이미지 조작 이벤트 설정
+        // 새로운 함수: 이미지 조작 이벤트 설정 (성능 개선: throttledRender 사용)
         function setupImageManipulation(overlay, slotIndex) {
             if (!config.images[slotIndex]) return;
 
@@ -959,7 +1098,7 @@
                 panStartOffsetY = config.images[slotIndex].offsetY || 0;
                 document.addEventListener('mousemove', handleMouseMove);
                 document.addEventListener('mouseup', handleMouseUp);
-            });
+            }, { passive: false });
 
             overlay.addEventListener('wheel', (e) => {
                 if (selectedSlotIndex !== slotIndex) return;
@@ -967,17 +1106,17 @@
                 const zoomDelta = e.deltaY > 0 ? -5 : 5;
                 const newZoom = Math.max(50, Math.min(200, (config.images[slotIndex].zoom || 100) + zoomDelta));
                 config.images[slotIndex].zoom = newZoom;
-                renderRequest();
-            });
+                throttledRender();
+            }, { passive: false });
 
-            const handleMouseMove = (e) => {
+            const handleMouseMove = throttle((e) => {
                 if (!isPanning || !isManipulating) return;
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
                 config.images[slotIndex].offsetX = panStartOffsetX + deltaX;
                 config.images[slotIndex].offsetY = panStartOffsetY + deltaY;
-                renderRequest();
-            };
+                throttledRender();
+            }, 16);
 
             const handleMouseUp = () => {
                 isPanning = false;
@@ -986,7 +1125,7 @@
                 document.removeEventListener('mouseup', handleMouseUp);
             };
 
-            // 터치 이벤트 (모바일)
+            // 터치 이벤트 (모바일) - passive: false로 preventDefault 허용
             overlay.addEventListener('touchstart', (e) => {
                 if (selectedSlotIndex !== slotIndex) return;
                 e.preventDefault();
@@ -1004,10 +1143,10 @@
                     pinchStartZoom = config.images[slotIndex].zoom || 100;
                 }
                 document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                document.addEventListener('touchend', handleTouchEnd);
-            });
+                document.addEventListener('touchend', handleTouchEnd, { passive: false });
+            }, { passive: false });
 
-            const handleTouchMove = (e) => {
+            const handleTouchMove = throttle((e) => {
                 if (!isManipulating) return;
                 e.preventDefault();
                 const touches = e.touches;
@@ -1016,16 +1155,16 @@
                     const deltaY = touches[0].clientY - startY;
                     config.images[slotIndex].offsetX = panStartOffsetX + deltaX;
                     config.images[slotIndex].offsetY = panStartOffsetY + deltaY;
-                    renderRequest();
+                    throttledRender();
                 } else if (touches.length === 2 && isPinching) {
                     const currentDist = getDistance(touches[0], touches[1]);
                     const scale = currentDist / lastPinchDist;
                     const newZoom = Math.max(50, Math.min(200, pinchStartZoom * scale));
                     config.images[slotIndex].zoom = newZoom;
-                    renderRequest();
+                    throttledRender();
                     lastPinchDist = currentDist;
                 }
-            };
+            }, 16);
 
             const handleTouchEnd = (e) => {
                 isPanning = false;
@@ -1052,15 +1191,16 @@
                 selectedPreviewIndex = null;
                 showToast("사진이 교체되었습니다!");
                 renderPreviews();
-                renderRequest();
+                throttledRender();
                 return;
             }
             
             if (selectedSlotIndex === null) {
                 selectedSlotIndex = index;
-                showToast("바꿀 위치의 사진을 선택하세요");
+                selectionOverlay.classList.add('active'); // 오버레이 표시
+                showToast("이 사진을 드래그로 이동하거나 핀치로 확대하세요. 취소하려면 버튼 클릭.");
             } else if (selectedSlotIndex === index) {
-                selectedSlotIndex = null;
+                cancelSelection(); // 동일 슬롯 클릭 시 취소
             } else {
                 if (config.images[selectedSlotIndex] || config.images[index]) {
                     const temp = config.images[selectedSlotIndex];
@@ -1069,10 +1209,11 @@
                     
                     showToast("사진 순서가 변경되었습니다! 🔄");
                     selectedSlotIndex = null;
+                    selectionOverlay.classList.remove('active');
                     renderPreviews();
                 }
             }
-            renderRequest();
+            throttledRender();
         }
 
         function renderPreviews() {
@@ -1099,8 +1240,9 @@
         window.selectPreview = (idx) => {
             selectedPreviewIndex = (selectedPreviewIndex === idx) ? null : idx;
             selectedSlotIndex = null;
+            selectionOverlay.classList.remove('active');
             renderPreviews();
-            renderRequest();
+            throttledRender();
         };
 
         window.editImage = (e, idx) => {
@@ -1118,9 +1260,9 @@
             document.getElementById('imageEditModal').classList.add('active');
         };
 
-        window.removeImage = (e, idx) => { e.stopPropagation(); config.images.splice(idx, 1); renderPreviews(); renderRequest(); };
-        window.rotateImage = (e, idx) => { e.stopPropagation(); config.images[idx].rotation = (config.images[idx].rotation + 90) % 360; renderRequest(); };
-        window.flipImage = (e, idx) => { e.stopPropagation(); config.images[idx].flipped = !config.images[idx].flipped; renderRequest(); };
+        window.removeImage = (e, idx) => { e.stopPropagation(); config.images.splice(idx, 1); renderPreviews(); throttledRender(); };
+        window.rotateImage = (e, idx) => { e.stopPropagation(); config.images[idx].rotation = (config.images[idx].rotation + 90) % 360; throttledRender(); };
+        window.flipImage = (e, idx) => { e.stopPropagation(); config.images[idx].flipped = !config.images[idx].flipped; throttledRender(); };
 
         function updateEditPreview() {
             const zoom = parseInt(document.getElementById('zoomSlider').value);
@@ -1170,7 +1312,7 @@
                 config.images[editingImageIndex].offsetY = editState.offsetY;
                 showToast("사진이 저장되었습니다!");
                 closeImageEdit();
-                renderRequest();
+                throttledRender();
             }
         }
 
@@ -1193,7 +1335,7 @@
                 document.addEventListener('mouseup', onUp);
                 document.addEventListener('touchend', onUp);
             };
-            const onMove = (e) => {
+            const onMove = throttle((e) => {
                 if (!isDraggingText) return;
                 e.preventDefault();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1208,7 +1350,7 @@
                 config[configKey].y = newY;
                 el.style.left = (newX * 100) + '%';
                 el.style.top = (newY * 100) + '%';
-            };
+            }, 16);
             const onUp = () => {
                 isDraggingText = false;
                 el.classList.remove('dragging');
@@ -1216,7 +1358,7 @@
                 document.removeEventListener('touchmove', onMove);
                 document.removeEventListener('mouseup', onUp);
                 document.removeEventListener('touchend', onUp);
-                renderRequest();
+                throttledRender();
             };
             el.addEventListener('mousedown', onDown);
             el.addEventListener('touchstart', onDown, { passive: false });
