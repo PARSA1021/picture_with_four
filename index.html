@@ -27,9 +27,9 @@
             max-width: 420px; 
             margin: 0 auto; 
             position: relative; 
-            touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
+            pointer-events: auto;
         } 
         #photoCanvas {
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); 
@@ -54,7 +54,7 @@
             background-color: transparent;
             border: 2px dashed transparent;
             transform: translate(-50%, -50%); 
-            touch-action: none;
+            touch-action: pinch-zoom;
             -webkit-user-select: none;
         }
         
@@ -69,7 +69,6 @@
             position: absolute;
             cursor: pointer;
             border-radius: 8px;
-            touch-action: none;
             z-index: 40;
         }
         
@@ -1114,12 +1113,22 @@
             try {
                 const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
                 const file = new File([blob], `framediary_${Date.now()}.png`, { type: 'image/png' });
+                
+                // 파일 공유 API 지원 여부 확인
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({ files: [file], title: 'Frame Diary Pro', text: '나만의 네컷 사진' });
-                        showLoader(false); return;
-                    } catch (e) { console.log('Share failed'); }
+                        showLoader(false);
+                        showToast('✅ 사진이 성공적으로 공유되었습니다!');
+                        return;
+                    } catch (e) { 
+                        if (e.name !== 'AbortError') {
+                            console.log('Share failed');
+                        }
+                    }
                 }
+                
+                // 다운로드 방식으로 저장
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -1128,14 +1137,21 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                
+                showLoader(false);
+                showToast('✅ 사진이 성공적으로 저장되었습니다!');
             } catch (err) {
+                console.error('Save error:', err);
+                showLoader(false);
+                
+                // 폴백: 모달에 이미지 표시
                 const url = exportCanvas.toDataURL('image/png');
                 const modal = document.getElementById('resultModal');
                 const img = document.getElementById('resultImage');
                 img.src = url;
                 modal.style.display = 'flex';
+                showToast('⚠️ 다른 방식으로 저장 옵션이 열렸습니다.');
             }
-            showLoader(false);
         }
 
         function showToast(message) {
