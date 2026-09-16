@@ -16,7 +16,8 @@ export const THEMES: Record<ThemeType, ThemeDefinition> = {
   'sage-green': { name: '세이지 리프 (Sage Leaf)', bg: '#f2f7f4', frame: '#e2ede6', text: '#166534' },
   'botanical-eucalyptus': { name: '🌿 보태니컬 유칼립투스 (시그니처)', bg: '#54634b', frame: '#f9f9f5', text: '#736551' },
   'romantic-rose': { name: '🌹 로맨틱 핑크 로즈 (시그니처)', bg: '#f8a199', frame: '#fcebee', text: '#ffffff' },
-  'sky-cloud': { name: '☁️ 퓨어 스카이 & 뭉게구름 (시그니처)', bg: '#5c97d6', frame: '#e8f4fc', text: '#1c395c' }
+  'sky-cloud': { name: '☁️ 퓨어 스카이 & 뭉게구름 (시그니처)', bg: '#5c97d6', frame: '#e8f4fc', text: '#1c395c' },
+  'pastel-oil': { name: '🎨 파스텔 유화 (시그니처 #4)', bg: '#d8cde8', frame: '#f5eefb', text: '#ffffff' }
 };
 
 export interface FramePresetMeta {

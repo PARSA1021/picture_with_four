@@ -176,4 +176,17 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     expect(store.getConfig().mainText.content).toBe('');
     expect(store.getConfig().subText.content).toBe('');
   });
+
+  it('Simulation 11: Signature #4 Pastel Impasto Oil Painting Theme defaults and behavior', () => {
+    store.setTheme('pastel-oil');
+    const config = store.getConfig();
+
+    expect(config.theme).toBe('pastel-oil');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
+    expect(config.frameColor).toBe('#f5eefb');
+    expect(config.backgroundColor).toBe('#d8cde8');
+  });
 });

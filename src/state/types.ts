@@ -11,7 +11,8 @@ export type ThemeType =
   | 'sage-green'
   | 'botanical-eucalyptus'
   | 'romantic-rose'
-  | 'sky-cloud';
+  | 'sky-cloud'
+  | 'pastel-oil';
 
 export type FramePresetType = 'classic-slim' | 'polaroid' | 'modern-round' | 'borderless';
 

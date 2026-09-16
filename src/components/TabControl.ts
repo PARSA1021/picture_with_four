@@ -113,6 +113,7 @@ export class TabControl {
       const isBotanical = key === 'botanical-eucalyptus';
       const isRose = key === 'romantic-rose';
       const isCloud = key === 'sky-cloud';
+      const isOil = key === 'pastel-oil';
       let extraClass = '';
       let swatchClass = '';
       let swatchBg = theme.bg;
@@ -133,6 +134,11 @@ export class TabControl {
         swatchClass = 'swatch-cloud';
         swatchBg = 'linear-gradient(135deg, #e0f2fe 0%, #7dc3f5 50%, #388dd0 100%)';
         icon = '<span class="swatch-cloud-icon">☁️</span>';
+      } else if (isOil) {
+        extraClass = 'btn-theme-oil';
+        swatchClass = 'swatch-oil';
+        swatchBg = 'linear-gradient(135deg, #f5eefb 0%, #d1c4e9 35%, #f48fb1 70%, #80deea 100%)';
+        icon = '<span class="swatch-oil-icon">🎨</span>';
       }
 
       return `
@@ -294,6 +300,22 @@ export class TabControl {
           e.preventDefault();
           store.setTheme('sky-cloud');
           showToast('☁️ PIC4U 시그니처 퓨어 스카이 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Pastel Oil Signature Edition Banner
+    const oilBanner = document.getElementById('btnApplyOilTheme');
+    if (oilBanner) {
+      oilBanner.addEventListener('click', () => {
+        store.setTheme('pastel-oil');
+        showToast('🎨 PIC4U 시그니처 파스텔 유화 프레임이 적용되었습니다!');
+      });
+      oilBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('pastel-oil');
+          showToast('🎨 PIC4U 시그니처 파스텔 유화 프레임이 적용되었습니다!');
         }
       });
     }
@@ -469,6 +491,12 @@ export class TabControl {
     const cloudBanner = document.getElementById('btnApplyCloudTheme');
     if (cloudBanner) {
       cloudBanner.classList.toggle('active', config.theme === 'sky-cloud');
+    }
+
+    // Pastel Oil banner active state
+    const oilBanner = document.getElementById('btnApplyOilTheme');
+    if (oilBanner) {
+      oilBanner.classList.toggle('active', config.theme === 'pastel-oil');
     }
 
     // Color pickers

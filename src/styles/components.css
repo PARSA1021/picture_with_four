@@ -625,6 +625,66 @@
   box-shadow: 0 0 0 2px #4ba3e3 !important;
 }
 
+/* Pastel Impasto Oil Edition Styles */
+.special-edition-banner.edition-oil {
+  background: linear-gradient(135deg, #f5eefb 0%, #ebe1f7 50%, #e0f4f7 100%);
+  border-color: #c7b4e6;
+  box-shadow: 0 2px 8px rgba(126, 87, 194, 0.09);
+}
+
+.special-edition-banner.edition-oil:hover {
+  border-color: #9575cd;
+  background: linear-gradient(135deg, #f0e6fa 0%, #e3d5f5 50%, #d5eff4 100%);
+  box-shadow: 0 4px 12px rgba(126, 87, 194, 0.15);
+}
+
+.special-edition-banner.edition-oil.active {
+  border-color: #7e57c2;
+  background: linear-gradient(135deg, #ebe0f9 0%, #dccbf2 50%, #ccebf0 100%);
+  box-shadow: 0 0 0 2px #7e57c2, 0 4px 12px rgba(126, 87, 194, 0.18);
+}
+
+.special-edition-banner.edition-oil .special-edition-badge {
+  color: #6a3ab2;
+}
+
+.special-edition-banner.edition-oil .special-edition-title {
+  color: #3b1d6b;
+}
+
+.special-edition-banner.edition-oil .special-edition-desc {
+  color: #5c437e;
+}
+
+.special-edition-banner.edition-oil .special-edition-tag {
+  color: #6a3ab2;
+  border-color: #baa4df;
+}
+
+.special-edition-banner.edition-oil.active .special-edition-tag {
+  background: #7e57c2;
+  color: #ffffff;
+  border-color: #7e57c2;
+}
+
+.swatch-oil {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.swatch-oil-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-theme-oil.active {
+  border-color: #7e57c2 !important;
+  box-shadow: 0 0 0 2px #b39ddb !important;
+}
+
 /* Segmented Button Groups (Minimal Studio Control) */
 .segmented-control {
   display: flex;
