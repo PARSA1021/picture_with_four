@@ -263,140 +263,19 @@ function drawPaletteKnifeStroke(
   ctx.restore();
 }
 
-export interface DollopTheme {
-  highlight: string;
-  light: string;
-  mid: string;
-  deep: string;
-  dark: string;
-  shadow: string;
-}
-
-/**
- * Draws an ultra-realistic, dimensional 3D oil paint teardrop/dollop (물감 덩어리)
- * with thick cast shadows, organic viscous curvature, and glossy wet-oil specular crescents.
- */
-function drawPaintDollop(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  sizeX: number,
-  sizeY: number,
-  angle: number,
-  palette: DollopTheme,
-  scale: number
-) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-
-  // 1. Dual-layer cast shadow for thick volumetric physical presence
-  // Layer A: Soft diffuse drop shadow
-  ctx.shadowColor = palette.shadow;
-  ctx.shadowBlur = 10 * scale;
-  ctx.shadowOffsetX = 3.5 * scale;
-  ctx.shadowOffsetY = 5 * scale;
-
-  // Layer B: Main teardrop bulb path
-  ctx.beginPath();
-  ctx.moveTo(0, -sizeY * 0.52);
-  ctx.bezierCurveTo(
-    sizeX * 0.65,
-    -sizeY * 0.32,
-    sizeX * 0.72,
-    sizeY * 0.28,
-    0,
-    sizeY * 0.58
-  );
-  ctx.bezierCurveTo(
-    -sizeX * 0.72,
-    sizeY * 0.28,
-    -sizeX * 0.65,
-    -sizeY * 0.32,
-    0,
-    -sizeY * 0.52
-  );
-  ctx.closePath();
-
-  // Multi-stop radial gradient creating dome height
-  const bulbGrad = ctx.createRadialGradient(
-    -sizeX * 0.2,
-    -sizeY * 0.2,
-    sizeX * 0.08,
-    0,
-    0,
-    sizeX * 0.72
-  );
-  bulbGrad.addColorStop(0, '#ffffff');
-  bulbGrad.addColorStop(0.2, palette.highlight);
-  bulbGrad.addColorStop(0.48, palette.light);
-  bulbGrad.addColorStop(0.8, palette.mid);
-  bulbGrad.addColorStop(1, palette.deep);
-
-  ctx.fillStyle = bulbGrad;
-  ctx.fill();
-
-  // Reset shadow for crisp specular reflections
-  ctx.shadowColor = 'transparent';
-
-  // 2. Primary glossy specular highlight crescent (wet sheen)
-  ctx.beginPath();
-  ctx.ellipse(
-    -sizeX * 0.2,
-    -sizeY * 0.18,
-    sizeX * 0.24,
-    sizeY * 0.15,
-    -Math.PI / 4.2,
-    0,
-    Math.PI * 2
-  );
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-  ctx.fill();
-
-  // 3. Pinpoint light glint at top crest
-  ctx.beginPath();
-  ctx.arc(-sizeX * 0.12, -sizeY * 0.26, sizeX * 0.08, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-
-  // 4. Subtle secondary rim reflection along bottom edge
-  ctx.beginPath();
-  ctx.arc(sizeX * 0.22, sizeY * 0.25, sizeX * 0.14, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
-  ctx.fill();
-
-  // 5. Delicate knife streak contour down dollop center
-  ctx.beginPath();
-  ctx.moveTo(-sizeX * 0.05, -sizeY * 0.35);
-  ctx.quadraticCurveTo(sizeX * 0.12, 0, 0, sizeY * 0.42);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.lineWidth = Math.max(0.8, 1.2 * scale);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
 /**
  * Main foreground decorator:
  * - Renders crisp editorial white paper borders around photo slots.
- * - Renders signature 3D paint dollops overlapping photo edges matching reference image #4.
- * - Renders divider impasto palette knife strokes between slots.
- * - Renders rich swirled marbled wave in the footer.
+ * - Renders divider impasto palette knife streaks bridging slots.
  */
 export function renderOilDecorations(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number,
+  _height: number,
   slots: LayoutSlot[],
   scale: number
 ) {
   if (slots.length === 0) return;
-
-  const topSlot = slots[0];
-  const bottomSlot = slots[slots.length - 1];
-  const slotLeft = topSlot.x;
-  const slotRight = topSlot.x + topSlot.w;
-  const slotBottom = bottomSlot.y + bottomSlot.h;
 
   // 1. DELICATE WHITE PHOTO CARD BORDERS (Clean editorial cutout look)
   ctx.save();
@@ -419,7 +298,7 @@ export function renderOilDecorations(
       const next = slots[i + 1];
       const gapY = (curr.y + curr.h + next.y) / 2;
 
-      // Turquoise & Lilac multi-color smear bridging slots
+      // Subtle multi-color smear bridging slots
       drawPaletteKnifeStroke(
         ctx,
         width * 0.46,
@@ -429,7 +308,7 @@ export function renderOilDecorations(
         0.04,
         i % 2 === 0 ? OIL_PALETTE.mint.mid : OIL_PALETTE.lilac.mid,
         scale,
-        0.88
+        0.75
       );
 
       drawPaletteKnifeStroke(
@@ -441,179 +320,8 @@ export function renderOilDecorations(
         -0.07,
         i % 2 === 0 ? OIL_PALETTE.rose.light : OIL_PALETTE.cream.mid,
         scale,
-        0.78
+        0.65
       );
     }
   }
-
-  // 3. SIGNATURE 3D PAINT DOLLOPS (Directly matching #4 reference photo!)
-  // Dollop 1: Large Lilac/Violet 3D drop overlapping the RIGHT border of Slot 2
-  if (slots.length >= 2) {
-    const s2 = slots[1];
-    const dropY = s2.y + s2.h * 0.65;
-    drawPaintDollop(
-      ctx,
-      slotRight, // Exactly centered on the right edge line
-      dropY,
-      17 * scale,
-      26 * scale,
-      0.22,
-      OIL_PALETTE.lilac,
-      scale
-    );
-  }
-
-  // Dollop 2: Rose-Pink 3D drop overlapping the LEFT border of Slot 4 (or Slot 3)
-  if (slots.length >= 4) {
-    const s4 = slots[3];
-    const dropY = s4.y + s4.h * 0.68;
-    drawPaintDollop(
-      ctx,
-      slotLeft, // Exactly centered on the left edge line
-      dropY,
-      16 * scale,
-      24 * scale,
-      -0.28,
-      OIL_PALETTE.rose,
-      scale
-    );
-  } else if (slots.length >= 3) {
-    const s3 = slots[2];
-    const dropY = s3.y + s3.h * 0.7;
-    drawPaintDollop(
-      ctx,
-      slotLeft,
-      dropY,
-      16 * scale,
-      24 * scale,
-      -0.28,
-      OIL_PALETTE.rose,
-      scale
-    );
-  }
-
-  // Dollop 3: Soft Buttercream/Peach drop near top-left of Slot 1
-  if (slots.length >= 1) {
-    const s1 = slots[0];
-    drawPaintDollop(
-      ctx,
-      slotLeft - 2 * scale,
-      s1.y + s1.h * 0.15,
-      12 * scale,
-      18 * scale,
-      -0.38,
-      OIL_PALETTE.peach,
-      scale
-    );
-  }
-
-  // Dollop 4: Small turquoise dab near top-right margin
-  if (slots.length >= 1) {
-    const s1 = slots[0];
-    drawPaintDollop(
-      ctx,
-      slotRight + 4 * scale,
-      s1.y + s1.h * 0.08,
-      10 * scale,
-      15 * scale,
-      0.32,
-      OIL_PALETTE.mint,
-      scale
-    );
-  }
-
-  // 4. FOOTER SWIRLED MARBLING & SPECULAR GLAZE (Under brand text)
-  renderFooterOilSwirl(ctx, width, height, slotBottom, scale);
-}
-
-/**
- * Draws the expressive palette knife oil swirl in the footer area
- */
-function renderFooterOilSwirl(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  slotBottom: number,
-  scale: number
-) {
-  const footerH = h - slotBottom;
-  if (footerH < 40 * scale) return;
-
-  const footerMidY = slotBottom + footerH * 0.58;
-
-  // 1. Turquoise ocean sweep
-  drawPaletteKnifeStroke(
-    ctx,
-    w * 0.64,
-    footerMidY + 10 * scale,
-    w * 0.78,
-    28 * scale,
-    -0.14,
-    OIL_PALETTE.mint.mid,
-    scale,
-    0.88
-  );
-
-  // 2. Soft lilac violet sweep
-  drawPaletteKnifeStroke(
-    ctx,
-    w * 0.34,
-    footerMidY + 16 * scale,
-    w * 0.72,
-    30 * scale,
-    0.16,
-    OIL_PALETTE.lilac.mid,
-    scale,
-    0.92
-  );
-
-  // 3. Rose blush accent streak
-  drawPaletteKnifeStroke(
-    ctx,
-    w * 0.5,
-    footerMidY + 4 * scale,
-    w * 0.64,
-    20 * scale,
-    -0.06,
-    OIL_PALETTE.rose.light,
-    scale,
-    0.85
-  );
-
-  // 4. Cream & Pearl highlight ribbon
-  drawPaletteKnifeStroke(
-    ctx,
-    w * 0.44,
-    footerMidY - 3 * scale,
-    w * 0.5,
-    14 * scale,
-    0.09,
-    OIL_PALETTE.cream.highlight,
-    scale,
-    0.72
-  );
-
-  // 5. Rich purple paint dollop at bottom-left corner
-  drawPaintDollop(
-    ctx,
-    w * 0.16,
-    footerMidY + 22 * scale,
-    18 * scale,
-    26 * scale,
-    0.28,
-    OIL_PALETTE.lilac,
-    scale
-  );
-
-  // 6. Turquoise dollop at bottom-right corner
-  drawPaintDollop(
-    ctx,
-    w * 0.86,
-    footerMidY + 18 * scale,
-    17 * scale,
-    24 * scale,
-    -0.22,
-    OIL_PALETTE.mint,
-    scale
-  );
 }

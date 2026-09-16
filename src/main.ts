@@ -11,6 +11,7 @@ import { ResultModal } from './components/ResultModal.ts';
 import { TabControl } from './components/TabControl.ts';
 import { pwaInstaller } from './core/pwa-installer.ts';
 import { onOilTextureLoaded } from './core/oil-frame.ts';
+import { onRoseTextureLoaded } from './core/rose-frame.ts';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = new ResultModal();
@@ -20,8 +21,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   new TabControl(exportService);
   const canvasView = new CanvasView();
 
-  // Re-render when oil painting texture finishes loading
+  // Re-render when asynchronous textures finish loading
   onOilTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
+  onRoseTextureLoaded(() => {
     canvasView.resizeAndRender();
   });
 

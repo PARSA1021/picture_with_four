@@ -1,7 +1,7 @@
 import { FrameConfig, LayoutSlot, TextConfig } from '../state/types.ts';
 import { calculateLayoutSlots } from './layout-engine.ts';
 import { drawWatercolorPaperTexture, renderBotanicalDecorations } from './botanical-frame.ts';
-import { drawRoseBackground, renderRoseDecorations } from './rose-frame.ts';
+import { drawRoseBackground, renderRoseDecorations, onRoseTextureLoaded } from './rose-frame.ts';
 import { drawSkyBackground, renderCloudDecorations } from './cloud-frame.ts';
 import { drawOilBackground, renderOilDecorations, onOilTextureLoaded } from './oil-frame.ts';
 
@@ -25,8 +25,12 @@ export function clearLayerCache() {
   decorCache = null;
 }
 
-// Clear cached layers when asynchronous oil painting asset completes loading
+// Clear cached layers when asynchronous texture assets complete loading
 onOilTextureLoaded(() => {
+  clearLayerCache();
+});
+
+onRoseTextureLoaded(() => {
   clearLayerCache();
 });
 
