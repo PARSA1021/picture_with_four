@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e24" />
+      <stop offset="100%" stop-color="#101114" />
+    </linearGradient>
+    <linearGradient id="roseSky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+  <!-- Background Icon Badge -->
+  <rect width="64" height="64" rx="14" fill="url(#bgGrad)" />
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="url(#roseSky)" stroke-width="2" opacity="0.85" />
+
+  <!-- Mini 4-slot Photopaper Strip -->
+  <rect x="18" y="10" width="28" height="38" rx="3" fill="#ffffff" />
+  <rect x="21" y="13" width="22" height="6" rx="1.5" fill="#f43f5e" />
+  <rect x="21" y="21" width="22" height="6" rx="1.5" fill="#3b82f6" />
+  <rect x="21" y="29" width="22" height="6" rx="1.5" fill="#10b981" />
+  <rect x="21" y="37" width="22" height="6" rx="1.5" fill="#f59e0b" />
+
+  <!-- PIC4U Micro Brand Text -->
+  <text x="32" y="56" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="7.5" font-weight="800" letter-spacing="0.5" text-anchor="middle">PIC4U</text>
+  
+  <!-- Sparkle Star -->
+  <circle cx="48" cy="11" r="3" fill="#fbbf24" />
+</svg>

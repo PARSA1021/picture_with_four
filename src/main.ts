@@ -9,6 +9,7 @@ import { ExportService } from './components/ExportService.ts';
 import { PreviewStrip } from './components/PreviewStrip.ts';
 import { ResultModal } from './components/ResultModal.ts';
 import { TabControl } from './components/TabControl.ts';
+import { pwaInstaller } from './core/pwa-installer.ts';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = new ResultModal();
@@ -17,6 +18,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   new PreviewStrip();
   new TabControl(exportService);
   const canvasView = new CanvasView();
+
+  // Initialize Progressive Web App (PWA) installation
+  pwaInstaller.init('headerInstallBtn');
+
+  // iOS Safari install guide close button
+  document.getElementById('closeIosInstallBtn')?.addEventListener('click', () => {
+    document.getElementById('iosInstallModal')?.classList.remove('is-open');
+  });
 
   try {
     if ('fonts' in document) {

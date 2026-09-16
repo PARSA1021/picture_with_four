@@ -1,0 +1,41 @@
+{
+  "id": "/",
+  "name": "PIC4U STUDIO | 감성 네컷 사진관",
+  "short_name": "PIC4U",
+  "description": "나만의 감성 네컷 사진을 만드는 모바일 포토부스 스튜디오",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#141416",
+  "theme_color": "#141416",
+  "orientation": "portrait-primary",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "categories": ["photo", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -8,9 +8,19 @@
   <meta property="og:title" content="PIC4U | Picture for You 인생네컷 스튜디오" />
   <meta property="og:description" content="Picture + 4 + You — 나만의 감성 네컷 사진을 1초 만에 완성하세요" />
   <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#18181b" />
+  <meta property="og:image" content="/icons/icon-512.png" />
+  
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="theme-color" content="#141416" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PIC4U" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="PIC4U" />
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2318181b'/><text x='50' y='64' font-size='40' text-anchor='middle' fill='%2338bdf8' font-family='sans-serif' font-weight='900'>P4U</text></svg>" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
   <!-- Google Fonts Preconnect & Optimized Loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,13 +38,22 @@
         </div>
         <span class="brand-badge">ATELIER</span>
       </div>
-      <button type="button" id="headerResetBtn" class="btn-secondary-sm" title="모든 작업 초기화" aria-label="처음부터 다시하기">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-          <path d="M3 3v5h5"/>
-        </svg>
-        <span>초기화</span>
-      </button>
+      <div class="header-actions">
+        <button type="button" id="headerInstallBtn" class="btn-primary-sm btn-install-pwa" style="display: none;" title="홈 화면에 앱 설치하기" aria-label="PIC4U 앱 설치">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+          <span>앱 설치</span>
+        </button>
+        <button type="button" id="headerResetBtn" class="btn-secondary-sm" title="모든 작업 초기화" aria-label="처음부터 다시하기">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          <span>초기화</span>
+        </button>
+      </div>
     </header>
 
     <!-- Main Studio -->
@@ -396,6 +415,20 @@
   <div id="loader" role="dialog" aria-modal="true" aria-label="로딩 중">
     <div class="spinner"></div>
     <p class="loader-text">처리 중입니다...</p>
+  </div>
+
+  <!-- iOS Safari PWA Install Modal -->
+  <div id="iosInstallModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="iosInstallTitle">
+    <div class="modal-dialog" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 40px; margin-bottom: 6px;">📱</div>
+      <h2 id="iosInstallTitle" class="modal-title" style="justify-content: center;">PIC4U 홈 화면 설치 방법</h2>
+      <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin: 12px 0;">
+        iPhone / iPad Safari 브라우저 하단의<br />
+        <strong>공유 버튼( <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> )</strong>을 누른 뒤<br />
+        <strong style="color: #60a5fa;">[홈 화면에 추가]</strong>를 누르면 실제 네이티브 앱처럼 전체화면으로 빠르게 사용하실 수 있습니다!
+      </p>
+      <button type="button" id="closeIosInstallBtn" class="btn-primary" style="margin-top: 10px;">확인 완료</button>
+    </div>
   </div>
 
   <script type="module" src="/src/main.ts"></script>
