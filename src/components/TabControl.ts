@@ -137,7 +137,7 @@ export class TabControl {
       } else if (isOil) {
         extraClass = 'btn-theme-oil';
         swatchClass = 'swatch-oil';
-        swatchBg = 'linear-gradient(135deg, #f5eefb 0%, #d1c4e9 35%, #f48fb1 70%, #80deea 100%)';
+        swatchBg = 'linear-gradient(135deg, #c084fc 0%, #38bdf8 35%, #f472b6 70%, #fde047 100%)';
         icon = '<span class="swatch-oil-icon">🎨</span>';
       }
 

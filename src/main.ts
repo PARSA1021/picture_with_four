@@ -10,6 +10,7 @@ import { PreviewStrip } from './components/PreviewStrip.ts';
 import { ResultModal } from './components/ResultModal.ts';
 import { TabControl } from './components/TabControl.ts';
 import { pwaInstaller } from './core/pwa-installer.ts';
+import { onOilTextureLoaded } from './core/oil-frame.ts';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = new ResultModal();
@@ -18,6 +19,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   new PreviewStrip();
   new TabControl(exportService);
   const canvasView = new CanvasView();
+
+  // Re-render when oil painting texture finishes loading
+  onOilTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
 
   // Initialize Progressive Web App (PWA) installation
   pwaInstaller.init('headerInstallBtn');

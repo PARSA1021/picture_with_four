@@ -1,36 +1,89 @@
 import { LayoutSlot } from '../state/types.ts';
 
 /**
- * Pastel Impasto Oil Painting Drawing Engine (#4 유화 프레임)
- * Specifically designed for PIC4U signature Oil Painting Edition.
+ * Authentic Impasto Oil Painting Frame Engine (#4 유화 프레임)
+ * PIC4U Signature #4: Pastel Impasto Oil Painting Edition
  */
 
-const OIL_PALETTE = {
+export const OIL_PALETTE = {
   // Rich blended pastel oil colors from reference photo
-  lilacDark: '#7e57c2',
-  lilacMid: '#9575cd',
-  lilacLight: '#b39ddb',
-  lilacSoft: '#d1c4e9',
-  lilacPastel: '#ede7f6',
-
-  roseDeep: '#ec407a',
-  roseMid: '#f06292',
-  roseLight: '#f48fb1',
-  roseSoft: '#f8bbd0',
-
-  mintDeep: '#00acc1',
-  mintMid: '#26c6da',
-  mintLight: '#4dd0e1',
-  mintSoft: '#80deea',
-  mintIce: '#e0f7fa',
-
-  butterCream: '#fff8e1',
+  lilac: {
+    highlight: '#e9d5ff',
+    light: '#c084fc',
+    mid: '#a855f7',
+    deep: '#7e22ce',
+    dark: '#581c87',
+    shadow: 'rgba(55, 15, 80, 0.42)'
+  },
+  rose: {
+    highlight: '#fce7f3',
+    light: '#f472b6',
+    mid: '#ec4899',
+    deep: '#be185d',
+    dark: '#831843',
+    shadow: 'rgba(75, 12, 45, 0.42)'
+  },
+  mint: {
+    highlight: '#cffafe',
+    light: '#38bdf8',
+    mid: '#06b6d4',
+    deep: '#0e7490',
+    dark: '#155e75',
+    shadow: 'rgba(12, 60, 80, 0.42)'
+  },
+  peach: {
+    highlight: '#fff7ed',
+    light: '#fed7aa',
+    mid: '#fb923c',
+    deep: '#c2410c',
+    dark: '#7c2d12',
+    shadow: 'rgba(70, 30, 10, 0.38)'
+  },
+  cream: {
+    highlight: '#ffffff',
+    light: '#fef9c3',
+    mid: '#fde047',
+    deep: '#eab308',
+    dark: '#a16207',
+    shadow: 'rgba(60, 50, 15, 0.35)'
+  },
   pearlWhite: '#ffffff',
-
-  shadowDark: 'rgba(50, 20, 70, 0.35)',
-  shadowSoft: 'rgba(70, 30, 90, 0.18)',
-  highlight: 'rgba(255, 255, 255, 0.75)'
+  knifeHighlight: 'rgba(255, 255, 255, 0.82)',
+  knifeShadow: 'rgba(40, 20, 55, 0.28)'
 };
+
+// Singleton background image management
+let oilBgImage: HTMLImageElement | null = null;
+let isOilTextureReady = false;
+const textureLoadCallbacks: Array<() => void> = [];
+
+export function onOilTextureLoaded(callback: () => void) {
+  if (isOilTextureReady) {
+    callback();
+  } else {
+    textureLoadCallbacks.push(callback);
+  }
+}
+
+export function preloadOilTexture() {
+  if (typeof window === 'undefined' || typeof Image === 'undefined') return;
+  if (oilBgImage) return;
+
+  oilBgImage = new Image();
+  oilBgImage.src = '/assets/themes/oil-frame-bg.jpg';
+  oilBgImage.onload = () => {
+    isOilTextureReady = true;
+    textureLoadCallbacks.forEach((cb) => {
+      try { cb(); } catch (err) { console.error('Oil texture callback error:', err); }
+    });
+  };
+  oilBgImage.onerror = (e) => {
+    console.warn('Oil background texture image failed to load, using procedural impasto fallback.', e);
+  };
+}
+
+// Auto-preload on file evaluation
+preloadOilTexture();
 
 function seededRandom(seed: number): () => number {
   let s = seed % 2147483647;
@@ -42,7 +95,9 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
- * Draws the rich impasto oil painting textured canvas background
+ * Draws the masterwork impasto oil painting background.
+ * Uses the authentic high-resolution oil painting asset when loaded,
+ * with seamless procedural impasto oil fallback.
  */
 export function drawOilBackground(
   ctx: CanvasRenderingContext2D,
@@ -54,52 +109,102 @@ export function drawOilBackground(
 ) {
   ctx.save();
 
-  // 1. Base luminous pastel gradient (Lavender to Soft Rose & Mint)
+  // If high-resolution oil painting asset is ready, draw it with object-fit: cover
+  if (oilBgImage && isOilTextureReady && oilBgImage.naturalWidth > 0) {
+    const imgW = oilBgImage.naturalWidth;
+    const imgH = oilBgImage.naturalHeight;
+    const imgRatio = imgW / imgH;
+    const targetRatio = w / h;
+
+    let sw: number, sh: number, sx: number, sy: number;
+    if (targetRatio > imgRatio) {
+      sw = imgW;
+      sh = imgW / targetRatio;
+      sx = 0;
+      sy = (imgH - sh) * 0.5;
+    } else {
+      sh = imgH;
+      sw = imgH * targetRatio;
+      sx = (imgW - sw) * 0.5;
+      sy = (imgH - sh) * 0.5;
+    }
+
+    ctx.drawImage(oilBgImage, sx, sy, sw, sh, x, y, w, h);
+
+    // Subtle edge framing vignette for editorial warmth
+    const edgeVig = ctx.createLinearGradient(x, y, x + w, y);
+    edgeVig.addColorStop(0, 'rgba(110, 80, 130, 0.09)');
+    edgeVig.addColorStop(0.06, 'rgba(110, 80, 130, 0)');
+    edgeVig.addColorStop(0.94, 'rgba(110, 80, 130, 0)');
+    edgeVig.addColorStop(1, 'rgba(110, 80, 130, 0.09)');
+    ctx.fillStyle = edgeVig;
+    ctx.fillRect(x, y, w, h);
+
+    ctx.restore();
+    return;
+  }
+
+  // Fallback: Rich procedural impasto oil painting engine
+  drawProceduralOilFallback(ctx, x, y, w, h, scale);
+  ctx.restore();
+}
+
+/**
+ * Rich procedural impasto canvas fallback with multi-color palette knife ribbons
+ */
+function drawProceduralOilFallback(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale: number
+) {
+  // 1. Base vibrant pastel oil gradient
   const baseGrad = ctx.createLinearGradient(x, y, x + w, y + h);
-  baseGrad.addColorStop(0, '#e8dff5');
-  baseGrad.addColorStop(0.35, '#fce4ec');
-  baseGrad.addColorStop(0.7, '#e0f7fa');
-  baseGrad.addColorStop(1, '#ede7f6');
+  baseGrad.addColorStop(0, '#e9d5ff'); // Lilac
+  baseGrad.addColorStop(0.28, '#fce7f3'); // Rose blush
+  baseGrad.addColorStop(0.62, '#cffafe'); // Mint ice
+  baseGrad.addColorStop(0.85, '#fef9c3'); // Buttercream
+  baseGrad.addColorStop(1, '#ddd6fe'); // Soft violet
   ctx.fillStyle = baseGrad;
   ctx.fillRect(x, y, w, h);
 
-  // 2. Subtle artist canvas linen weave texture
-  const rand = seededRandom(404);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  const weaveCount = Math.min(500, Math.round(w * h * 0.0003));
+  // 2. Artist canvas linen weave texture
+  const rand = seededRandom(512);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+  const weaveCount = Math.min(600, Math.round(w * h * 0.0004));
   for (let i = 0; i < weaveCount; i++) {
     const wx = x + rand() * w;
     const wy = y + rand() * h;
-    const ww = (2 + rand() * 4) * scale;
-    const wh = (1 + rand() * 2) * scale;
+    const ww = (3 + rand() * 4) * scale;
+    const wh = (1.5 + rand() * 2) * scale;
     ctx.fillRect(wx, wy, ww, wh);
   }
 
-  // 3. Sweeping Palette Knife Strokes across the card background
-  const strokeCount = 45;
+  // 3. Sweeping layered impasto palette knife strokes
   const colors = [
-    OIL_PALETTE.lilacLight,
-    OIL_PALETTE.lilacMid,
-    OIL_PALETTE.roseLight,
-    OIL_PALETTE.roseMid,
-    OIL_PALETTE.mintLight,
-    OIL_PALETTE.mintMid,
-    OIL_PALETTE.lilacSoft,
-    OIL_PALETTE.butterCream
+    OIL_PALETTE.lilac.mid,
+    OIL_PALETTE.rose.mid,
+    OIL_PALETTE.mint.mid,
+    OIL_PALETTE.cream.light,
+    OIL_PALETTE.peach.light,
+    OIL_PALETTE.lilac.light,
+    OIL_PALETTE.rose.light,
+    OIL_PALETTE.mint.light
   ];
 
+  const strokeCount = 55;
   for (let i = 0; i < strokeCount; i++) {
     const sx = x + rand() * w;
     const sy = y + rand() * h;
-    const sw = (50 + rand() * 120) * scale;
-    const sh = (14 + rand() * 28) * scale;
-    const angle = (rand() - 0.5) * 1.1 + (i % 2 === 0 ? 0.35 : -0.35);
+    const sw = (60 + rand() * 140) * scale;
+    const sh = (16 + rand() * 32) * scale;
+    const angle = (rand() - 0.5) * 1.2 + (i % 2 === 0 ? 0.35 : -0.35);
     const color = colors[i % colors.length];
 
-    drawPaletteKnifeStroke(ctx, sx, sy, sw, sh, angle, color, scale, 0.35 + rand() * 0.45);
+    drawPaletteKnifeStroke(ctx, sx, sy, sw, sh, angle, color, scale, 0.45 + rand() * 0.45);
   }
-
-  ctx.restore();
 }
 
 /**
@@ -114,7 +219,7 @@ function drawPaletteKnifeStroke(
   angle: number,
   color: string,
   scale: number,
-  alpha: number = 0.8
+  alpha: number = 0.85
 ) {
   ctx.save();
   ctx.translate(cx, cy);
@@ -122,66 +227,54 @@ function drawPaletteKnifeStroke(
   ctx.globalAlpha = alpha;
 
   // 1. Under-stroke soft paint shadow (giving thickness to the paint layer)
-  ctx.shadowColor = OIL_PALETTE.shadowSoft;
-  ctx.shadowBlur = 4 * scale;
-  ctx.shadowOffsetY = 2 * scale;
+  ctx.shadowColor = OIL_PALETTE.knifeShadow;
+  ctx.shadowBlur = 5 * scale;
+  ctx.shadowOffsetY = 2.5 * scale;
 
-  // 2. Main paint stroke body (curved thick smear)
+  // 2. Main curved paint smear body
   ctx.beginPath();
   ctx.moveTo(-length * 0.5, -width * 0.3);
-  ctx.bezierCurveTo(
-    -length * 0.2,
-    -width * 0.6,
-    length * 0.2,
-    -width * 0.5,
-    length * 0.5,
-    -width * 0.2
-  );
-  ctx.bezierCurveTo(
-    length * 0.45,
-    width * 0.4,
-    -length * 0.1,
-    width * 0.6,
-    -length * 0.5,
-    width * 0.3
-  );
+  ctx.bezierCurveTo(-length * 0.2, -width * 0.65, length * 0.2, -width * 0.55, length * 0.5, -width * 0.2);
+  ctx.bezierCurveTo(length * 0.45, width * 0.45, -length * 0.1, width * 0.65, -length * 0.5, width * 0.3);
   ctx.closePath();
 
   ctx.fillStyle = color;
   ctx.fill();
 
-  // Reset shadow for fine highlights
+  // Reset shadow for crisp knife ridge highlight
   ctx.shadowColor = 'transparent';
 
   // 3. Crisp palette knife ridge highlight along top bevel
   ctx.beginPath();
   ctx.moveTo(-length * 0.45, -width * 0.25);
-  ctx.bezierCurveTo(
-    -length * 0.15,
-    -width * 0.55,
-    length * 0.15,
-    -width * 0.45,
-    length * 0.42,
-    -width * 0.18
-  );
-  ctx.strokeStyle = OIL_PALETTE.highlight;
-  ctx.lineWidth = Math.max(0.8, 1.2 * scale);
+  ctx.bezierCurveTo(-length * 0.15, -width * 0.58, length * 0.15, -width * 0.48, length * 0.42, -width * 0.18);
+  ctx.strokeStyle = OIL_PALETTE.knifeHighlight;
+  ctx.lineWidth = Math.max(1, 1.4 * scale);
   ctx.stroke();
 
-  // 4. Subtle inner color variation streak
+  // 4. Subtle inner color streak
   ctx.beginPath();
   ctx.moveTo(-length * 0.3, 0);
   ctx.lineTo(length * 0.3, 0);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.lineWidth = Math.max(0.6, 1.0 * scale);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = Math.max(0.8, 1.2 * scale);
   ctx.stroke();
 
   ctx.restore();
 }
 
+export interface DollopTheme {
+  highlight: string;
+  light: string;
+  mid: string;
+  deep: string;
+  dark: string;
+  shadow: string;
+}
+
 /**
- * Draws a dimensional 3D oil paint teardrop/dollop peeking over the frame edge
- * (Matching the lilac and pink drops on the borders in the reference photo!)
+ * Draws an ultra-realistic, dimensional 3D oil paint teardrop/dollop (물감 덩어리)
+ * with thick cast shadows, organic viscous curvature, and glossy wet-oil specular crescents.
  */
 function drawPaintDollop(
   ctx: CanvasRenderingContext2D,
@@ -190,86 +283,105 @@ function drawPaintDollop(
   sizeX: number,
   sizeY: number,
   angle: number,
-  baseColor: string,
-  deepColor: string,
+  palette: DollopTheme,
   scale: number
 ) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(angle);
 
-  // 1. Cast shadow of the thick paint dollop
-  ctx.shadowColor = OIL_PALETTE.shadowDark;
-  ctx.shadowBlur = 8 * scale;
-  ctx.shadowOffsetX = 3 * scale;
-  ctx.shadowOffsetY = 4 * scale;
+  // 1. Dual-layer cast shadow for thick volumetric physical presence
+  // Layer A: Soft diffuse drop shadow
+  ctx.shadowColor = palette.shadow;
+  ctx.shadowBlur = 10 * scale;
+  ctx.shadowOffsetX = 3.5 * scale;
+  ctx.shadowOffsetY = 5 * scale;
 
-  // 2. Volumetric teardrop/petal shape
+  // Layer B: Main teardrop bulb path
   ctx.beginPath();
-  ctx.moveTo(0, -sizeY * 0.5);
+  ctx.moveTo(0, -sizeY * 0.52);
   ctx.bezierCurveTo(
-    sizeX * 0.6,
-    -sizeY * 0.3,
     sizeX * 0.65,
-    sizeY * 0.25,
+    -sizeY * 0.32,
+    sizeX * 0.72,
+    sizeY * 0.28,
     0,
-    sizeY * 0.55
+    sizeY * 0.58
   );
   ctx.bezierCurveTo(
+    -sizeX * 0.72,
+    sizeY * 0.28,
     -sizeX * 0.65,
-    sizeY * 0.25,
-    -sizeX * 0.6,
-    -sizeY * 0.3,
+    -sizeY * 0.32,
     0,
-    -sizeY * 0.5
+    -sizeY * 0.52
   );
   ctx.closePath();
 
-  const dollopGrad = ctx.createRadialGradient(
-    -sizeX * 0.15,
-    -sizeY * 0.15,
-    sizeX * 0.05,
+  // Multi-stop radial gradient creating dome height
+  const bulbGrad = ctx.createRadialGradient(
+    -sizeX * 0.2,
+    -sizeY * 0.2,
+    sizeX * 0.08,
     0,
     0,
-    sizeX * 0.65
+    sizeX * 0.72
   );
-  dollopGrad.addColorStop(0, '#ffffff');
-  dollopGrad.addColorStop(0.3, baseColor);
-  dollopGrad.addColorStop(0.85, deepColor);
-  dollopGrad.addColorStop(1, deepColor);
+  bulbGrad.addColorStop(0, '#ffffff');
+  bulbGrad.addColorStop(0.2, palette.highlight);
+  bulbGrad.addColorStop(0.48, palette.light);
+  bulbGrad.addColorStop(0.8, palette.mid);
+  bulbGrad.addColorStop(1, palette.deep);
 
-  ctx.fillStyle = dollopGrad;
+  ctx.fillStyle = bulbGrad;
   ctx.fill();
 
-  // Reset shadow for glossy shine
+  // Reset shadow for crisp specular reflections
   ctx.shadowColor = 'transparent';
 
-  // 3. Specular gloss highlight crescent on the dome
+  // 2. Primary glossy specular highlight crescent (wet sheen)
   ctx.beginPath();
   ctx.ellipse(
-    -sizeX * 0.18,
-    -sizeY * 0.15,
-    sizeX * 0.22,
-    sizeY * 0.14,
-    -Math.PI / 4,
+    -sizeX * 0.2,
+    -sizeY * 0.18,
+    sizeX * 0.24,
+    sizeY * 0.15,
+    -Math.PI / 4.2,
     0,
     Math.PI * 2
   );
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
   ctx.fill();
 
-  // 4. Subtle secondary rim reflection
+  // 3. Pinpoint light glint at top crest
   ctx.beginPath();
-  ctx.arc(sizeX * 0.2, sizeY * 0.2, sizeX * 0.1, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.arc(-sizeX * 0.12, -sizeY * 0.26, sizeX * 0.08, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
   ctx.fill();
+
+  // 4. Subtle secondary rim reflection along bottom edge
+  ctx.beginPath();
+  ctx.arc(sizeX * 0.22, sizeY * 0.25, sizeX * 0.14, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+  ctx.fill();
+
+  // 5. Delicate knife streak contour down dollop center
+  ctx.beginPath();
+  ctx.moveTo(-sizeX * 0.05, -sizeY * 0.35);
+  ctx.quadraticCurveTo(sizeX * 0.12, 0, 0, sizeY * 0.42);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = Math.max(0.8, 1.2 * scale);
+  ctx.stroke();
 
   ctx.restore();
 }
 
 /**
- * Main foreground decorator: renders the 3D paint dollops, divider palette knife strokes,
- * and the rich impasto swirl in the footer around the brand text.
+ * Main foreground decorator:
+ * - Renders crisp editorial white paper borders around photo slots.
+ * - Renders signature 3D paint dollops overlapping photo edges matching reference image #4.
+ * - Renders divider impasto palette knife strokes between slots.
+ * - Renders rich swirled marbled wave in the footer.
  */
 export function renderOilDecorations(
   ctx: CanvasRenderingContext2D,
@@ -278,106 +390,144 @@ export function renderOilDecorations(
   slots: LayoutSlot[],
   scale: number
 ) {
-  const is1x4 = slots.length === 4 && slots[0].w > slots[0].h * 1.1;
+  if (slots.length === 0) return;
+
   const topSlot = slots[0];
   const bottomSlot = slots[slots.length - 1];
+  const slotLeft = topSlot.x;
+  const slotRight = topSlot.x + topSlot.w;
+  const slotBottom = bottomSlot.y + bottomSlot.h;
 
-  const slotLeft = topSlot ? topSlot.x : width * 0.08;
-  const slotRight = topSlot ? topSlot.x + topSlot.w : width * 0.92;
-  const slotBottom = bottomSlot ? bottomSlot.y + bottomSlot.h : height * 0.82;
+  // 1. DELICATE WHITE PHOTO CARD BORDERS (Clean editorial cutout look)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.lineWidth = Math.max(1.2, 1.8 * scale);
+  ctx.shadowColor = 'rgba(40, 15, 60, 0.18)';
+  ctx.shadowBlur = 4 * scale;
+  ctx.shadowOffsetY = 1.5 * scale;
 
-  // 1. DIVIDER IMPASTO STROKES (Between slots)
+  slots.forEach((s) => {
+    ctx.strokeRect(s.x, s.y, s.w, s.h);
+  });
+  ctx.restore();
+
+  // 2. DIVIDER IMPASTO STROKES (Between slots)
+  const is1x4 = slots.length === 4 && slots[0].w > slots[0].h * 1.05;
   if (is1x4) {
     for (let i = 0; i < slots.length - 1; i++) {
       const curr = slots[i];
       const next = slots[i + 1];
       const gapY = (curr.y + curr.h + next.y) / 2;
 
-      // Turquoise & Lilac smear in gutter
+      // Turquoise & Lilac multi-color smear bridging slots
       drawPaletteKnifeStroke(
         ctx,
-        width * 0.45,
+        width * 0.46,
         gapY,
-        width * 0.65,
-        12 * scale,
-        0.05,
-        i % 2 === 0 ? OIL_PALETTE.mintMid : OIL_PALETTE.lilacMid,
+        width * 0.68,
+        14 * scale,
+        0.04,
+        i % 2 === 0 ? OIL_PALETTE.mint.mid : OIL_PALETTE.lilac.mid,
         scale,
-        0.85
+        0.88
       );
 
       drawPaletteKnifeStroke(
         ctx,
-        width * 0.58,
+        width * 0.55,
         gapY + 1 * scale,
-        width * 0.5,
-        9 * scale,
-        -0.08,
-        i % 2 === 0 ? OIL_PALETTE.roseLight : OIL_PALETTE.mintLight,
+        width * 0.52,
+        10 * scale,
+        -0.07,
+        i % 2 === 0 ? OIL_PALETTE.rose.light : OIL_PALETTE.cream.mid,
         scale,
-        0.75
+        0.78
       );
     }
   }
 
-  // 2. SIGNATURE 3D PAINT DOLLOPS (From reference photo!)
-  // Dollop 1: Distinct Lilac/Purple 3D drop on the right side of Slot 2
+  // 3. SIGNATURE 3D PAINT DOLLOPS (Directly matching #4 reference photo!)
+  // Dollop 1: Large Lilac/Violet 3D drop overlapping the RIGHT border of Slot 2
   if (slots.length >= 2) {
     const s2 = slots[1];
-    const dropY = s2.y + s2.h * 0.72;
+    const dropY = s2.y + s2.h * 0.65;
     drawPaintDollop(
       ctx,
-      slotRight + 2 * scale,
+      slotRight, // Exactly centered on the right edge line
       dropY,
-      22 * scale,
-      32 * scale,
-      0.25,
-      OIL_PALETTE.lilacMid,
-      OIL_PALETTE.lilacDark,
+      17 * scale,
+      26 * scale,
+      0.22,
+      OIL_PALETTE.lilac,
       scale
     );
   }
 
-  // Dollop 2: Soft Rosy-Pink 3D drop on the left side of Slot 3
-  if (slots.length >= 3) {
+  // Dollop 2: Rose-Pink 3D drop overlapping the LEFT border of Slot 4 (or Slot 3)
+  if (slots.length >= 4) {
+    const s4 = slots[3];
+    const dropY = s4.y + s4.h * 0.68;
+    drawPaintDollop(
+      ctx,
+      slotLeft, // Exactly centered on the left edge line
+      dropY,
+      16 * scale,
+      24 * scale,
+      -0.28,
+      OIL_PALETTE.rose,
+      scale
+    );
+  } else if (slots.length >= 3) {
     const s3 = slots[2];
-    const dropY = s3.y + s3.h * 0.78;
+    const dropY = s3.y + s3.h * 0.7;
     drawPaintDollop(
       ctx,
-      slotLeft - 2 * scale,
+      slotLeft,
       dropY,
-      20 * scale,
-      30 * scale,
-      -0.35,
-      OIL_PALETTE.roseMid,
-      OIL_PALETTE.roseDeep,
+      16 * scale,
+      24 * scale,
+      -0.28,
+      OIL_PALETTE.rose,
       scale
     );
   }
 
-  // Dollop 3: Small Lilac droplet at top-right of Slot 1
+  // Dollop 3: Soft Buttercream/Peach drop near top-left of Slot 1
   if (slots.length >= 1) {
     const s1 = slots[0];
     drawPaintDollop(
       ctx,
-      slotRight + 3 * scale,
-      s1.y + s1.h * 0.2,
-      16 * scale,
-      24 * scale,
-      0.15,
-      OIL_PALETTE.lilacLight,
-      OIL_PALETTE.lilacMid,
+      slotLeft - 2 * scale,
+      s1.y + s1.h * 0.15,
+      12 * scale,
+      18 * scale,
+      -0.38,
+      OIL_PALETTE.peach,
       scale
     );
   }
 
-  // 3. FOOTER IMPASTO PALETTE KNIFE SWIRL
-  // Creates the marbleized oil painting swirl around the footer brand title
+  // Dollop 4: Small turquoise dab near top-right margin
+  if (slots.length >= 1) {
+    const s1 = slots[0];
+    drawPaintDollop(
+      ctx,
+      slotRight + 4 * scale,
+      s1.y + s1.h * 0.08,
+      10 * scale,
+      15 * scale,
+      0.32,
+      OIL_PALETTE.mint,
+      scale
+    );
+  }
+
+  // 4. FOOTER SWIRLED MARBLING & SPECULAR GLAZE (Under brand text)
   renderFooterOilSwirl(ctx, width, height, slotBottom, scale);
 }
 
 /**
- * Draws the expressive palette knife oil swirl in the footer
+ * Draws the expressive palette knife oil swirl in the footer area
  */
 function renderFooterOilSwirl(
   ctx: CanvasRenderingContext2D,
@@ -387,31 +537,32 @@ function renderFooterOilSwirl(
   scale: number
 ) {
   const footerH = h - slotBottom;
+  if (footerH < 40 * scale) return;
+
   const footerMidY = slotBottom + footerH * 0.58;
 
-  // Swirling sweeping strokes across the bottom
   // 1. Turquoise ocean sweep
   drawPaletteKnifeStroke(
     ctx,
-    w * 0.65,
-    footerMidY + 12 * scale,
-    w * 0.75,
-    26 * scale,
-    -0.12,
-    OIL_PALETTE.mintMid,
+    w * 0.64,
+    footerMidY + 10 * scale,
+    w * 0.78,
+    28 * scale,
+    -0.14,
+    OIL_PALETTE.mint.mid,
     scale,
-    0.9
+    0.88
   );
 
   // 2. Soft lilac violet sweep
   drawPaletteKnifeStroke(
     ctx,
-    w * 0.32,
-    footerMidY + 18 * scale,
-    w * 0.68,
-    28 * scale,
-    0.15,
-    OIL_PALETTE.lilacMid,
+    w * 0.34,
+    footerMidY + 16 * scale,
+    w * 0.72,
+    30 * scale,
+    0.16,
+    OIL_PALETTE.lilac.mid,
     scale,
     0.92
   );
@@ -420,11 +571,11 @@ function renderFooterOilSwirl(
   drawPaletteKnifeStroke(
     ctx,
     w * 0.5,
-    footerMidY + 6 * scale,
-    w * 0.6,
-    18 * scale,
-    -0.05,
-    OIL_PALETTE.roseLight,
+    footerMidY + 4 * scale,
+    w * 0.64,
+    20 * scale,
+    -0.06,
+    OIL_PALETTE.rose.light,
     scale,
     0.85
   );
@@ -432,26 +583,25 @@ function renderFooterOilSwirl(
   // 4. Cream & Pearl highlight ribbon
   drawPaletteKnifeStroke(
     ctx,
-    w * 0.42,
-    footerMidY - 2 * scale,
-    w * 0.48,
-    12 * scale,
-    0.08,
-    OIL_PALETTE.butterCream,
+    w * 0.44,
+    footerMidY - 3 * scale,
+    w * 0.5,
+    14 * scale,
+    0.09,
+    OIL_PALETTE.cream.highlight,
     scale,
-    0.7
+    0.72
   );
 
-  // 5. Rich purple paint dollop accent at bottom-left corner
+  // 5. Rich purple paint dollop at bottom-left corner
   drawPaintDollop(
     ctx,
     w * 0.16,
     footerMidY + 22 * scale,
-    24 * scale,
-    34 * scale,
-    0.3,
-    OIL_PALETTE.lilacMid,
-    OIL_PALETTE.lilacDark,
+    18 * scale,
+    26 * scale,
+    0.28,
+    OIL_PALETTE.lilac,
     scale
   );
 
@@ -459,12 +609,11 @@ function renderFooterOilSwirl(
   drawPaintDollop(
     ctx,
     w * 0.86,
-    footerMidY + 20 * scale,
-    22 * scale,
-    30 * scale,
-    -0.25,
-    OIL_PALETTE.mintMid,
-    OIL_PALETTE.mintDeep,
+    footerMidY + 18 * scale,
+    17 * scale,
+    24 * scale,
+    -0.22,
+    OIL_PALETTE.mint,
     scale
   );
 }

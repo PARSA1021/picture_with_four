@@ -3,7 +3,7 @@ import { calculateLayoutSlots } from './layout-engine.ts';
 import { drawWatercolorPaperTexture, renderBotanicalDecorations } from './botanical-frame.ts';
 import { drawRoseBackground, renderRoseDecorations } from './rose-frame.ts';
 import { drawSkyBackground, renderCloudDecorations } from './cloud-frame.ts';
-import { drawOilBackground, renderOilDecorations } from './oil-frame.ts';
+import { drawOilBackground, renderOilDecorations, onOilTextureLoaded } from './oil-frame.ts';
 
 export interface RenderOptions {
   isExport?: boolean;
@@ -24,6 +24,11 @@ export function clearLayerCache() {
   bgCache = null;
   decorCache = null;
 }
+
+// Clear cached layers when asynchronous oil painting asset completes loading
+onOilTextureLoaded(() => {
+  clearLayerCache();
+});
 
 function createOffscreenCanvas(w: number, h: number): HTMLCanvasElement | null {
   if (typeof document === 'undefined') return null;

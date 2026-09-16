@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 
-function Generate-PwaIcon {
+function New-PwaIcon {
     param(
         [int]$size,
         [string]$outputPath,
@@ -79,7 +79,7 @@ function Generate-PwaIcon {
     Write-Host "Generated: $outputPath"
 }
 
-Generate-PwaIcon -size 192 -outputPath "$PSScriptRoot\..\public\icons\icon-192.png" -isMaskable $false
-Generate-PwaIcon -size 512 -outputPath "$PSScriptRoot\..\public\icons\icon-512.png" -isMaskable $false
-Generate-PwaIcon -size 512 -outputPath "$PSScriptRoot\..\public\icons\maskable-512.png" -isMaskable $true
+New-PwaIcon -size 192 -outputPath "$PSScriptRoot\..\public\icons\icon-192.png" -isMaskable $false
+New-PwaIcon -size 512 -outputPath "$PSScriptRoot\..\public\icons\icon-512.png" -isMaskable $false
+New-PwaIcon -size 512 -outputPath "$PSScriptRoot\..\public\icons\maskable-512.png" -isMaskable $true
 Write-Host "All PWA PNG icons created successfully!"
