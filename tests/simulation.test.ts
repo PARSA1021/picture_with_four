@@ -114,4 +114,44 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
       });
     });
   });
+
+  it('Simulation 7: Botanical Eucalyptus Theme - automatically applies 인생네컷 typography and watercolor palette', () => {
+    // Switch to botanical-eucalyptus
+    store.setTheme('botanical-eucalyptus');
+
+    const config = store.getConfig();
+    expect(config.theme).toBe('botanical-eucalyptus');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.color).toBe('#736551');
+    expect(config.frameColor).toBe('#f9f9f5');
+    expect(config.backgroundColor).toBe('#54634b');
+  });
+
+  it('Simulation 8: Romantic Pink Rose Theme - automatically applies 인생네컷 typography and rose palette', () => {
+    // Switch to romantic-rose
+    store.setTheme('romantic-rose');
+
+    const config = store.getConfig();
+    expect(config.theme).toBe('romantic-rose');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
+    expect(config.frameColor).toBe('#fcebee');
+    expect(config.backgroundColor).toBe('#f8a199');
+  });
+
+  it('Simulation 9: Sky Cloud Theme - automatically applies 인생네컷 typography and blue sky cloud palette', () => {
+    // Switch to sky-cloud
+    store.setTheme('sky-cloud');
+
+    const config = store.getConfig();
+    expect(config.theme).toBe('sky-cloud');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.color).toBe('#1c395c');
+    expect(config.frameColor).toBe('#e8f4fc');
+    expect(config.backgroundColor).toBe('#5c97d6');
+  });
 });

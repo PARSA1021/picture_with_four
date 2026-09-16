@@ -109,14 +109,41 @@ export class TabControl {
 
   private initThemeButtons() {
     const container = $<HTMLElement>('#themeButtons');
-    container.innerHTML = Object.entries(THEMES).map(
-      ([key, theme]) => `
-      <button type="button" class="choice-card btn-theme" data-theme="${key}" role="radio" aria-checked="false" title="${escapeHtml(theme.name)}">
-        <div class="theme-swatch" style="background: ${theme.bg}; border-color: ${theme.frame === '#ffffff' ? '#e2e8f0' : theme.frame};"></div>
+    container.innerHTML = Object.entries(THEMES).map(([key, theme]) => {
+      const isBotanical = key === 'botanical-eucalyptus';
+      const isRose = key === 'romantic-rose';
+      const isCloud = key === 'sky-cloud';
+      let extraClass = '';
+      let swatchClass = '';
+      let swatchBg = theme.bg;
+      let icon = '';
+
+      if (isBotanical) {
+        extraClass = 'btn-theme-botanical';
+        swatchClass = 'swatch-botanical';
+        swatchBg = 'linear-gradient(135deg, #f9f9f5 0%, #d8e6d4 50%, #54634b 100%)';
+        icon = '<span class="swatch-leaf-icon">🌿</span>';
+      } else if (isRose) {
+        extraClass = 'btn-theme-rose';
+        swatchClass = 'swatch-rose';
+        swatchBg = 'linear-gradient(135deg, #fff0f3 0%, #f7a8b8 50%, #e05e78 100%)';
+        icon = '<span class="swatch-rose-icon">🌹</span>';
+      } else if (isCloud) {
+        extraClass = 'btn-theme-cloud';
+        swatchClass = 'swatch-cloud';
+        swatchBg = 'linear-gradient(135deg, #e0f2fe 0%, #7dc3f5 50%, #388dd0 100%)';
+        icon = '<span class="swatch-cloud-icon">☁️</span>';
+      }
+
+      return `
+      <button type="button" class="choice-card btn-theme ${extraClass}" data-theme="${key}" role="radio" aria-checked="false" title="${escapeHtml(theme.name)}">
+        <div class="theme-swatch ${swatchClass}" style="background: ${swatchBg}; border-color: ${theme.frame === '#ffffff' ? '#e2e8f0' : theme.frame};">
+          ${icon}
+        </div>
         <span class="choice-card-title">${escapeHtml(theme.name)}</span>
       </button>
-    `
-    ).join('');
+    `;
+    }).join('');
 
     container.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest<HTMLElement>('.btn-theme');
@@ -213,6 +240,54 @@ export class TabControl {
         toggleAdvBtn.textContent = isHidden ? '세부 여백/모서리 조절 열기' : '세부 조절 닫기';
       }
     });
+
+    // Botanical Signature Edition Banner
+    const botanicalBanner = document.getElementById('btnApplyBotanicalTheme');
+    if (botanicalBanner) {
+      botanicalBanner.addEventListener('click', () => {
+        store.setTheme('botanical-eucalyptus');
+        showToast('🌿 수채화 유칼립투스 인생네컷 프레임이 적용되었습니다!');
+      });
+      botanicalBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('botanical-eucalyptus');
+          showToast('🌿 수채화 유칼립투스 인생네컷 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Rose Signature Edition Banner
+    const roseBanner = document.getElementById('btnApplyRoseTheme');
+    if (roseBanner) {
+      roseBanner.addEventListener('click', () => {
+        store.setTheme('romantic-rose');
+        showToast('🌹 로맨틱 핑크 로즈 인생네컷 프레임이 적용되었습니다!');
+      });
+      roseBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('romantic-rose');
+          showToast('🌹 로맨틱 핑크 로즈 인생네컷 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Sky Cloud Signature Edition Banner
+    const cloudBanner = document.getElementById('btnApplyCloudTheme');
+    if (cloudBanner) {
+      cloudBanner.addEventListener('click', () => {
+        store.setTheme('sky-cloud');
+        showToast('☁️ 퓨어 스카이 뭉게구름 인생네컷 프레임이 적용되었습니다!');
+      });
+      cloudBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('sky-cloud');
+          showToast('☁️ 퓨어 스카이 뭉게구름 인생네컷 프레임이 적용되었습니다!');
+        }
+      });
+    }
   }
 
   private setupTextControls() {
@@ -317,6 +392,24 @@ export class TabControl {
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
     });
+
+    // Botanical banner active state
+    const botanicalBanner = document.getElementById('btnApplyBotanicalTheme');
+    if (botanicalBanner) {
+      botanicalBanner.classList.toggle('active', config.theme === 'botanical-eucalyptus');
+    }
+
+    // Rose banner active state
+    const roseBanner = document.getElementById('btnApplyRoseTheme');
+    if (roseBanner) {
+      roseBanner.classList.toggle('active', config.theme === 'romantic-rose');
+    }
+
+    // Sky Cloud banner active state
+    const cloudBanner = document.getElementById('btnApplyCloudTheme');
+    if (cloudBanner) {
+      cloudBanner.classList.toggle('active', config.theme === 'sky-cloud');
+    }
 
     // Color pickers
     $<HTMLInputElement>('#frameColorPicker').value = config.frameColor;

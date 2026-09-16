@@ -13,7 +13,10 @@ export const THEMES: Record<ThemeType, ThemeDefinition> = {
   'y2k-pink': { name: '블러시 로즈 (Blush Rose)', bg: '#fdf2f8', frame: '#fce7f3', text: '#be185d' },
   'cool-ocean': { name: '마린 틸 (Marine Teal)', bg: '#f0f9ff', frame: '#e0f2fe', text: '#0369a1' },
   'cherry-blossom': { name: '뮤트 핑크 (Muted Pink)', bg: '#fff1f2', frame: '#ffe4e6', text: '#e11d48' },
-  'sage-green': { name: '세이지 리프 (Sage Leaf)', bg: '#f2f7f4', frame: '#e2ede6', text: '#166534' }
+  'sage-green': { name: '세이지 리프 (Sage Leaf)', bg: '#f2f7f4', frame: '#e2ede6', text: '#166534' },
+  'botanical-eucalyptus': { name: '🌿 보태니컬 유칼립투스 (인생네컷)', bg: '#54634b', frame: '#f9f9f5', text: '#736551' },
+  'romantic-rose': { name: '🌹 로맨틱 핑크 로즈 (인생네컷)', bg: '#f8a199', frame: '#fcebee', text: '#ffffff' },
+  'sky-cloud': { name: '☁️ 퓨어 스카이 & 뭉게구름 (인생네컷)', bg: '#5c97d6', frame: '#e8f4fc', text: '#1c395c' }
 };
 
 export interface FramePresetMeta {

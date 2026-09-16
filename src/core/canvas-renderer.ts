@@ -1,5 +1,8 @@
 import { FrameConfig, LayoutSlot, TextConfig } from '../state/types.ts';
 import { calculateLayoutSlots } from './layout-engine.ts';
+import { drawWatercolorPaperTexture, renderBotanicalDecorations } from './botanical-frame.ts';
+import { drawRoseBackground, renderRoseDecorations } from './rose-frame.ts';
+import { drawSkyBackground, renderCloudDecorations } from './cloud-frame.ts';
 
 export interface RenderOptions {
   isExport?: boolean;
@@ -46,6 +49,7 @@ export function renderScene(
   options: RenderOptions = {}
 ): LayoutSlot[] {
   const { isExport = false, selectedSlotIndex = null, baseScreenWidth = 400 } = options;
+  const scale = width / baseScreenWidth;
 
   // 1. Fill entire background
   ctx.fillStyle = config.backgroundColor;
@@ -58,20 +62,61 @@ export function renderScene(
   // 3. Draw outer photo frame card
   const frameW = width - marginPx * 2;
   const frameH = height - marginPx * 2;
+  const frameRadius = Math.max(4, config.imageCornerRadius * 1.5);
 
-  ctx.fillStyle = config.frameColor;
-  // Frame has subtle shadow for screen preview, clean fill for export
-  if (!isExport) {
+  if (config.theme === 'botanical-eucalyptus') {
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.06)';
-    ctx.shadowBlur = 12;
-    ctx.shadowOffsetY = 4;
-    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, Math.max(4, config.imageCornerRadius * 1.5));
+    if (!isExport) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 6;
+    }
+    ctx.fillStyle = '#f9f9f5';
+    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
     ctx.fill();
+    ctx.clip();
+    drawWatercolorPaperTexture(ctx, marginPx, marginPx, frameW, frameH, scale);
+    ctx.restore();
+  } else if (config.theme === 'romantic-rose') {
+    ctx.save();
+    if (!isExport) {
+      ctx.shadowColor = 'rgba(180, 50, 70, 0.16)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 6;
+    }
+    ctx.fillStyle = '#fcebee';
+    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
+    ctx.fill();
+    ctx.clip();
+    drawRoseBackground(ctx, marginPx, marginPx, frameW, frameH, scale);
+    ctx.restore();
+  } else if (config.theme === 'sky-cloud') {
+    ctx.save();
+    if (!isExport) {
+      ctx.shadowColor = 'rgba(30, 80, 140, 0.18)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 6;
+    }
+    ctx.fillStyle = '#4ba0e3';
+    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
+    ctx.fill();
+    ctx.clip();
+    drawSkyBackground(ctx, marginPx, marginPx, frameW, frameH, scale);
     ctx.restore();
   } else {
-    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, Math.max(4, config.imageCornerRadius * 1.5));
-    ctx.fill();
+    ctx.fillStyle = config.frameColor;
+    if (!isExport) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.06)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+      drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
+      ctx.fill();
+    }
   }
 
   // 4. Calculate layout slots
@@ -81,7 +126,6 @@ export function renderScene(
   });
 
   // 5. Draw each slot
-  const scale = width / baseScreenWidth;
   const cornerRadius = config.imageCornerRadius * scale;
 
   slots.forEach((slot) => {
@@ -197,6 +241,15 @@ export function renderScene(
     }
   });
 
+  // 5.5 Draw Botanical / Floral / Cloud Overlays if active
+  if (config.theme === 'botanical-eucalyptus') {
+    renderBotanicalDecorations(ctx, width, height, slots, scale);
+  } else if (config.theme === 'romantic-rose') {
+    renderRoseDecorations(ctx, width, height, slots, scale);
+  } else if (config.theme === 'sky-cloud') {
+    renderCloudDecorations(ctx, width, height, slots, scale);
+  }
+
   // 6. Draw Texts for Export (or when rendered on canvas)
   if (isExport) {
     drawCanvasText(ctx, config.mainText, width, height, scale);
@@ -210,15 +263,21 @@ export function renderScene(
     }
 
     // 8. Draw Micro Archival Studio Stamp for Export
-    ctx.save();
-    ctx.font = `600 ${Math.max(9, Math.round(10 * scale))}px "Inter", sans-serif`;
-    ctx.fillStyle =
-      config.theme === 'modern-black'
-        ? 'rgba(255, 255, 255, 0.25)'
-        : 'rgba(0, 0, 0, 0.22)';
-    ctx.textAlign = 'center';
-    ctx.fillText('PIC4U STUDIO · ARCHIVAL PRINT', width * 0.5, height - marginPx * 0.38);
-    ctx.restore();
+    if (
+      config.theme !== 'botanical-eucalyptus' &&
+      config.theme !== 'romantic-rose' &&
+      config.theme !== 'sky-cloud'
+    ) {
+      ctx.save();
+      ctx.font = `600 ${Math.max(9, Math.round(10 * scale))}px "Inter", sans-serif`;
+      ctx.fillStyle =
+        config.theme === 'modern-black'
+          ? 'rgba(255, 255, 255, 0.25)'
+          : 'rgba(0, 0, 0, 0.22)';
+      ctx.textAlign = 'center';
+      ctx.fillText('PIC4U STUDIO · ARCHIVAL PRINT', width * 0.5, height - marginPx * 0.38);
+      ctx.restore();
+    }
   }
 
   return slots;

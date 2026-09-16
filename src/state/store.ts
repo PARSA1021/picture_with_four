@@ -67,6 +67,45 @@ class FrameStore {
     this.config.frameColor = themeDef.frame;
     this.config.mainText.color = themeDef.text;
     this.config.subText.color = themeDef.text;
+    if (themeKey === 'botanical-eucalyptus') {
+      if (this.config.mainText.content === 'PIC4U STUDIO' || !this.config.mainText.content) {
+        this.config.mainText.content = '인생네컷';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 46;
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    } else if (themeKey === 'romantic-rose') {
+      if (this.config.mainText.content === 'PIC4U STUDIO' || !this.config.mainText.content) {
+        this.config.mainText.content = '인생네컷';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 46;
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
+      this.config.mainText.y = 0.942;
+      this.config.subText.content = '';
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    } else if (themeKey === 'sky-cloud') {
+      if (this.config.mainText.content === 'PIC4U STUDIO' || !this.config.mainText.content) {
+        this.config.mainText.content = '인생네컷';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 46;
+      this.config.mainText.color = '#1c395c';
+      this.config.mainText.effect = 'none';
+      this.config.mainText.y = 0.942;
+      this.config.subText.content = '';
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    }
 
     const filter = themeDef.filter || null;
     this.config.images.forEach((img) => {

@@ -8,7 +8,10 @@ export type ThemeType =
   | 'y2k-pink'
   | 'cool-ocean'
   | 'cherry-blossom'
-  | 'sage-green';
+  | 'sage-green'
+  | 'botanical-eucalyptus'
+  | 'romantic-rose'
+  | 'sky-cloud';
 
 export type FramePresetType = 'classic-slim' | 'polaroid' | 'modern-round' | 'borderless';
 

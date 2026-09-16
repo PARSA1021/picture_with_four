@@ -395,6 +395,236 @@
   margin-bottom: 2px;
 }
 
+/* Special Signature Edition Banner */
+.special-edition-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f4f7f2 0%, #e8f0e6 100%);
+  border: 1.5px solid #a3c2a1;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: var(--space-4);
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(84, 99, 75, 0.08);
+}
+
+.special-edition-banner:hover {
+  border-color: #698a66;
+  background: linear-gradient(135deg, #ecf4e9 0%, #dfede0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(84, 99, 75, 0.14);
+}
+
+.special-edition-banner.active {
+  border-color: #446440;
+  background: linear-gradient(135deg, #e4efe0 0%, #d5e6d2 100%);
+  box-shadow: 0 0 0 2px #54634b, 0 4px 12px rgba(84, 99, 75, 0.16);
+}
+
+.special-edition-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.special-edition-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.special-edition-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #4a6347;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.special-edition-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #273824;
+  margin-bottom: 2px;
+}
+
+.special-edition-desc {
+  font-size: 11px;
+  color: #5d6f5a;
+  line-height: 1.3;
+}
+
+.special-edition-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b5338;
+  background: #ffffff;
+  border: 1px solid #b2cca0;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.special-edition-banner.active .special-edition-tag {
+  background: #446440;
+  color: #ffffff;
+  border-color: #446440;
+}
+
+.swatch-botanical {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.swatch-leaf-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-theme-botanical.active {
+  border-color: #4a6347 !important;
+  box-shadow: 0 0 0 2px #688565 !important;
+}
+
+/* Rose Edition Styles */
+.special-editions-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.special-edition-banner.edition-rose {
+  background: linear-gradient(135deg, #fff0f3 0%, #fce2e8 100%);
+  border-color: #f7a8b8;
+  box-shadow: 0 2px 8px rgba(180, 50, 70, 0.08);
+}
+
+.special-edition-banner.edition-rose:hover {
+  border-color: #e56d85;
+  background: linear-gradient(135deg, #fde4ea 0%, #fbd5df 100%);
+  box-shadow: 0 4px 12px rgba(180, 50, 70, 0.14);
+}
+
+.special-edition-banner.edition-rose.active {
+  border-color: #ce4260;
+  background: linear-gradient(135deg, #fbd2dc 0%, #f8bfce 100%);
+  box-shadow: 0 0 0 2px #ce4260, 0 4px 12px rgba(180, 50, 70, 0.16);
+}
+
+.special-edition-banner.edition-rose .special-edition-badge {
+  color: #b8334f;
+}
+
+.special-edition-banner.edition-rose .special-edition-title {
+  color: #4f1120;
+}
+
+.special-edition-banner.edition-rose .special-edition-desc {
+  color: #8c3a4d;
+}
+
+.special-edition-banner.edition-rose .special-edition-tag {
+  color: #9c2742;
+  border-color: #f5b0bf;
+}
+
+.special-edition-banner.edition-rose.active .special-edition-tag {
+  background: #ce4260;
+  color: #ffffff;
+  border-color: #ce4260;
+}
+
+.swatch-rose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.swatch-rose-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-theme-rose.active {
+  border-color: #ce4260 !important;
+  box-shadow: 0 0 0 2px #e56d85 !important;
+}
+
+/* Sky Cloud Edition Styles */
+.special-edition-banner.edition-cloud {
+  background: linear-gradient(135deg, #eaf4fc 0%, #d8edf9 100%);
+  border-color: #8cc4ec;
+  box-shadow: 0 2px 8px rgba(30, 80, 140, 0.08);
+}
+
+.special-edition-banner.edition-cloud:hover {
+  border-color: #4ba3e3;
+  background: linear-gradient(135deg, #e1f0fb 0%, #cde5f7 100%);
+  box-shadow: 0 4px 12px rgba(30, 80, 140, 0.14);
+}
+
+.special-edition-banner.edition-cloud.active {
+  border-color: #1e70b8;
+  background: linear-gradient(135deg, #c7e3f8 0%, #b5d9f5 100%);
+  box-shadow: 0 0 0 2px #1e70b8, 0 4px 12px rgba(30, 80, 140, 0.16);
+}
+
+.special-edition-banner.edition-cloud .special-edition-badge {
+  color: #1664a8;
+}
+
+.special-edition-banner.edition-cloud .special-edition-title {
+  color: #103456;
+}
+
+.special-edition-banner.edition-cloud .special-edition-desc {
+  color: #2b567d;
+}
+
+.special-edition-banner.edition-cloud .special-edition-tag {
+  color: #16568c;
+  border-color: #9acbee;
+}
+
+.special-edition-banner.edition-cloud.active .special-edition-tag {
+  background: #1e70b8;
+  color: #ffffff;
+  border-color: #1e70b8;
+}
+
+.swatch-cloud {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.swatch-cloud-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-theme-cloud.active {
+  border-color: #1e70b8 !important;
+  box-shadow: 0 0 0 2px #4ba3e3 !important;
+}
+
 /* Segmented Button Groups (Minimal Studio Control) */
 .segmented-control {
   display: flex;
