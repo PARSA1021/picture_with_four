@@ -1,1202 +1,342 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Frame Diary Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Inter:wght@400;600;800&family=Lobster&family=Nanum+Pen+Script&family=Do+Hyeon&family=Gothic+A1&family=Permanent+Marker&family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    
-    <style>
-        * { box-sizing: border-box; }
-        html, body { 
-            overscroll-behavior-y: contain; 
-            height: 100%;
-            touch-action: pan-y;
-        }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f3f4f6; 
-            min-height: 100dvh; 
-        }
-        
-        #canvasContainer { 
-            width: 100%; 
-            max-width: 420px; 
-            margin: 0 auto; 
-            position: relative; 
-            user-select: none;
-            -webkit-user-select: none;
-            pointer-events: auto;
-        } 
-        #photoCanvas {
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); 
-            border: 1px solid #e5e7eb;
-            display: block; 
-            width: 100%; 
-            height: auto; 
-            border-radius: 1rem;
-        }
-        
-        .text-overlay {
-            position: absolute; 
-            text-align: center; 
-            cursor: grab; 
-            user-select: none;
-            z-index: 50; 
-            padding: 15px; 
-            border-radius: 8px;
-            transition: opacity 0.1s ease-out; 
-            white-space: nowrap;
-            opacity: 0; 
-            background-color: transparent;
-            border: 2px dashed transparent;
-            transform: translate(-50%, -50%); 
-            touch-action: pinch-zoom;
-            -webkit-user-select: none;
-        }
-        
-        .text-overlay.dragging {
-            opacity: 1 !important;
-            background-color: rgba(255, 255, 255, 0.85);
-            border: 2px dashed #3b82f6;
-            cursor: grabbing;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>PIC4U | Picture for You 인생네컷 스튜디오</title>
+  <meta name="description" content="오직 너만을 위한 감성 네컷 스튜디오, PIC4U! 다양한 레이아웃과 감성 테마로 완성하는 나만의 포토부스" />
+  <meta property="og:title" content="PIC4U | Picture for You 인생네컷 스튜디오" />
+  <meta property="og:description" content="Picture + 4 + You — 나만의 감성 네컷 사진을 1초 만에 완성하세요" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#18181b" />
 
-        .slot-overlay {
-            position: absolute;
-            cursor: pointer;
-            border-radius: 8px;
-            z-index: 40;
-        }
-        
-        .slot-overlay.selected {
-            box-shadow: 0 0 0 3px #3b82f6 inset;
-            background-color: rgba(59, 130, 246, 0.1);
-        }
-        
-        .tab-btn.active { border-color: #111827; color: #111827; font-weight: 700; }
-        .control-btn {
-            transition: all 0.2s ease-in-out; 
-            border: 1px solid #e5e7eb;
-            padding: 1rem; 
-            min-width: 80px; 
-            text-align: center;
-        }
-        .control-btn.active {
-            transform: scale(0.98); 
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-            border-color: #111827; 
-            background-color: #f9fafb;
-            z-index: 10;
-        }
-        
-        #dropZone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
-        .preview-item.dragging { opacity: 0.4; border: 2px solid #3b82f6; }
-        
-        .image-edit-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 200;
-            background: rgba(0,0,0,0.95);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .image-edit-modal.active {
-            display: flex;
-        }
-        
-        #editCanvasContainer {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            height: 400px;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        #editCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        .edit-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            max-width: 400px;
-            margin-top: 20px;
-        }
-        
-        .edit-controls button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .edit-btn {
-            background: #3b82f6;
-            color: white;
-        }
-        
-        .edit-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .edit-cancel-btn {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .edit-slider-group {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            color: white;
-        }
-        
-        .edit-slider-group input {
-            width: 100%;
-            margin-top: 8px;
-        }
-        
-        #resultModal {
-            position: fixed; inset: 0; z-index: 100;
-            background: rgba(0,0,0,0.8);
-            display: none; align-items: center; justify-content: center;
-            flex-direction: column; padding: 20px;
-        }
-        #resultModal img {
-            max-height: 70vh; max-width: 90vw;
-            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 50px;
-            padding: 16px;
-            position: fixed;
-            z-index: 9999;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        #toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
-        }
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2318181b'/><text x='50' y='64' font-size='40' text-anchor='middle' fill='%2338bdf8' font-family='sans-serif' font-weight='900'>P4U</text></svg>" />
 
-        @media (max-width: 640px) {
-            .control-btn { padding: 0.75rem; min-width: 60px; font-size: 0.875rem; }
-        }
-    </style>
+  <!-- Google Fonts Preconnect & Optimized Loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Do+Hyeon&family=Gothic+A1:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;600;700;900&family=Permanent+Marker&display=swap" rel="stylesheet" />
 </head>
-<body class="min-h-screen select-none">
-
-    <div class="w-full max-w-7xl mx-auto bg-white lg:rounded-3xl lg:shadow-2xl lg:my-8 overflow-hidden min-h-screen lg:min-h-0">
-        
-        <header class="text-center py-4 border-b border-gray-100 lg:hidden">
-            <h1 class="text-2xl font-black text-gray-900">Frame Diary Pro</h1>
-        </header>
-        
-        <main class="flex flex-col lg:flex-row lg:gap-12 lg:p-10">
-            
-            <div class="w-full lg:w-2/5 p-4 lg:p-0 lg:sticky lg:top-10 self-start">
-                <header class="hidden lg:block mb-8 mt-4">
-                    <h1 class="text-5xl font-extrabold text-gray-900 tracking-tighter">Frame Diary Pro</h1>
-                    <p class="text-xl text-gray-500 mt-1">고급 네컷 사진 만들기</p>
-                </header>
-                
-                <div id="canvasContainer">
-                    <canvas id="photoCanvas"></canvas>
-                    <div id="slotOverlayContainer" class="absolute inset-0 z-10"></div>
-                    <div id="mainTextOverlay" class="text-overlay"></div>
-                    <div id="subTextOverlay" class="text-overlay"></div>
-                </div>
-                
-                <p class="text-center text-xs text-gray-400 mt-4">
-                    💡 사진을 터치하여 선택 후 다른 사진을 누르면 위치가 바뀝니다.
-                </p>
-            </div>
-
-            <div class="w-full lg:w-3/5 flex flex-col h-[calc(100vh-450px)] lg:h-auto">
-                <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-20 overflow-x-auto">
-                    <button class="tab-btn active flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-photo">사진</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-design">디자인</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-text">텍스트</button>
-                    <button class="tab-btn flex-1 p-4 font-medium border-b-4 border-transparent text-gray-500 text-sm md:text-base whitespace-nowrap" data-tab="tab-save">저장</button>
-                </nav>
-
-                <div class="p-6 space-y-8 overflow-y-auto flex-1 pb-20">
-                    
-                    <div id="tab-photo" class="tab-content space-y-4">
-                        <div id="dropZone" class="w-full p-8 border-2 border-dashed border-gray-300 rounded-2xl text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-colors">
-                            <p class="font-bold text-gray-600">📸 사진 추가하기</p>
-                            <p class="text-xs text-gray-400 mt-1">터치하거나 파일을 드래그하세요</p>
-                        </div>
-                        <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
-                        
-                        <div id="imagePreviewsContainer" class="space-y-2">
-                            <div class="flex justify-between items-end">
-                                <p id="fileStatus" class="text-sm text-gray-500 font-medium"></p>
-                                <button id="clearImagesBtn" class="text-xs text-red-500 underline">전체 삭제</button>
-                            </div>
-                            <div id="imagePreviews" class="grid grid-cols-4 gap-2"></div>
-                        </div>
-                    </div>
-
-                    <div id="tab-design" class="tab-content hidden space-y-6">
-                        <div>
-                           <h3 class="font-bold text-sm mb-3 text-gray-800">📐 레이아웃</h3>
-                           <div id="layoutButtons" class="grid grid-cols-3 gap-2"></div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm mb-3 text-gray-800">🎨 컬러 테마</h3>
-                            <div id="themeButtons" class="grid grid-cols-4 gap-2"></div>
-                        </div>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="font-bold text-sm mb-2 block text-gray-800">🖼️ 프레임 색상</label>
-                                <div class="flex gap-2">
-                                    <input type="color" id="frameColorPicker" class="w-14 h-14 p-1 border rounded cursor-pointer">
-                                    <div class="flex-1 p-3 bg-gray-50 rounded-lg flex items-center">
-                                        <span id="frameColorValue" class="text-sm font-mono">#ffffff</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="font-bold text-sm mb-2 block text-gray-800">🌈 배경 색상</label>
-                                <div class="flex gap-2">
-                                    <input type="color" id="bgColorPicker" class="w-14 h-14 p-1 border rounded cursor-pointer">
-                                    <div class="flex-1 p-3 bg-gray-50 rounded-lg flex items-center">
-                                        <span id="bgColorValue" class="text-sm font-mono">#f7f7f7</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-xl space-y-4">
-                            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-600">여백 크기</span><span id="frameMarginValue">5%</span></div><input type="range" id="frameMarginSlider" min="0" max="20" value="5" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"></div>
-                            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-600">사진 간격</span><span id="imagePaddingValue">5%</span></div><input type="range" id="imagePaddingSlider" min="0" max="20" value="5" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"></div>
-                            <div><div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-600">둥근 모서리</span><span id="imageRadiusValue">0px</span></div><input type="range" id="imageRadiusSlider" min="0" max="50" value="0" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"></div>
-                        </div>
-                    </div>
-
-                    <div id="tab-text" class="tab-content hidden space-y-6">
-                        <div class="space-y-3">
-                            <label class="block text-sm font-bold text-gray-700">메인 타이틀</label>
-                            <input type="text" id="customTextInput" placeholder="제목 입력 (예: LIFE 4 CUTS)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
-                            <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
-                                <select id="mainFontSelector" class="w-full p-2 text-sm border rounded bg-white"></select>
-                                <input type="color" id="mainFontColorPicker" class="w-full h-9 p-1 border rounded bg-white cursor-pointer">
-                                <div class="col-span-2 space-y-2 pt-2 border-t border-gray-200">
-                                    <div class="flex justify-between text-xs text-gray-500"><span>크기</span><span id="mainFontSizeValue">50px</span></div><input type="range" id="mainFontSizeSlider" min="20" max="150" value="50" class="w-full h-1 bg-gray-300 rounded-lg appearance-none">
-                                    <div class="flex justify-between text-xs text-gray-500"><span>테두리 두께</span><span id="mainTextStrokeValue">0px</span></div><input type="range" id="mainTextStrokeSlider" min="0" max="10" value="0" class="w-full h-1 bg-gray-300 rounded-lg appearance-none">
-                                    <input type="color" id="mainTextStrokeColorPicker" class="w-full h-6 p-0 border-0 rounded mt-1" value="#ffffff">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-3 pt-4 border-t">
-                            <label class="block text-sm font-bold text-gray-700">날짜 / 설명</label>
-                            <input type="text" id="subTextInput" placeholder="날짜 입력" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                            <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
-                                <select id="subFontSelector" class="w-full p-2 text-sm border rounded bg-white"></select>
-                                <input type="color" id="subFontColorPicker" class="w-full h-9 p-1 border rounded bg-white cursor-pointer">
-                                <div class="col-span-2 space-y-2 pt-2 border-t border-gray-200">
-                                    <div class="flex justify-between text-xs text-gray-500"><span>크기</span><span id="subFontSizeValue">25px</span></div><input type="range" id="subFontSizeSlider" min="10" max="80" value="25" class="w-full h-1 bg-gray-300 rounded-lg appearance-none">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="tab-save" class="tab-content hidden space-y-4">
-                        <div class="text-center py-6">
-                            <p class="text-lg font-bold text-gray-800">✨ 완성되었습니다!</p>
-                            <p class="text-sm text-gray-500">원하는 방식으로 저장하세요.</p>
-                        </div>
-                        <button id="downloadBtn" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2"><span>📥</span> 이미지로 저장하기</button>
-                        <button id="resetBtn" class="w-full bg-white text-red-500 border border-red-100 p-3 rounded-xl font-semibold hover:bg-red-50 transition-colors mt-8">🔄 처음부터 다시하기</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-    
-    <!-- 이미지 편집 모달 -->
-    <div id="imageEditModal" class="image-edit-modal">
-        <h2 class="text-white text-xl font-bold mb-4">📸 사진 편집하기</h2>
-        <div id="editCanvasContainer">
-            <canvas id="editCanvas"></canvas>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-symbol" aria-hidden="true">P4U</div>
+        <div class="brand-info">
+          <h1 class="brand-title">PIC4U <span class="brand-subtitle">STUDIO</span></h1>
         </div>
-        
-        <div class="edit-slider-group">
+        <span class="brand-badge">ATELIER</span>
+      </div>
+      <button type="button" id="headerResetBtn" class="btn-secondary-sm" title="모든 작업 초기화" aria-label="처음부터 다시하기">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        <span>초기화</span>
+      </button>
+    </header>
+
+    <!-- Main Studio -->
+    <main class="studio-main">
+      <!-- Left Stage: Interactive Canvas -->
+      <section class="canvas-stage" aria-label="네컷 사진 실시간 미리보기">
+        <div id="canvasContainer" class="canvas-wrapper">
+          <canvas id="photoCanvas"></canvas>
+          <div id="slotOverlayContainer" aria-label="사진 슬롯 인터랙션 오버레이"></div>
+          <div id="mainTextOverlay" class="text-overlay"></div>
+          <div id="subTextOverlay" class="text-overlay"></div>
+        </div>
+
+        <p class="stage-tip">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>사진 슬롯을 탭하여 회전·반전·크롭하거나, 빈 슬롯을 눌러 사진을 채울 수 있습니다.</span>
+        </p>
+
+        <!-- Desktop Download Button (Always accessible directly under canvas) -->
+        <div class="desktop-download-container">
+          <button type="button" id="desktopDownloadBtn" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>고화질 인쇄 저장 / 공유하기</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Panel: 3-Step Controls -->
+      <section class="control-panel" aria-label="디자인 및 편집 제어 패널">
+        <nav class="tab-navigation" role="tablist" aria-label="스튜디오 메뉴">
+          <button type="button" class="tab-btn active" role="tab" id="tab-btn-photo" aria-selected="true" aria-controls="tab-photo" data-tab="tab-photo">
+            <span class="tab-btn-num">01</span>
+            <span class="tab-btn-label">사진 선택</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" id="tab-btn-style" aria-selected="false" aria-controls="tab-style" data-tab="tab-style">
+            <span class="tab-btn-num">02</span>
+            <span class="tab-btn-label">프레임 &amp; 테마</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" id="tab-btn-text" aria-selected="false" aria-controls="tab-text" data-tab="tab-text">
+            <span class="tab-btn-num">03</span>
+            <span class="tab-btn-label">타이포 &amp; 스티커</span>
+          </button>
+        </nav>
+
+        <div class="tab-content-container">
+          <!-- STEP 1: Photo Upload & Management -->
+          <div id="tab-photo" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-photo">
+            <!-- 1-Click Demo Photo Filler -->
+            <button type="button" id="btnLoadDemoPhotos" class="btn-demo-fill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span>스튜디오 무드 사진 4장 불러오기 (원클릭)</span>
+            </button>
+
+            <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="사진 파일 추가하기" style="margin-top: var(--space-3);">
+              <div class="drop-zone-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <p class="drop-zone-text">내 사진 파일 추가하기</p>
+              <p class="drop-zone-hint">이곳을 클릭하거나 사진을 드래그해 올려주세요 (최대 6장)</p>
+            </div>
+            <input type="file" id="imageUpload" multiple accept="image/*" class="sr-only" />
+
             <div>
-                <label class="text-sm font-semibold">🔍 확대/축소: <span id="zoomValue">100</span>%</label>
-                <input type="range" id="zoomSlider" min="50" max="200" value="100">
+              <div class="preview-header">
+                <span id="fileStatus" class="file-status">0 / 6장</span>
+                <button type="button" id="clearImagesBtn" class="btn-clear-all">전체 비우기</button>
+              </div>
+              <div id="imagePreviews" class="preview-grid" aria-label="추가된 사진 목록"></div>
             </div>
-            <div class="mt-4">
-                <label class="text-sm font-semibold">↔️ 좌우 이동: <span id="offsetXValue">0</span>px</label>
-                <input type="range" id="offsetXSlider" min="-100" max="100" value="0">
+          </div>
+
+          <!-- STEP 2: Style, Preset, & Theme -->
+          <div id="tab-style" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-style">
+            <div>
+              <h2 class="section-title">프레임 레이아웃</h2>
+              <div id="layoutButtons" class="choice-grid-3" role="radiogroup" aria-label="레이아웃 선택"></div>
             </div>
-            <div class="mt-4">
-                <label class="text-sm font-semibold">↕️ 상하 이동: <span id="offsetYValue">0</span>px</label>
-                <input type="range" id="offsetYSlider" min="-100" max="100" value="0">
+
+            <div>
+              <h2 class="section-title">마진 &amp; 모서리 프리셋</h2>
+              <div id="presetButtons" class="choice-grid-2" role="radiogroup" aria-label="프레임 스타일 프리셋 선택"></div>
             </div>
-        </div>
-        
-        <div class="edit-controls">
-            <button class="edit-btn" id="editSaveBtn">💾 저장</button>
-            <button class="edit-cancel-btn" id="editCancelBtn">✕ 취소</button>
-        </div>
-    </div>
-    
-    <div id="loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm hidden z-[9999] flex-col justify-center items-center">
-        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 font-semibold text-gray-600 animate-pulse">처리 중입니다...</p>
-    </div>
 
-    <div id="resultModal" class="hidden">
-        <div class="text-white text-center mb-4 space-y-1">
-            <h3 class="text-xl font-bold">이미지가 생성되었습니다!</h3>
-            <p class="text-sm text-gray-300">이미지를 길게 눌러 [사진 앱에 저장] 하세요.</p>
-        </div>
-        <img id="resultImage" alt="Generated Image">
-        <button id="closeModalBtn" class="mt-6 px-6 py-2 bg-white text-black rounded-full font-bold">닫기</button>
-    </div>
+            <div>
+              <h2 class="section-title">포토페이퍼 테마</h2>
+              <div id="themeButtons" class="choice-grid-4" role="radiogroup" aria-label="컬러 테마 선택"></div>
+            </div>
 
-    <div id="toast">알림 메시지</div>
+            <!-- Optional Collapsible Advanced Customization -->
+            <div>
+              <button type="button" id="toggleAdvancedSettings" class="collapsible-header-btn">
+                <span>세부 여백 및 인쇄 커스텀 조절</span>
+                <span>▼</span>
+              </button>
 
-    <script>
-        const MAX_IMAGES = 6;
-        const MAX_IMAGE_SIZE = 2000;
-        
-        const canvas = document.getElementById('photoCanvas');
-        const ctx = canvas.getContext('2d');
-        const editCanvas = document.getElementById('editCanvas');
-        const editCtx = editCanvas.getContext('2d');
-        
-        let imageSlots = [];
-        let selectedSlotIndex = null;
-        let selectedPreviewIndex = null;
-        let isDraggingText = false;
-        let editingImageIndex = null;
-        let editState = { zoom: 100, offsetX: 0, offsetY: 0 };
-        let draggedImageIndex = null;
-        
-        const defaultConfig = {
-            images: [],
-            layout: '1x4',
-            theme: 'modern-matte',
-            backgroundColor: '#f7f7f7',
-            frameColor: '#ffffff',
-            frameMargin: 5,
-            imagePadding: 5,
-            imageCornerRadius: 0,
-            mainText: {
-                content: 'LIFE 4 CUTS', font: 'Noto Sans KR', size: 50,
-                color: '#333333', x: 0.5, y: 0.92,
-                strokeColor: '#ffffff', strokeWidth: 0
-            },
-            subText: {
-                content: getFormattedDate(), font: 'Noto Sans KR', size: 25,
-                color: '#333333', x: 0.5, y: 0.96
-            }
-        };
-        
-        let config = JSON.parse(JSON.stringify(defaultConfig));
-
-        const themes = {
-            'modern-matte': { name: '✨ 모던 매트', bg: '#f7f7f7', frame: '#ffffff', text: '#333333' },
-            'dark-mode': { name: '🌑 다크 모드', bg: '#1a1a1a', frame: '#333333', text: '#eeeeee' },
-            'warm-beige': { name: '🧸 웜 베이지', bg: '#f5f5dc', frame: '#fffaf0', text: '#5d4037' },
-            'cool-blue': { name: '❄️ 쿨 블루', bg: '#e3f2fd', frame: '#ffffff', text: '#1565c0' },
-            'pink-lover': { name: '💖 핑크 러버', bg: '#fce4ec', frame: '#ffffff', text: '#c2185b' },
-            'vintage-film': { name: '🎞️ 빈티지', bg: '#d7ccc8', frame: '#efebe9', text: '#3e2723', filter: 'sepia' },
-            'cherry-blossom': { name: '🌸 벚꽃', bg: '#fff0f5', frame: '#ffb7b2', text: '#d81b60' },
-            'mint-choco': { name: '🌿 민트', bg: '#e0f2f1', frame: '#ffffff', text: '#00695c' }
-        };
-
-        const layouts = [
-            { id: '1x4', label: '세로 4컷' },
-            { id: '2x2', label: '정사각 4컷' },
-            { id: '1+3', label: '큰1 + 작3' },
-            { id: '2x3', label: '세로 6컷' },
-            { id: '3x2', label: '가로 6컷' }
-        ];
-
-        const fonts = [
-            { val: 'Inter', name: 'Inter' },
-            { val: 'Noto Sans KR', name: '본고딕' },
-            { val: 'Jua', name: '주아체' },
-            { val: 'Nanum Pen Script', name: '나눔손글씨' },
-            { val: 'Gothic A1', name: '고딕 A1' },
-            { val: 'Do Hyeon', name: '도현체' },
-            { val: 'Caveat', name: 'Caveat' },
-            { val: 'Permanent Marker', name: '마커체' }
-        ];
-
-        window.onload = async () => {
-            initUI();
-            setupEvents();
-            await document.fonts.ready;
-            resizeCanvas();
-            renderScene(ctx, canvas.width, canvas.height, true);
-        };
-
-        function getFormattedDate() {
-            const d = new Date();
-            return `${d.getFullYear()}. ${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getDate()).padStart(2,'0')}`;
-        }
-
-        function initUI() {
-            const layoutContainer = document.getElementById('layoutButtons');
-            layoutContainer.innerHTML = layouts.map(l => 
-                `<button class="control-btn rounded-lg text-sm font-medium hover:bg-gray-50 bg-white" data-layout="${l.id}">${l.label}</button>`
-            ).join('');
-
-            const themeContainer = document.getElementById('themeButtons');
-            themeContainer.innerHTML = Object.entries(themes).map(([k, v]) => 
-                `<button class="control-btn p-1 rounded-lg hover:shadow-md bg-white" data-theme="${k}" title="${v.name}">
-                    <div class="w-full h-8 rounded mb-1 border" style="background:${v.bg}; border-color:${v.frame === '#ffffff' ? '#eee' : v.frame}"></div>
-                    <span class="text-xs truncate block w-full">${v.name}</span>
-                </button>`
-            ).join('');
-
-            const createFontOptions = () => fonts.map(f => `<option value="${f.val}">${f.name}</option>`).join('');
-            document.getElementById('mainFontSelector').innerHTML = createFontOptions();
-            document.getElementById('subFontSelector').innerHTML = createFontOptions();
-
-            updateUIValues();
-        }
-
-        function setupEvents() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-                    btn.classList.add('active');
-                    document.getElementById(btn.dataset.tab).classList.remove('hidden');
-                });
-            });
-
-            const dropZone = document.getElementById('dropZone');
-            dropZone.addEventListener('click', () => document.getElementById('imageUpload').click());
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('drag-over');
-            });
-            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-                handleImageUpload({ target: { files: e.dataTransfer.files } });
-            });
-            
-            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
-            
-            document.getElementById('layoutButtons').addEventListener('click', e => {
-                const btn = e.target.closest('button');
-                if(btn) { 
-                    config.layout = btn.dataset.layout;
-                    updateUIValues();
-                    renderRequest();
-                }
-            });
-
-            document.getElementById('themeButtons').addEventListener('click', e => {
-                const btn = e.target.closest('button');
-                if(btn) {
-                    const theme = themes[btn.dataset.theme];
-                    config.theme = btn.dataset.theme;
-                    config.backgroundColor = theme.bg;
-                    config.frameColor = theme.frame;
-                    config.mainText.color = theme.text;
-                    config.subText.color = theme.text;
-                    const filter = theme.filter || null;
-                    config.images.forEach(img => img.filter = filter);
-                    document.getElementById('frameColorPicker').value = theme.frame;
-                    document.getElementById('bgColorPicker').value = theme.bg;
-                    updateUIValues();
-                    renderRequest();
-                }
-            });
-
-            document.getElementById('frameColorPicker').addEventListener('input', e => {
-                config.frameColor = e.target.value;
-                document.getElementById('frameColorValue').innerText = e.target.value;
-                renderRequest();
-            });
-
-            document.getElementById('bgColorPicker').addEventListener('input', e => {
-                config.backgroundColor = e.target.value;
-                document.getElementById('bgColorValue').innerText = e.target.value;
-                renderRequest();
-            });
-
-            const inputs = [
-                ['frameMarginSlider', 'frameMargin'], ['imagePaddingSlider', 'imagePadding'],
-                ['imageRadiusSlider', 'imageCornerRadius'], ['mainFontSizeSlider', 'mainText.size'],
-                ['subFontSizeSlider', 'subText.size'], ['mainTextStrokeSlider', 'mainText.strokeWidth']
-            ];
-            
-            inputs.forEach(([id, path]) => {
-                document.getElementById(id).addEventListener('input', (e) => {
-                    const val = parseInt(e.target.value);
-                    setNestedValue(config, path, val);
-                    updateLabel(id, val);
-                    renderRequest();
-                });
-            });
-            
-            const colorInputs = [
-                ['mainFontColorPicker', 'mainText.color'], ['subFontColorPicker', 'subText.color'],
-                ['mainTextStrokeColorPicker', 'mainText.strokeColor']
-            ];
-            colorInputs.forEach(([id, path]) => {
-                document.getElementById(id).addEventListener('input', (e) => {
-                    setNestedValue(config, path, e.target.value);
-                    renderRequest();
-                });
-            });
-
-            document.getElementById('customTextInput').addEventListener('input', e => { config.mainText.content = e.target.value; renderRequest(); });
-            document.getElementById('subTextInput').addEventListener('input', e => { config.subText.content = e.target.value; renderRequest(); });
-            document.getElementById('mainFontSelector').addEventListener('change', e => { config.mainText.font = e.target.value; renderRequest(); });
-            document.getElementById('subFontSelector').addEventListener('change', e => { config.subText.font = e.target.value; renderRequest(); });
-
-            document.getElementById('downloadBtn').addEventListener('click', saveImage);
-            document.getElementById('resetBtn').addEventListener('click', () => {
-                if(confirm('모든 작업이 초기화됩니다.')) location.reload();
-            });
-            document.getElementById('clearImagesBtn').addEventListener('click', () => {
-                config.images = [];
-                renderPreviews();
-                renderRequest();
-            });
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
-                document.getElementById('resultModal').style.display = 'none';
-            });
-
-            // 이미지 편집 이벤트
-            document.getElementById('editSaveBtn').addEventListener('click', saveImageEdit);
-            document.getElementById('editCancelBtn').addEventListener('click', closeImageEdit);
-            document.getElementById('zoomSlider').addEventListener('input', updateEditPreview);
-            document.getElementById('offsetXSlider').addEventListener('input', updateEditPreview);
-            document.getElementById('offsetYSlider').addEventListener('input', updateEditPreview);
-
-            initTextDrag(document.getElementById('mainTextOverlay'), 'mainText');
-            initTextDrag(document.getElementById('subTextOverlay'), 'subText');
-            
-            window.addEventListener('resize', () => {
-                resizeCanvas();
-                renderRequest();
-            });
-        }
-
-        async function handleImageUpload(e) {
-            const files = Array.from(e.target.files).slice(0, MAX_IMAGES - config.images.length);
-            if (files.length === 0) return;
-
-            showLoader(true);
-            
-            for (const file of files) {
-                try {
-                    const compressedDataUrl = await compressImage(file);
-                    const imgObj = await loadImage(compressedDataUrl);
-                    
-                    config.images.push({
-                        id: Date.now() + Math.random(),
-                        image: imgObj,
-                        flipped: false,
-                        rotation: 0,
-                        filter: themes[config.theme].filter || null,
-                        zoom: 100,
-                        offsetX: 0,
-                        offsetY: 0
-                    });
-                } catch (err) {
-                    console.error("이미지 로드 실패:", err);
-                }
-            }
-            
-            renderPreviews();
-            renderRequest();
-            showLoader(false);
-            e.target.value = '';
-        }
-
-        function compressImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        let w = img.width, h = img.height;
-                        if (w > MAX_IMAGE_SIZE || h > MAX_IMAGE_SIZE) {
-                            if (w > h) { h = Math.round(h * (MAX_IMAGE_SIZE / w)); w = MAX_IMAGE_SIZE; }
-                            else { w = Math.round(w * (MAX_IMAGE_SIZE / h)); h = MAX_IMAGE_SIZE; }
-                        }
-                        const c = document.createElement('canvas');
-                        c.width = w; c.height = h;
-                        const ctx = c.getContext('2d');
-                        ctx.drawImage(img, 0, 0, w, h);
-                        resolve(c.toDataURL('image/jpeg', 0.9));
-                    };
-                };
-            });
-        }
-
-        function loadImage(src) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = src;
-            });
-        }
-
-        function calculateLayoutSlots(layout, W, H, margin, padding) {
-            const fw = W - margin * 2;
-            const fh = H - margin * 2;
-            const fx = margin;
-            const fy = margin;
-            const slots = [];
-            const addSlot = (idx, x, y, w, h) => slots.push({index: idx, x, y, w, h});
-
-            switch(layout) {
-                case '1x4':
-                    const h1 = (fh - padding * 3) / 4;
-                    for(let i=0; i<4; i++) addSlot(i, fx, fy + i*(h1+padding), fw, h1);
-                    break;
-                case '2x2':
-                    const w2 = (fw - padding) / 2;
-                    const h2 = (fh - padding) / 2;
-                    addSlot(0, fx, fy, w2, h2);
-                    addSlot(1, fx + w2 + padding, fy, w2, h2);
-                    addSlot(2, fx, fy + h2 + padding, w2, h2);
-                    addSlot(3, fx + w2 + padding, fy + h2 + padding, w2, h2);
-                    break;
-                case '1+3':
-                    const bigH = fh * 0.6;
-                    const smallH = fh - bigH - padding;
-                    const smallW = (fw - padding * 2) / 3;
-                    addSlot(0, fx, fy, fw, bigH);
-                    for(let i=0; i<3; i++) addSlot(i+1, fx + i*(smallW+padding), fy + bigH + padding, smallW, smallH);
-                    break;
-                case '2x3':
-                    const w23 = (fw - padding) / 2;
-                    const h23 = (fh - padding * 2) / 3;
-                    for(let i=0; i<6; i++) {
-                        const r = Math.floor(i/2), c = i%2;
-                        addSlot(i, fx + c*(w23+padding), fy + r*(h23+padding), w23, h23);
-                    }
-                    break;
-                case '3x2':
-                    const w32 = (fw - padding * 2) / 3;
-                    const h32 = (fh - padding) / 2;
-                    for(let i=0; i<6; i++) {
-                        const r = Math.floor(i/3), c = i%3;
-                        addSlot(i, fx + c*(w32+padding), fy + r*(h32+padding), w32, h32);
-                    }
-                    break;
-            }
-            return slots;
-        }
-
-        function renderScene(targetCtx, W, H, isScreenRender) {
-            targetCtx.fillStyle = config.backgroundColor;
-            targetCtx.fillRect(0, 0, W, H);
-
-            const marginPx = W * (config.frameMargin / 100);
-            const paddingPx = (W - marginPx * 2) * (config.imagePadding / 100);
-            
-            targetCtx.fillStyle = config.frameColor;
-            targetCtx.fillRect(marginPx, marginPx, W - marginPx*2, H - marginPx*2);
-
-            const slots = calculateLayoutSlots(config.layout, W, H, marginPx, paddingPx);
-            if (isScreenRender) imageSlots = slots;
-
-            slots.forEach(slot => {
-                const imgData = config.images[slot.index];
-                
-                targetCtx.save();
-                drawRoundedPath(targetCtx, slot.x, slot.y, slot.w, slot.h, config.imageCornerRadius);
-                targetCtx.clip();
-
-                if (imgData) {
-                    const { image, flipped, rotation, filter, zoom, offsetX, offsetY } = imgData;
-                    const imgRatio = image.width / image.height;
-                    const slotRatio = slot.w / slot.h;
-                    let drawW, drawH, offsetXImg, offsetYImg;
-                    
-                    if (imgRatio > slotRatio) {
-                        drawH = slot.h; drawW = slot.h * imgRatio;
-                        offsetXImg = (slot.w - drawW) / 2; offsetYImg = 0;
-                    } else {
-                        drawW = slot.w; drawH = slot.w / imgRatio;
-                        offsetXImg = 0; offsetYImg = (slot.h - drawH) / 2;
-                    }
-
-                    // 확대/축소 및 이동 적용
-                    const zoomFactor = zoom / 100;
-                    drawW *= zoomFactor;
-                    drawH *= zoomFactor;
-                    offsetXImg += offsetX;
-                    offsetYImg += offsetY;
-
-                    targetCtx.translate(slot.x + slot.w/2, slot.y + slot.h/2);
-                    if (flipped) targetCtx.scale(-1, 1);
-                    targetCtx.rotate(rotation * Math.PI / 180);
-                    
-                    if (filter === 'sepia') targetCtx.filter = 'sepia(1)';
-                    
-                    targetCtx.drawImage(image, offsetXImg - drawW/2, offsetYImg - drawH/2, drawW, drawH);
-                } else {
-                    targetCtx.fillStyle = '#eee';
-                    targetCtx.fillRect(slot.x, slot.y, slot.w, slot.h);
-                    targetCtx.fillStyle = '#ccc';
-                    targetCtx.font = `bold ${W * 0.05}px sans-serif`;
-                    targetCtx.textAlign = 'center';
-                    targetCtx.textBaseline = 'middle';
-                    targetCtx.fillText('+', slot.x + slot.w/2, slot.y + slot.h/2);
-                }
-                targetCtx.restore();
-
-                if(isScreenRender && selectedSlotIndex === slot.index) {
-                    targetCtx.strokeStyle = '#3b82f6';
-                    targetCtx.lineWidth = 6;
-                    drawRoundedPath(targetCtx, slot.x, slot.y, slot.w, slot.h, config.imageCornerRadius);
-                    targetCtx.stroke();
-                    
-                    targetCtx.fillStyle = '#3b82f6';
-                    targetCtx.beginPath();
-                    targetCtx.arc(slot.x + slot.w - 20, slot.y + 20, 15, 0, Math.PI*2);
-                    targetCtx.fill();
-                    targetCtx.fillStyle = '#fff';
-                    targetCtx.font = 'bold 16px sans-serif';
-                    targetCtx.textAlign = 'center';
-                    targetCtx.textBaseline = 'middle';
-                    targetCtx.fillText('✓', slot.x + slot.w - 20, slot.y + 20);
-                }
-            });
-
-            if (!isScreenRender) {
-                drawText(targetCtx, config.mainText, W, H);
-                drawText(targetCtx, config.subText, W, H);
-            } else {
-                updateTextOverlayDOM(W, H);
-                updateSlotOverlays();
-            }
-        }
-
-        function drawText(ctx, textConfig, W, H) {
-            if (!textConfig.content) return;
-            const x = W * textConfig.x;
-            const y = H * textConfig.y;
-            ctx.save();
-            ctx.font = `bold ${textConfig.size * (W / canvas.width)}px "${textConfig.font}"`; 
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            if (textConfig.strokeWidth > 0) {
-                ctx.strokeStyle = textConfig.strokeColor;
-                ctx.lineWidth = textConfig.strokeWidth * 2;
-                ctx.strokeText(textConfig.content, x, y);
-            }
-            ctx.fillStyle = textConfig.color;
-            ctx.fillText(textConfig.content, x, y);
-            ctx.restore();
-        }
-
-        function drawRoundedPath(ctx, x, y, w, h, r) {
-            ctx.beginPath();
-            if (r > w/2) r = w/2;
-            if (r > h/2) r = h/2;
-            ctx.moveTo(x + r, y);
-            ctx.arcTo(x + w, y, x + w, y + h, r);
-            ctx.arcTo(x + w, y + h, x, y + h, r);
-            ctx.arcTo(x, y + h, x, y, r);
-            ctx.arcTo(x, y, x + w, y, r);
-            ctx.closePath();
-        }
-
-        function resizeCanvas() {
-            const container = document.getElementById('canvasContainer');
-            const width = container.clientWidth;
-            let aspect = 1.5;
-            if (config.layout === '1x4') aspect = 3;
-            else if (config.layout === '2x3') aspect = 1.6;
-            else if (config.layout === '1+3') aspect = 1.8;
-            
-            const height = width * aspect;
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
-            ctx.scale(dpr, dpr);
-            container.style.height = `${height}px`;
-            renderRequest();
-        }
-
-        function renderRequest() {
-            requestAnimationFrame(() => renderScene(ctx, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1), true));
-        }
-
-        function updateTextOverlayDOM(W, H) {
-            const update = (el, conf) => {
-                if(!conf.content) { el.style.opacity = 0; return; }
-                if(!el.classList.contains('dragging')) {
-                    el.style.left = (conf.x * 100) + '%';
-                    el.style.top = (conf.y * 100) + '%';
-                }
-                el.innerText = conf.content;
-                el.style.fontFamily = conf.font;
-                el.style.fontSize = conf.size + 'px';
-                el.style.color = conf.color;
-                el.style.fontWeight = 'bold';
-                
-                if (conf.strokeWidth > 0) {
-                    const c = conf.strokeColor;
-                    const w = conf.strokeWidth;
-                    el.style.textShadow = `-${w}px -${w}px 0 ${c}, ${w}px -${w}px 0 ${c}, -${w}px ${w}px 0 ${c}, ${w}px ${w}px 0 ${c}`;
-                } else {
-                    el.style.textShadow = 'none';
-                }
-                if(!el.classList.contains('dragging')) el.style.opacity = 1;
-            };
-            update(document.getElementById('mainTextOverlay'), config.mainText);
-            update(document.getElementById('subTextOverlay'), config.subText);
-        }
-        
-        function updateSlotOverlays() {
-            const container = document.getElementById('slotOverlayContainer');
-            container.innerHTML = '';
-            
-            imageSlots.forEach(slot => {
-                const div = document.createElement('div');
-                div.className = 'slot-overlay';
-                if (selectedSlotIndex === slot.index) div.classList.add('selected');
-                div.style.left = slot.x + 'px';
-                div.style.top = slot.y + 'px';
-                div.style.width = slot.w + 'px';
-                div.style.height = slot.h + 'px';
-                div.dataset.index = slot.index;
-                div.addEventListener('click', () => handleSlotClick(slot.index));
-                container.appendChild(div);
-            });
-        }
-
-        function handleSlotClick(index) {
-            if (selectedPreviewIndex !== null) {
-                if (index < config.images.length) {
-                    [config.images[index], config.images[selectedPreviewIndex]] = 
-                    [config.images[selectedPreviewIndex], config.images[index]];
-                }
-                selectedPreviewIndex = null;
-                showToast("사진이 교체되었습니다!");
-                renderPreviews();
-                renderRequest();
-                return;
-            }
-            
-            if (selectedSlotIndex === null) {
-                selectedSlotIndex = index;
-                showToast("바꿀 위치의 사진을 선택하세요");
-            } else if (selectedSlotIndex === index) {
-                selectedSlotIndex = null;
-            } else {
-                if (config.images[selectedSlotIndex] || config.images[index]) {
-                    const temp = config.images[selectedSlotIndex];
-                    config.images[selectedSlotIndex] = config.images[index];
-                    config.images[index] = temp;
-                    
-                    showToast("사진 순서가 변경되었습니다! 🔄");
-                    selectedSlotIndex = null;
-                    renderPreviews();
-                }
-            }
-            renderRequest();
-        }
-
-        function renderPreviews() {
-            const container = document.getElementById('imagePreviews');
-            container.innerHTML = config.images.map((img, idx) => {
-                if(!img) return '';
-                return `
-                <div class="preview-item relative aspect-square group ${selectedPreviewIndex === idx ? 'ring-2 ring-blue-500' : ''}" onclick="selectPreview(${idx})" draggable="true">
-                    <img src="${img.image.src}" class="w-full h-full object-cover rounded-lg bg-white shadow-sm">
-                    <button onclick="removeImage(event, ${idx})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">×</button>
-                    <div class="absolute bottom-0 left-0 right-0 bg-black/50 p-1 flex justify-center gap-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button onclick="editImage(event, ${idx})" class="text-white text-xs" title="편집">✏️</button>
-                         <button onclick="rotateImage(event, ${idx})" class="text-white text-xs">↻</button>
-                         <button onclick="flipImage(event, ${idx})" class="text-white text-xs">↔</button>
-                    </div>
+              <div id="advancedSettingsSection" class="control-card hidden" style="margin-top: var(--space-3);">
+                <div class="color-item">
+                  <div class="color-input-wrapper">
+                    <input type="color" id="frameColorPicker" aria-label="프레임 색상 선택" />
+                  </div>
+                  <div class="color-meta">
+                    <div class="color-name">프레임 색상</div>
+                    <div id="frameColorValue" class="color-hex">#27272a</div>
+                  </div>
                 </div>
-            `}).join('');
-            
-            config.images = config.images.filter(x => x !== undefined);
-            
-            document.getElementById('fileStatus').innerText = `${config.images.length} / ${MAX_IMAGES}장`;
-        }
-        
-        window.selectPreview = (idx) => {
-            selectedPreviewIndex = (selectedPreviewIndex === idx) ? null : idx;
-            selectedSlotIndex = null;
-            renderPreviews();
-            renderRequest();
-        };
 
-        window.editImage = (e, idx) => {
-            e.stopPropagation();
-            editingImageIndex = idx;
-            editState = { 
-                zoom: config.images[idx].zoom || 100, 
-                offsetX: config.images[idx].offsetX || 0,
-                offsetY: config.images[idx].offsetY || 0
-            };
-            document.getElementById('zoomSlider').value = editState.zoom;
-            document.getElementById('offsetXSlider').value = editState.offsetX;
-            document.getElementById('offsetYSlider').value = editState.offsetY;
-            updateEditPreview();
-            document.getElementById('imageEditModal').classList.add('active');
-        };
+                <div class="color-item">
+                  <div class="color-input-wrapper">
+                    <input type="color" id="bgColorPicker" aria-label="배경 색상 선택" />
+                  </div>
+                  <div class="color-meta">
+                    <div class="color-name">배경 색상</div>
+                    <div id="bgColorValue" class="color-hex">#18181b</div>
+                  </div>
+                </div>
 
-        window.removeImage = (e, idx) => { e.stopPropagation(); config.images.splice(idx, 1); renderPreviews(); renderRequest(); };
-        window.rotateImage = (e, idx) => { e.stopPropagation(); config.images[idx].rotation = (config.images[idx].rotation + 90) % 360; renderRequest(); };
-        window.flipImage = (e, idx) => { e.stopPropagation(); config.images[idx].flipped = !config.images[idx].flipped; renderRequest(); };
+                <div class="slider-field">
+                  <div class="slider-header">
+                    <span>바깥 여백</span>
+                    <span id="frameMarginValue" class="slider-value">4%</span>
+                  </div>
+                  <input type="range" id="frameMarginSlider" min="0" max="20" value="4" aria-label="프레임 바깥 여백" />
+                </div>
 
-        function updateEditPreview() {
-            const zoom = parseInt(document.getElementById('zoomSlider').value);
-            const offsetX = parseInt(document.getElementById('offsetXSlider').value);
-            const offsetY = parseInt(document.getElementById('offsetYSlider').value);
-            
-            document.getElementById('zoomValue').innerText = zoom;
-            document.getElementById('offsetXValue').innerText = offsetX;
-            document.getElementById('offsetYValue').innerText = offsetY;
-            
-            editState = { zoom, offsetX, offsetY };
-            
-            if (editingImageIndex !== null) {
-                const img = config.images[editingImageIndex].image;
-                const w = editCanvas.width;
-                const h = editCanvas.height;
-                
-                editCtx.fillStyle = '#000';
-                editCtx.fillRect(0, 0, w, h);
-                
-                const imgRatio = img.width / img.height;
-                const containerRatio = w / h;
-                
-                let drawW, drawH, x, y;
-                if (imgRatio > containerRatio) {
-                    drawH = h;
-                    drawW = h * imgRatio;
-                } else {
-                    drawW = w;
-                    drawH = w / imgRatio;
-                }
-                
-                drawW = drawW * (zoom / 100);
-                drawH = drawH * (zoom / 100);
-                
-                x = (w - drawW) / 2 + offsetX;
-                y = (h - drawH) / 2 + offsetY;
-                
-                editCtx.drawImage(img, x, y, drawW, drawH);
-            }
-        }
+                <div class="slider-field">
+                  <div class="slider-header">
+                    <span>사진 간격</span>
+                    <span id="imagePaddingValue" class="slider-value">3%</span>
+                  </div>
+                  <input type="range" id="imagePaddingSlider" min="0" max="20" value="3" aria-label="사진 간격" />
+                </div>
 
-        function saveImageEdit() {
-            if (editingImageIndex !== null) {
-                config.images[editingImageIndex].zoom = editState.zoom;
-                config.images[editingImageIndex].offsetX = editState.offsetX;
-                config.images[editingImageIndex].offsetY = editState.offsetY;
-                showToast("사진이 저장되었습니다!");
-                closeImageEdit();
-                renderRequest();
-            }
-        }
+                <div class="slider-field">
+                  <div class="slider-header">
+                    <span>둥근 모서리</span>
+                    <span id="imageRadiusValue" class="slider-value">4px</span>
+                  </div>
+                  <input type="range" id="imageRadiusSlider" min="0" max="50" value="4" aria-label="사진 둥근 모서리" />
+                </div>
+              </div>
+            </div>
+          </div>
 
-        function closeImageEdit() {
-            document.getElementById('imageEditModal').classList.remove('active');
-            editingImageIndex = null;
-        }
+          <!-- STEP 3: Text & Stickers Customization -->
+          <div id="tab-text" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-text">
+            <!-- Stickers Palette -->
+            <div class="control-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="section-title" style="margin-bottom: 0;">아카이브 스탬프 &amp; 스티커</h2>
+                <button type="button" id="btnClearStickers" class="btn-clear-all">스티커 지우기</button>
+              </div>
+              <p style="font-size: 11px; color: var(--color-text-muted);">스티커를 누르면 캔버스에 배치되며, 자유롭게 드래그해 옮길 수 있습니다.</p>
+              <div id="stickerPalette" class="sticker-palette-grid"></div>
+            </div>
 
-        function initTextDrag(el, configKey) {
-            let startX, startY;
-            const onDown = (e) => {
-                e.preventDefault();
-                isDraggingText = true;
-                el.classList.add('dragging');
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                startX = clientX; startY = clientY;
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('touchmove', onMove, { passive: false });
-                document.addEventListener('mouseup', onUp);
-                document.addEventListener('touchend', onUp);
-            };
-            const onMove = (e) => {
-                if (!isDraggingText) return;
-                e.preventDefault();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const container = document.getElementById('canvasContainer');
-                const rect = container.getBoundingClientRect();
-                let newX = (clientX - rect.left) / rect.width;
-                let newY = (clientY - rect.top) / rect.height;
-                newX = Math.max(0.05, Math.min(0.95, newX));
-                newY = Math.max(0.05, Math.min(0.95, newY));
-                config[configKey].x = newX;
-                config[configKey].y = newY;
-                el.style.left = (newX * 100) + '%';
-                el.style.top = (newY * 100) + '%';
-            };
-            const onUp = () => {
-                isDraggingText = false;
-                el.classList.remove('dragging');
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('touchmove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                document.removeEventListener('touchend', onUp);
-                renderRequest();
-            };
-            el.addEventListener('mousedown', onDown);
-            el.addEventListener('touchstart', onDown, { passive: false });
-        }
+            <!-- Text Setting -->
+            <div class="control-card">
+              <h2 class="section-title">메인 타이틀 각인</h2>
+              <input type="text" id="customTextInput" class="input-text" placeholder="예: PIC4U STUDIO, OUR MOMENT" aria-label="메인 타이틀 텍스트" />
 
-        async function saveImage() {
-            if (config.images.length === 0) {
-                showToast('사진을 먼저 추가해주세요!');
-                return;
-            }
-            showLoader(true);
-            const exportWidth = 1200;
-            let aspect = 1.5;
-            if (config.layout === '1x4') aspect = 3;
-            else if (config.layout === '2x3') aspect = 1.6;
-            else if (config.layout === '1+3') aspect = 1.8;
-            
-            const exportHeight = exportWidth * aspect;
-            const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = exportWidth;
-            exportCanvas.height = exportHeight;
-            const exportCtx = exportCanvas.getContext('2d');
-            renderScene(exportCtx, exportWidth, exportHeight, false);
-            
-            try {
-                const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
-                const file = new File([blob], `framediary_${Date.now()}.png`, { type: 'image/png' });
-                
-                // 파일 공유 API 지원 여부 확인
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ files: [file], title: 'Frame Diary Pro', text: '나만의 네컷 사진' });
-                        showLoader(false);
-                        showToast('✅ 사진이 성공적으로 공유되었습니다!');
-                        return;
-                    } catch (e) { 
-                        if (e.name !== 'AbortError') {
-                            console.log('Share failed');
-                        }
-                    }
-                }
-                
-                // 다운로드 방식으로 저장
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `framediary_${Date.now()}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showLoader(false);
-                showToast('✅ 사진이 성공적으로 저장되었습니다!');
-            } catch (err) {
-                console.error('Save error:', err);
-                showLoader(false);
-                
-                // 폴백: 모달에 이미지 표시
-                const url = exportCanvas.toDataURL('image/png');
-                const modal = document.getElementById('resultModal');
-                const img = document.getElementById('resultImage');
-                img.src = url;
-                modal.style.display = 'flex';
-                showToast('⚠️ 다른 방식으로 저장 옵션이 열렸습니다.');
-            }
-        }
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); align-items: center;">
+                <select id="mainFontSelector" class="select-font" aria-label="폰트 선택"></select>
+                <div class="color-input-wrapper" style="width: 38px; height: 38px;">
+                  <input type="color" id="mainFontColorPicker" aria-label="메인 텍스트 색상" />
+                </div>
+              </div>
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
-        }
+              <div>
+                <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 6px;">글자 크기</span>
+                <div class="segmented-control">
+                  <button type="button" class="segmented-btn btn-text-size" data-size="32">작게 (32px)</button>
+                  <button type="button" class="segmented-btn btn-text-size active" data-size="44">보통 (44px)</button>
+                  <button type="button" class="segmented-btn btn-text-size" data-size="58">크게 (58px)</button>
+                </div>
+              </div>
 
-        function setNestedValue(obj, path, value) {
-            const keys = path.split('.');
-            let current = obj;
-            for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]];
-            current[keys[keys.length - 1]] = value;
-        }
+              <div>
+                <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 6px;">글자 스타일</span>
+                <div class="segmented-control">
+                  <button type="button" class="segmented-btn btn-text-effect active" data-effect="none">심플</button>
+                  <button type="button" class="segmented-btn btn-text-effect" data-effect="soft-shadow">소프트 섀도우</button>
+                  <button type="button" class="segmented-btn btn-text-effect" data-effect="sticker-outline">외곽선 아웃라인</button>
+                </div>
+              </div>
+            </div>
 
-        function updateUIValues() {
-            updateActiveState('layoutButtons', 'data-layout', config.layout);
-            updateActiveState('themeButtons', 'data-theme', config.theme);
-            document.getElementById('frameMarginSlider').value = config.frameMargin;
-            updateLabel('frameMarginSlider', config.frameMargin);
-            document.getElementById('frameColorPicker').value = config.frameColor;
-            document.getElementById('bgColorPicker').value = config.backgroundColor;
-            document.getElementById('frameColorValue').innerText = config.frameColor;
-            document.getElementById('bgColorValue').innerText = config.backgroundColor;
-            document.getElementById('customTextInput').value = config.mainText.content;
-            document.getElementById('subTextInput').value = config.subText.content;
-        }
+            <div class="control-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="section-title" style="margin-bottom: 0;">날짜 및 서브 타이포</h2>
+                <button type="button" id="btnAutoDate" class="btn-secondary-sm">오늘 날짜 자동 입력</button>
+              </div>
+              <input type="text" id="subTextInput" class="input-text" placeholder="예: 2026. 09. 16 또는 PIC4U ARCHIVE" aria-label="서브 텍스트" />
 
-        function updateActiveState(parentId, dataAttr, value) {
-            document.getElementById(parentId).querySelectorAll('.control-btn').forEach(btn => {
-                if(btn.getAttribute(dataAttr) === value) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-        }
+              <div class="color-item" style="margin-top: 4px;">
+                <div class="color-input-wrapper" style="width: 34px; height: 34px;">
+                  <input type="color" id="subFontColorPicker" aria-label="날짜 텍스트 색상" />
+                </div>
+                <div class="color-meta">
+                  <span style="font-size: 11px; color: var(--color-text-muted);">날짜 글자 색상</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
-        function updateLabel(inputId, val) {
-            const labelId = inputId.replace('Slider', 'Value');
-            const el = document.getElementById(labelId);
-            if(el) el.innerText = inputId.includes('Radius') || inputId.includes('Size') || inputId.includes('Stroke') ? val + 'px' : val + '%';
-        }
+  <!-- Mobile Sticky Action Bar (Always accessible on phones) -->
+  <div class="mobile-action-bar">
+    <button type="button" id="mobileDownloadBtn" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>고화질 인쇄 저장 / 공유하기</span>
+    </button>
+  </div>
 
-        function showLoader(show) { 
-            document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
-        }
-    </script>
+  <!-- Image Detail Edit Modal -->
+  <div id="imageEditModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-dialog">
+      <h2 id="editModalTitle" class="modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>사진 구도 및 상세 조절</span>
+      </h2>
+
+      <div id="editCanvasContainer">
+        <canvas id="editCanvas"></canvas>
+      </div>
+      <p class="edit-gesture-hint">캔버스를 직접 터치하거나 드래그하여 구도를 조절하세요.</p>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: var(--space-3);">
+        <div class="slider-field">
+          <div class="slider-header" style="color: #cbd5e1;">
+            <span>확대 / 축소 (Zoom)</span>
+            <span class="slider-value" style="color: #60a5fa;"><span id="zoomValue">100</span>%</span>
+          </div>
+          <input type="range" id="zoomSlider" min="50" max="200" value="100" aria-label="확대 축소 배율" />
+        </div>
+
+        <div class="slider-field">
+          <div class="slider-header" style="color: #cbd5e1;">
+            <span>가로 위치 (X)</span>
+            <span class="slider-value" style="color: #60a5fa;"><span id="offsetXValue">0</span>px</span>
+          </div>
+          <input type="range" id="offsetXSlider" min="-150" max="150" value="0" aria-label="좌우 이동" />
+        </div>
+
+        <div class="slider-field">
+          <div class="slider-header" style="color: #cbd5e1;">
+            <span>세로 위치 (Y)</span>
+            <span class="slider-value" style="color: #60a5fa;"><span id="offsetYValue">0</span>px</span>
+          </div>
+          <input type="range" id="offsetYSlider" min="-150" max="150" value="0" aria-label="상하 이동" />
+        </div>
+      </div>
+
+      <div class="modal-actions-grid">
+        <button type="button" id="editSaveBtn" class="btn-modal-save">적용 완료</button>
+        <button type="button" id="editCancelBtn" class="btn-modal-cancel">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Fallback Result Modal -->
+  <div id="resultModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resultModalTitle">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div style="text-align: center;">
+        <h2 id="resultModalTitle" class="modal-title" style="justify-content: center;">사진 인쇄 완료</h2>
+        <p style="font-size: var(--font-size-xs); color: #94a3b8; margin-top: 4px;">모바일 환경에서는 이미지를 길게 눌러 [사진 앱에 저장] 하실 수 있습니다.</p>
+      </div>
+      <img id="resultImage" alt="완성된 네컷 사진" />
+      <button type="button" id="closeModalBtn" class="btn-secondary-sm" style="margin-top: var(--space-3); width: 100%; padding: 10px;">닫기</button>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite">알림 메시지</div>
+
+  <div id="loader" role="dialog" aria-modal="true" aria-label="로딩 중">
+    <div class="spinner"></div>
+    <p class="loader-text">처리 중입니다...</p>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

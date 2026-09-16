@@ -1,0 +1,87 @@
+:root {
+  /* Atelier Monochrome & Warm Studio Palette */
+  --color-primary: #141416;
+  --color-primary-hover: #232326;
+  --color-primary-light: #f4f4f2;
+  --color-primary-border: #141416;
+
+  --color-danger: #e11d48;
+  --color-danger-hover: #be123c;
+  --color-danger-light: #fff1f2;
+
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+
+  --color-bg-app: #f6f6f4;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #f0f0ed;
+  --color-bg-muted: #e4e4e0;
+
+  --color-text-main: #141416;
+  --color-text-muted: #666663;
+  --color-text-subtle: #9a9a95;
+  --color-text-inverse: #ffffff;
+
+  --color-border-subtle: rgba(20, 20, 22, 0.06);
+  --color-border-default: rgba(20, 20, 22, 0.11);
+  --color-border-strong: rgba(20, 20, 22, 0.22);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Pretendard', 'Noto Sans KR', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --font-size-2xs: 0.6875rem; /* 11px */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.84375rem; /* 13.5px */
+  --font-size-base: 0.9375rem;/* 15px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Spacing */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+
+  /* Border Radius */
+  --radius-xs: 0.25rem;  /* 4px */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.5rem;   /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-2xl: 1.25rem; /* 20px */
+  --radius-full: 9999px;
+
+  /* Authentic Multi-Layered Studio Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(20, 20, 22, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(20, 20, 22, 0.06), 0 2px 4px -1px rgba(20, 20, 22, 0.03);
+  --shadow-lg: 0 12px 24px -4px rgba(20, 20, 22, 0.08), 0 4px 8px -2px rgba(20, 20, 22, 0.04);
+  --shadow-photopaper: 0 24px 54px -14px rgba(20, 20, 22, 0.16), 0 8px 18px -4px rgba(20, 20, 22, 0.08), 0 0 0 1px rgba(20, 20, 22, 0.06);
+  --shadow-dialog: 0 30px 60px -15px rgba(20, 20, 22, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  /* Animation & Transitions */
+  --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 320ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Z-Index Hierarchy */
+  --z-base: 1;
+  --z-overlay: 10;
+  --z-sticky: 40;
+  --z-modal: 100;
+  --z-toast: 200;
+  --z-loader: 999;
+}
