@@ -213,22 +213,31 @@ export class TabControl {
     const paddingSlider = $<HTMLInputElement>('#imagePaddingSlider');
     const radiusSlider = $<HTMLInputElement>('#imageRadiusSlider');
 
+    let sliderRaf: number | null = null;
+    const throttleSlider = (callback: () => void) => {
+      if (sliderRaf) cancelAnimationFrame(sliderRaf);
+      sliderRaf = requestAnimationFrame(() => {
+        callback();
+        sliderRaf = null;
+      });
+    };
+
     marginSlider.addEventListener('input', () => {
       const val = parseInt(marginSlider.value, 10);
-      store.setFrameMargin(val);
       $<HTMLElement>('#frameMarginValue').textContent = `${val}%`;
+      throttleSlider(() => store.setFrameMargin(val));
     });
 
     paddingSlider.addEventListener('input', () => {
       const val = parseInt(paddingSlider.value, 10);
-      store.setImagePadding(val);
       $<HTMLElement>('#imagePaddingValue').textContent = `${val}%`;
+      throttleSlider(() => store.setImagePadding(val));
     });
 
     radiusSlider.addEventListener('input', () => {
       const val = parseInt(radiusSlider.value, 10);
-      store.setImageCornerRadius(val);
       $<HTMLElement>('#imageRadiusValue').textContent = `${val}px`;
+      throttleSlider(() => store.setImageCornerRadius(val));
     });
 
     // Toggle advanced slider section

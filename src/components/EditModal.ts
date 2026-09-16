@@ -197,18 +197,30 @@ export class EditModal {
     this.ctx.fillRect(0, 0, w, h);
 
     const { image, flipped, rotation, filter } = imgData;
+    const isRotated90 = rotation === 90 || rotation === 270;
     const imgRatio = image.width / image.height;
     const containerRatio = w / h;
 
     let baseW: number;
     let baseH: number;
 
-    if (imgRatio > containerRatio) {
-      baseH = h;
-      baseW = h * imgRatio;
+    if (isRotated90) {
+      const effectiveAspect = 1 / imgRatio;
+      if (effectiveAspect > containerRatio) {
+        baseW = h;
+        baseH = h * effectiveAspect;
+      } else {
+        baseH = w;
+        baseW = w * imgRatio;
+      }
     } else {
-      baseW = w;
-      baseH = w / imgRatio;
+      if (imgRatio > containerRatio) {
+        baseH = h;
+        baseW = h * imgRatio;
+      } else {
+        baseW = w;
+        baseH = w / imgRatio;
+      }
     }
 
     const zoomFactor = this.zoom / 100;

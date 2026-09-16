@@ -10,6 +10,32 @@ export interface RenderOptions {
   baseScreenWidth?: number;
 }
 
+// Pre-rendered layer caches for 60fps silky smooth rendering
+interface CachedLayer {
+  key: string;
+  canvas: HTMLCanvasElement;
+}
+
+let bgCache: CachedLayer | null = null;
+let decorCache: CachedLayer | null = null;
+
+export function clearLayerCache() {
+  bgCache = null;
+  decorCache = null;
+}
+
+function createOffscreenCanvas(w: number, h: number): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(w);
+    canvas.height = Math.round(h);
+    return canvas;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Draws rounded rectangle path on canvas
  */
@@ -48,84 +74,47 @@ export function renderScene(
   config: FrameConfig,
   options: RenderOptions = {}
 ): LayoutSlot[] {
-  const { isExport = false, selectedSlotIndex = null, baseScreenWidth = 400 } = options;
+  const { isExport = false, selectedSlotIndex = null, baseScreenWidth = 330 } = options;
   const scale = width / baseScreenWidth;
 
-  // 1. Fill entire background
-  ctx.fillStyle = config.backgroundColor;
-  ctx.fillRect(0, 0, width, height);
+  // 1. Draw photopaper card background with offscreen layer cache
+  const bgKey = `${config.theme}_${config.frameColor}_${width}_${height}_${scale.toFixed(3)}`;
+  if (!bgCache || bgCache.key !== bgKey) {
+    const offscreen = createOffscreenCanvas(width, height);
+    const bgCtx = offscreen ? offscreen.getContext('2d') : null;
+    const targetCtx = bgCtx || ctx;
 
-  // 2. Compute margin & padding in px
-  const marginPx = (width * config.frameMargin) / 100;
-  const paddingPx = ((width - marginPx * 2) * config.imagePadding) / 100;
-
-  // 3. Draw outer photo frame card
-  const frameW = width - marginPx * 2;
-  const frameH = height - marginPx * 2;
-  const frameRadius = Math.max(4, config.imageCornerRadius * 1.5);
-
-  if (config.theme === 'botanical-eucalyptus') {
-    ctx.save();
-    if (!isExport) {
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-      ctx.shadowBlur = 16;
-      ctx.shadowOffsetY = 6;
-    }
-    ctx.fillStyle = '#f9f9f5';
-    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
-    ctx.fill();
-    ctx.clip();
-    drawWatercolorPaperTexture(ctx, marginPx, marginPx, frameW, frameH, scale);
-    ctx.restore();
-  } else if (config.theme === 'romantic-rose') {
-    ctx.save();
-    if (!isExport) {
-      ctx.shadowColor = 'rgba(180, 50, 70, 0.16)';
-      ctx.shadowBlur = 16;
-      ctx.shadowOffsetY = 6;
-    }
-    ctx.fillStyle = '#fcebee';
-    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
-    ctx.fill();
-    ctx.clip();
-    drawRoseBackground(ctx, marginPx, marginPx, frameW, frameH, scale);
-    ctx.restore();
-  } else if (config.theme === 'sky-cloud') {
-    ctx.save();
-    if (!isExport) {
-      ctx.shadowColor = 'rgba(30, 80, 140, 0.18)';
-      ctx.shadowBlur = 16;
-      ctx.shadowOffsetY = 6;
-    }
-    ctx.fillStyle = '#4ba0e3';
-    drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
-    ctx.fill();
-    ctx.clip();
-    drawSkyBackground(ctx, marginPx, marginPx, frameW, frameH, scale);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = config.frameColor;
-    if (!isExport) {
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.06)';
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetY = 4;
-      drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
-      ctx.fill();
-      ctx.restore();
+    if (config.theme === 'botanical-eucalyptus') {
+      drawWatercolorPaperTexture(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'romantic-rose') {
+      drawRoseBackground(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'sky-cloud') {
+      drawSkyBackground(targetCtx, 0, 0, width, height, scale);
     } else {
-      drawRoundedPath(ctx, marginPx, marginPx, frameW, frameH, frameRadius);
-      ctx.fill();
+      targetCtx.fillStyle = config.frameColor;
+      targetCtx.fillRect(0, 0, width, height);
+    }
+
+    if (offscreen && bgCtx) {
+      bgCache = { key: bgKey, canvas: offscreen };
     }
   }
 
-  // 4. Calculate layout slots
+  if (bgCache && bgCache.key === bgKey) {
+    ctx.drawImage(bgCache.canvas, 0, 0);
+  }
+
+  // 2. Compute margin & padding in px (margin is the card frame border around slots)
+  const marginPx = (width * config.frameMargin) / 100;
+  const paddingPx = ((width - marginPx * 2) * config.imagePadding) / 100;
+
+  // 3. Calculate layout slots
   const slots = calculateLayoutSlots(config.layout, width, height, {
     marginPx,
     paddingPx
   });
 
-  // 5. Draw each slot
+  // 4. Draw each slot
   const cornerRadius = config.imageCornerRadius * scale;
 
   slots.forEach((slot) => {
@@ -137,26 +126,41 @@ export function renderScene(
 
     if (imgData && imgData.image) {
       const { image, flipped, rotation, filter, zoom, offsetX, offsetY } = imgData;
+      const isRotated90 = rotation === 90 || rotation === 270;
       const imgRatio = image.width / image.height;
       const slotRatio = slot.w / slot.h;
 
       let baseW: number;
       let baseH: number;
 
-      if (imgRatio > slotRatio) {
-        baseH = slot.h;
-        baseW = slot.h * imgRatio;
+      if (isRotated90) {
+        // When rotated 90 or 270 degrees, effective aspect ratio is inverted
+        const effectiveAspect = 1 / imgRatio;
+        if (effectiveAspect > slotRatio) {
+          baseW = slot.h;
+          baseH = slot.h * effectiveAspect;
+        } else {
+          baseH = slot.w;
+          baseW = slot.w * imgRatio;
+        }
       } else {
-        baseW = slot.w;
-        baseH = slot.w / imgRatio;
+        if (imgRatio > slotRatio) {
+          baseH = slot.h;
+          baseW = slot.h * imgRatio;
+        } else {
+          baseW = slot.w;
+          baseH = slot.w / imgRatio;
+        }
       }
 
       const zoomFactor = (zoom || 100) / 100;
       const drawW = baseW * zoomFactor;
       const drawH = baseH * zoomFactor;
 
-      const scaledOffsetX = offsetX * scale;
-      const scaledOffsetY = offsetY * scale;
+      // Scaled pan offsets proportional to slot size (base reference 320px)
+      const slotScale = slot.w / 320;
+      const scaledOffsetX = (offsetX || 0) * slotScale;
+      const scaledOffsetY = (offsetY || 0) * slotScale;
 
       const cx = slot.x + slot.w / 2;
       const cy = slot.y + slot.h / 2;
@@ -241,13 +245,35 @@ export function renderScene(
     }
   });
 
-  // 5.5 Draw Botanical / Floral / Cloud Overlays if active
-  if (config.theme === 'botanical-eucalyptus') {
-    renderBotanicalDecorations(ctx, width, height, slots, scale);
-  } else if (config.theme === 'romantic-rose') {
-    renderRoseDecorations(ctx, width, height, slots, scale);
-  } else if (config.theme === 'sky-cloud') {
-    renderCloudDecorations(ctx, width, height, slots, scale);
+  // 5. Draw Botanical / Floral / Cloud Overlays with layer caching
+  const isSignatureTheme =
+    config.theme === 'botanical-eucalyptus' ||
+    config.theme === 'romantic-rose' ||
+    config.theme === 'sky-cloud';
+
+  if (isSignatureTheme) {
+    const decorKey = `${config.theme}_${width}_${height}_${scale.toFixed(3)}_${config.layout}_${marginPx.toFixed(1)}_${paddingPx.toFixed(1)}`;
+    if (!decorCache || decorCache.key !== decorKey) {
+      const offscreen = createOffscreenCanvas(width, height);
+      const decorCtx = offscreen ? offscreen.getContext('2d') : null;
+      const targetCtx = decorCtx || ctx;
+
+      if (config.theme === 'botanical-eucalyptus') {
+        renderBotanicalDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'romantic-rose') {
+        renderRoseDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'sky-cloud') {
+        renderCloudDecorations(targetCtx, width, height, slots, scale);
+      }
+
+      if (offscreen && decorCtx) {
+        decorCache = { key: decorKey, canvas: offscreen };
+      }
+    }
+
+    if (decorCache && decorCache.key === decorKey) {
+      ctx.drawImage(decorCache.canvas, 0, 0);
+    }
   }
 
   // 6. Draw Texts for Export (or when rendered on canvas)
@@ -263,11 +289,7 @@ export function renderScene(
     }
 
     // 8. Draw Micro Archival Studio Stamp for Export
-    if (
-      config.theme !== 'botanical-eucalyptus' &&
-      config.theme !== 'romantic-rose' &&
-      config.theme !== 'sky-cloud'
-    ) {
+    if (!isSignatureTheme) {
       ctx.save();
       ctx.font = `600 ${Math.max(9, Math.round(10 * scale))}px "Inter", sans-serif`;
       ctx.fillStyle =
@@ -275,7 +297,7 @@ export function renderScene(
           ? 'rgba(255, 255, 255, 0.25)'
           : 'rgba(0, 0, 0, 0.22)';
       ctx.textAlign = 'center';
-      ctx.fillText('PIC4U STUDIO · ARCHIVAL PRINT', width * 0.5, height - marginPx * 0.38);
+      ctx.fillText('PIC4U STUDIO · ARCHIVAL PRINT', width * 0.5, height - (height * 0.022));
       ctx.restore();
     }
   }
@@ -288,11 +310,12 @@ export function drawCanvasSticker(
   sticker: import('../state/types.ts').StickerItem,
   canvasWidth: number,
   canvasHeight: number,
-  scale: number
+  _scale: number
 ) {
   const x = canvasWidth * sticker.x;
   const y = canvasHeight * sticker.y;
-  const fontSize = Math.round(sticker.size * scale);
+  const basePreviewWidth = 330;
+  const fontSize = Math.round(sticker.size * (canvasWidth / basePreviewWidth));
 
   ctx.save();
   ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
@@ -316,7 +339,8 @@ export function drawCanvasText(
 
   const x = canvasWidth * textConfig.x;
   const y = canvasHeight * textConfig.y;
-  const fontSize = Math.round(textConfig.size * scale);
+  const basePreviewWidth = 330;
+  const fontSize = Math.round(textConfig.size * (canvasWidth / basePreviewWidth));
 
   ctx.save();
   ctx.font = `700 ${fontSize}px "${textConfig.font}", sans-serif`;

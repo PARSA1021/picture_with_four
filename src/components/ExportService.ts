@@ -20,7 +20,16 @@ export class ExportService {
       return;
     }
 
-    showLoader(true, '고해상도 이미지를 생성하는 중입니다...');
+    showLoader(true, '고해상도 네컷 사진을 생성하고 있습니다...');
+
+    // Wait for web fonts to be completely rendered
+    try {
+      if ('fonts' in document) {
+        await document.fonts.ready;
+      }
+    } catch {
+      // Ignore font readiness check errors
+    }
 
     // Trigger realistic camera shutter flash
     const flashEl = document.createElement('div');
@@ -45,7 +54,7 @@ export class ExportService {
 
     renderScene(exportCtx, exportWidth, exportHeight, config, {
       isExport: true,
-      baseScreenWidth: 400
+      baseScreenWidth: 330
     });
 
     try {
@@ -55,7 +64,7 @@ export class ExportService {
 
       if (!blob) throw new Error('Blob creation failed');
 
-      const fileName = `frame_diary_${Date.now()}.png`;
+      const fileName = `pic4u_fourcut_${Date.now()}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
 
       // Check for Web Share API support
@@ -67,7 +76,7 @@ export class ExportService {
         try {
           await navigator.share({
             files: [file],
-            title: 'Frame Diary Pro',
+            title: 'PIC4U 인생네컷',
             text: '나만의 네컷 사진 프레임'
           });
           showLoader(false);
@@ -80,7 +89,7 @@ export class ExportService {
         }
       }
 
-      // Fallback: direct download link
+      // Safe download link with deferred object URL revocation
       const blobUrl = URL.createObjectURL(blob);
       const downloadLink = document.createElement('a');
       downloadLink.href = blobUrl;
@@ -88,17 +97,26 @@ export class ExportService {
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(blobUrl);
+
+      // Defer URL revocation so the browser download manager can finish writing to disk
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 45000);
 
       showLoader(false);
-      showToast('✅ 고화질 사진이 저장되었습니다! 📥');
+      showToast('✅ 고화질 인생네컷 사진이 저장되었습니다! 📥');
+
+      // On mobile devices, also display ResultModal for direct long-press save or re-download
+      if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        this.resultModal.open(blobUrl, fileName);
+      }
     } catch (err) {
       console.error('Save failed:', err);
       showLoader(false);
 
       // Fallback: show result modal
       const dataUrl = exportCanvas.toDataURL('image/png');
-      this.resultModal.open(dataUrl);
+      this.resultModal.open(dataUrl, `pic4u_fourcut_${Date.now()}.png`);
       showToast('💡 이미지를 길게 눌러 사진 앱에 저장할 수 있습니다.');
     }
   }
