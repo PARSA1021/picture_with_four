@@ -189,4 +189,17 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     expect(config.frameColor).toBe('#f5eefb');
     expect(config.backgroundColor).toBe('#d8cde8');
   });
+
+  it('Simulation 12: Signature #5 Sunshine Yellow Rose & Flowers Theme defaults and behavior', () => {
+    store.setTheme('yellow-rose');
+    const config = store.getConfig();
+
+    expect(config.theme).toBe('yellow-rose');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
+    expect(config.frameColor).toBe('#fefce8');
+    expect(config.backgroundColor).toBe('#fef08a');
+  });
 });

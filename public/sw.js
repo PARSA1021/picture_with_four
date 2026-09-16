@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pic4u-cache-v3';
+const CACHE_NAME = 'pic4u-cache-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   '/icons/icon-512.png',
   '/icons/maskable-512.png',
   '/assets/themes/oil-frame-bg.jpg',
-  '/assets/themes/rose-frame-bg.jpg'
+  '/assets/themes/rose-frame-bg.jpg',
+  '/assets/themes/yellow-rose-frame-bg.jpg'
 ];
 
 // Install: pre-cache critical shell assets

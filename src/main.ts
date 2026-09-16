@@ -12,6 +12,7 @@ import { TabControl } from './components/TabControl.ts';
 import { pwaInstaller } from './core/pwa-installer.ts';
 import { onOilTextureLoaded } from './core/oil-frame.ts';
 import { onRoseTextureLoaded } from './core/rose-frame.ts';
+import { onYellowRoseTextureLoaded } from './core/yellow-rose-frame.ts';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = new ResultModal();
@@ -27,6 +28,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   onRoseTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
+  onYellowRoseTextureLoaded(() => {
     canvasView.resizeAndRender();
   });
 

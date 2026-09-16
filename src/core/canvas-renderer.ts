@@ -4,6 +4,9 @@ import { drawWatercolorPaperTexture, renderBotanicalDecorations } from './botani
 import { drawRoseBackground, renderRoseDecorations, onRoseTextureLoaded } from './rose-frame.ts';
 import { drawSkyBackground, renderCloudDecorations } from './cloud-frame.ts';
 import { drawOilBackground, renderOilDecorations, onOilTextureLoaded } from './oil-frame.ts';
+import { drawYellowRoseBackground, renderYellowRoseDecorations, onYellowRoseTextureLoaded } from './yellow-rose-frame.ts';
+
+export { onRoseTextureLoaded, onOilTextureLoaded, onYellowRoseTextureLoaded };
 
 export interface RenderOptions {
   isExport?: boolean;
@@ -102,6 +105,8 @@ export function renderScene(
       drawSkyBackground(targetCtx, 0, 0, width, height, scale);
     } else if (config.theme === 'pastel-oil') {
       drawOilBackground(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'yellow-rose') {
+      drawYellowRoseBackground(targetCtx, 0, 0, width, height, scale);
     } else {
       targetCtx.fillStyle = config.frameColor;
       targetCtx.fillRect(0, 0, width, height);
@@ -262,7 +267,8 @@ export function renderScene(
     config.theme === 'botanical-eucalyptus' ||
     config.theme === 'romantic-rose' ||
     config.theme === 'sky-cloud' ||
-    config.theme === 'pastel-oil';
+    config.theme === 'pastel-oil' ||
+    config.theme === 'yellow-rose';
 
   if (isSignatureTheme) {
     const decorKey = `${config.theme}_${width}_${height}_${scale.toFixed(3)}_${config.layout}_${marginPx.toFixed(1)}_${paddingPx.toFixed(1)}`;
@@ -279,6 +285,8 @@ export function renderScene(
         renderCloudDecorations(targetCtx, width, height, slots, scale);
       } else if (config.theme === 'pastel-oil') {
         renderOilDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'yellow-rose') {
+        renderYellowRoseDecorations(targetCtx, width, height, slots, scale);
       }
 
       if (offscreen && decorCtx) {

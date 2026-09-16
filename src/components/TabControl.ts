@@ -114,6 +114,7 @@ export class TabControl {
       const isRose = key === 'romantic-rose';
       const isCloud = key === 'sky-cloud';
       const isOil = key === 'pastel-oil';
+      const isYellowRose = key === 'yellow-rose';
       let extraClass = '';
       let swatchClass = '';
       let swatchBg = theme.bg;
@@ -139,6 +140,11 @@ export class TabControl {
         swatchClass = 'swatch-oil';
         swatchBg = 'linear-gradient(135deg, #c084fc 0%, #38bdf8 35%, #f472b6 70%, #fde047 100%)';
         icon = '<span class="swatch-oil-icon">🎨</span>';
+      } else if (isYellowRose) {
+        extraClass = 'btn-theme-yellow-rose';
+        swatchClass = 'swatch-yellow-rose';
+        swatchBg = 'linear-gradient(135deg, #fefce8 0%, #fef08a 50%, #eab308 100%)';
+        icon = '<span class="swatch-yellow-rose-icon">🌼</span>';
       }
 
       return `
@@ -316,6 +322,22 @@ export class TabControl {
           e.preventDefault();
           store.setTheme('pastel-oil');
           showToast('🎨 PIC4U 시그니처 파스텔 유화 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Yellow Rose Signature Edition Banner
+    const yellowRoseBanner = document.getElementById('btnApplyYellowRoseTheme');
+    if (yellowRoseBanner) {
+      yellowRoseBanner.addEventListener('click', () => {
+        store.setTheme('yellow-rose');
+        showToast('🌼 PIC4U 시그니처 선샤인 옐로우 로즈 프레임이 적용되었습니다!');
+      });
+      yellowRoseBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('yellow-rose');
+          showToast('🌼 PIC4U 시그니처 선샤인 옐로우 로즈 프레임이 적용되었습니다!');
         }
       });
     }
@@ -497,6 +519,12 @@ export class TabControl {
     const oilBanner = document.getElementById('btnApplyOilTheme');
     if (oilBanner) {
       oilBanner.classList.toggle('active', config.theme === 'pastel-oil');
+    }
+
+    // Yellow Rose banner active state
+    const yellowRoseBanner = document.getElementById('btnApplyYellowRoseTheme');
+    if (yellowRoseBanner) {
+      yellowRoseBanner.classList.toggle('active', config.theme === 'yellow-rose');
     }
 
     // Color pickers
