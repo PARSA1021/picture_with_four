@@ -901,6 +901,33 @@ input[type="color"] {
   outline: none;
 }
 
+.input-date {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-default);
+  background-color: #fff;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-main);
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.input-date:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.btn-clear-text {
+  color: #e11d48 !important;
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+}
+
+.btn-clear-text:hover {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+}
+
 .select-font {
   width: 100%;
   padding: 8px 10px;

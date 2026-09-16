@@ -255,13 +255,13 @@ export class TabControl {
     if (botanicalBanner) {
       botanicalBanner.addEventListener('click', () => {
         store.setTheme('botanical-eucalyptus');
-        showToast('🌿 수채화 유칼립투스 인생네컷 프레임이 적용되었습니다!');
+        showToast('🌿 PIC4U 시그니처 유칼립투스 프레임이 적용되었습니다!');
       });
       botanicalBanner.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           store.setTheme('botanical-eucalyptus');
-          showToast('🌿 수채화 유칼립투스 인생네컷 프레임이 적용되었습니다!');
+          showToast('🌿 PIC4U 시그니처 유칼립투스 프레임이 적용되었습니다!');
         }
       });
     }
@@ -271,13 +271,13 @@ export class TabControl {
     if (roseBanner) {
       roseBanner.addEventListener('click', () => {
         store.setTheme('romantic-rose');
-        showToast('🌹 로맨틱 핑크 로즈 인생네컷 프레임이 적용되었습니다!');
+        showToast('🌹 PIC4U 시그니처 로맨틱 로즈 프레임이 적용되었습니다!');
       });
       roseBanner.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           store.setTheme('romantic-rose');
-          showToast('🌹 로맨틱 핑크 로즈 인생네컷 프레임이 적용되었습니다!');
+          showToast('🌹 PIC4U 시그니처 로맨틱 로즈 프레임이 적용되었습니다!');
         }
       });
     }
@@ -287,13 +287,13 @@ export class TabControl {
     if (cloudBanner) {
       cloudBanner.addEventListener('click', () => {
         store.setTheme('sky-cloud');
-        showToast('☁️ 퓨어 스카이 뭉게구름 인생네컷 프레임이 적용되었습니다!');
+        showToast('☁️ PIC4U 시그니처 퓨어 스카이 프레임이 적용되었습니다!');
       });
       cloudBanner.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           store.setTheme('sky-cloud');
-          showToast('☁️ 퓨어 스카이 뭉게구름 인생네컷 프레임이 적용되었습니다!');
+          showToast('☁️ PIC4U 시그니처 퓨어 스카이 프레임이 적용되었습니다!');
         }
       });
     }
@@ -303,9 +303,24 @@ export class TabControl {
     const mainTextInput = $<HTMLInputElement>('#customTextInput');
     const mainFontSelect = $<HTMLSelectElement>('#mainFontSelector');
     const mainColorInput = $<HTMLInputElement>('#mainFontColorPicker');
+    const clearMainBtn = document.getElementById('btnClearMainText');
+    const restoreBrandBtn = document.getElementById('btnRestoreBrand');
 
     mainTextInput.addEventListener('input', () => {
       store.updateMainText({ content: mainTextInput.value });
+    });
+
+    clearMainBtn?.addEventListener('click', () => {
+      mainTextInput.value = '';
+      store.updateMainText({ content: '' });
+      showToast('메인 타이틀 문구가 제거되었습니다.');
+    });
+
+    restoreBrandBtn?.addEventListener('click', () => {
+      const brand = 'PIC4U STUDIO';
+      mainTextInput.value = brand;
+      store.updateMainText({ content: brand });
+      showToast('브랜드명이 메인 타이틀로 적용되었습니다.');
     });
 
     mainFontSelect.addEventListener('change', () => {
@@ -334,10 +349,13 @@ export class TabControl {
       });
     });
 
-    // Subtext & Date
+    // Subtext & Date Controls
     const subTextInput = $<HTMLInputElement>('#subTextInput');
     const subColorInput = $<HTMLInputElement>('#subFontColorPicker');
-    const autoDateBtn = document.getElementById('btnAutoDate');
+    const datePicker = document.getElementById('datePickerInput') as HTMLInputElement | null;
+    const todayDateBtn = document.getElementById('btnTodayDate');
+    const clearSubBtn = document.getElementById('btnClearSubText');
+    const clearAllBtn = document.getElementById('btnClearAllTexts');
 
     subTextInput.addEventListener('input', () => {
       store.updateSubText({ content: subTextInput.value });
@@ -347,11 +365,44 @@ export class TabControl {
       store.updateSubText({ color: subColorInput.value });
     });
 
-    autoDateBtn?.addEventListener('click', () => {
+    // Calendar Date Picker change
+    datePicker?.addEventListener('input', () => {
+      if (!datePicker.value) return;
+      const [year, month, day] = datePicker.value.split('-');
+      const formatted = `${year}. ${month}. ${day}`;
+      subTextInput.value = formatted;
+      store.updateSubText({ content: formatted });
+      showToast(`선택한 날짜(${formatted})가 적용되었습니다.`);
+    });
+
+    todayDateBtn?.addEventListener('click', () => {
       const today = getFormattedDate();
       subTextInput.value = today;
       store.updateSubText({ content: today });
+      if (datePicker) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        datePicker.value = `${y}-${m}-${d}`;
+      }
       showToast('오늘 날짜가 입력되었습니다.');
+    });
+
+    clearSubBtn?.addEventListener('click', () => {
+      subTextInput.value = '';
+      if (datePicker) datePicker.value = '';
+      store.updateSubText({ content: '' });
+      showToast('날짜 문구가 제거되었습니다.');
+    });
+
+    clearAllBtn?.addEventListener('click', () => {
+      mainTextInput.value = '';
+      subTextInput.value = '';
+      if (datePicker) datePicker.value = '';
+      store.updateMainText({ content: '' });
+      store.updateSubText({ content: '' });
+      showToast('모든 문구가 제거되었습니다. 깔끔한 무지 프레임 모드입니다.');
     });
   }
 

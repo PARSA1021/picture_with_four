@@ -236,16 +236,16 @@ function renderDividerClouds(
 ) {
   const rand = seededRandom(1301 + dividerIdx * 83);
 
-  // Left corner puff overlapping slot edge
-  drawCloudPuff(ctx, slotLeft + 8 * scale, gapY, (14 + rand() * 6) * scale, 0.9, scale, false);
-  drawCloudPuff(ctx, slotLeft + 24 * scale, gapY - 2 * scale, (11 + rand() * 5) * scale, 0.85, scale, false);
+  // Left corner puff gently touching slot edge from margin
+  drawCloudPuff(ctx, slotLeft + 2 * scale, gapY, (12 + rand() * 5) * scale, 0.9, scale, false);
+  drawCloudPuff(ctx, slotLeft + 14 * scale, gapY - 1 * scale, (9 + rand() * 4) * scale, 0.85, scale, false);
 
-  // Center subtle cloud wisp
-  drawCumulusCloud(ctx, w * 0.5, gapY, 80 * scale, 22 * scale, 1401 + dividerIdx * 37, scale);
+  // Center subtle cloud wisp in the gap between slots
+  drawCumulusCloud(ctx, w * 0.5, gapY, 70 * scale, 18 * scale, 1401 + dividerIdx * 37, scale);
 
-  // Right corner puff overlapping slot edge
-  drawCloudPuff(ctx, slotRight - 8 * scale, gapY, (14 + rand() * 6) * scale, 0.9, scale, false);
-  drawCloudPuff(ctx, slotRight - 24 * scale, gapY + 2 * scale, (11 + rand() * 5) * scale, 0.85, scale, false);
+  // Right corner puff gently touching slot edge from margin
+  drawCloudPuff(ctx, slotRight - 2 * scale, gapY, (12 + rand() * 5) * scale, 0.9, scale, false);
+  drawCloudPuff(ctx, slotRight - 14 * scale, gapY + 1 * scale, (9 + rand() * 4) * scale, 0.85, scale, false);
 }
 
 function renderFooterCloudBank(
@@ -256,23 +256,23 @@ function renderFooterCloudBank(
   scale: number
 ) {
   const footerH = h - slotBottom;
-  const footerMidY = slotBottom + footerH * 0.55;
+  // Position cloud bed towards the lower third of the footer, leaving the upper half clear for typography
+  const footerMidY = slotBottom + footerH * 0.68;
 
-  // 1. Massive, voluminous bottom cumulus cloud bed
+  // 1. Bottom cumulus cloud bed
   // Backing shadow cloud bank
-  drawCumulusCloud(ctx, w * 0.5, footerMidY + 14 * scale, w * 1.08, footerH * 0.85, 1501, scale);
+  drawCumulusCloud(ctx, w * 0.5, footerMidY + 16 * scale, w * 1.05, footerH * 0.75, 1501, scale);
 
   // Left billowing cumulus
-  drawCumulusCloud(ctx, w * 0.22, footerMidY - 2 * scale, w * 0.55, footerH * 0.78, 1602, scale);
+  drawCumulusCloud(ctx, w * 0.2, footerMidY + 4 * scale, w * 0.5, footerH * 0.65, 1602, scale);
 
   // Right billowing cumulus
-  drawCumulusCloud(ctx, w * 0.78, footerMidY - 2 * scale, w * 0.55, footerH * 0.78, 1703, scale);
+  drawCumulusCloud(ctx, w * 0.8, footerMidY + 4 * scale, w * 0.5, footerH * 0.65, 1703, scale);
 
-  // Center cloud bed embracing "인생네컷"
-  drawCumulusCloud(ctx, w * 0.5, footerMidY + 8 * scale, w * 0.85, footerH * 0.65, 1804, scale);
+  // Center subtle cloud base
+  drawCumulusCloud(ctx, w * 0.5, footerMidY + 12 * scale, w * 0.75, footerH * 0.5, 1804, scale);
 
-  // Upper wisps softening the border with slot 4
-  drawCloudPuff(ctx, w * 0.35, slotBottom + 12 * scale, 22 * scale, 0.92, scale, false);
-  drawCloudPuff(ctx, w * 0.65, slotBottom + 12 * scale, 22 * scale, 0.92, scale, false);
-  drawCloudPuff(ctx, w * 0.5, slotBottom + 18 * scale, 20 * scale, 0.9, scale, false);
+  // Upper delicate wisps near footer border
+  drawCloudPuff(ctx, w * 0.3, slotBottom + 8 * scale, 16 * scale, 0.88, scale, false);
+  drawCloudPuff(ctx, w * 0.7, slotBottom + 8 * scale, 16 * scale, 0.88, scale, false);
 }

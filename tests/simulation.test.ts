@@ -115,43 +115,65 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     });
   });
 
-  it('Simulation 7: Botanical Eucalyptus Theme - automatically applies 인생네컷 typography and watercolor palette', () => {
+  it('Simulation 7: Botanical Eucalyptus Theme - applies PIC4U brand typography and watercolor palette', () => {
     // Switch to botanical-eucalyptus
     store.setTheme('botanical-eucalyptus');
 
     const config = store.getConfig();
     expect(config.theme).toBe('botanical-eucalyptus');
     expect(config.layout).toBe('1x4');
-    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
     expect(config.mainText.color).toBe('#736551');
     expect(config.frameColor).toBe('#f9f9f5');
     expect(config.backgroundColor).toBe('#54634b');
   });
 
-  it('Simulation 8: Romantic Pink Rose Theme - automatically applies 인생네컷 typography and rose palette', () => {
+  it('Simulation 8: Romantic Pink Rose Theme - applies PIC4U brand typography and rose palette', () => {
     // Switch to romantic-rose
     store.setTheme('romantic-rose');
 
     const config = store.getConfig();
     expect(config.theme).toBe('romantic-rose');
     expect(config.layout).toBe('1x4');
-    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
     expect(config.mainText.color).toBe('#ffffff');
     expect(config.mainText.effect).toBe('soft-shadow');
     expect(config.frameColor).toBe('#fcebee');
     expect(config.backgroundColor).toBe('#f8a199');
   });
 
-  it('Simulation 9: Sky Cloud Theme - automatically applies 인생네컷 typography and blue sky cloud palette', () => {
+  it('Simulation 9: Sky Cloud Theme - applies PIC4U brand typography and blue sky cloud palette', () => {
     // Switch to sky-cloud
     store.setTheme('sky-cloud');
 
     const config = store.getConfig();
     expect(config.theme).toBe('sky-cloud');
     expect(config.layout).toBe('1x4');
-    expect(config.mainText.content).toBe('인생네컷');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
     expect(config.mainText.color).toBe('#1c395c');
     expect(config.frameColor).toBe('#e8f4fc');
     expect(config.backgroundColor).toBe('#5c97d6');
+  });
+
+  it('Simulation 10: Preserves custom text and allows complete text removal', () => {
+    // 1. User enters custom couple title
+    store.updateMainText({ content: '성민❤️기영' });
+    store.updateSubText({ content: '2026. 09. 16' });
+
+    // Switching theme preserves the user's custom text
+    store.setTheme('sky-cloud');
+    expect(store.getConfig().mainText.content).toBe('성민❤️기영');
+    expect(store.getConfig().subText.content).toBe('2026. 09. 16');
+
+    // 2. User removes text (blank frame mode)
+    store.updateMainText({ content: '' });
+    store.updateSubText({ content: '' });
+    expect(store.getConfig().mainText.content).toBe('');
+    expect(store.getConfig().subText.content).toBe('');
+
+    // Switching theme still keeps it empty!
+    store.setTheme('romantic-rose');
+    expect(store.getConfig().mainText.content).toBe('');
+    expect(store.getConfig().subText.content).toBe('');
   });
 });

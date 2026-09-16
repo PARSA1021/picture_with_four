@@ -101,8 +101,17 @@ export class TextOverlayEngine {
       const deltaX = (e.clientX - this.startPointerX) / rect.width;
       const deltaY = (e.clientY - this.startPointerY) / rect.height;
 
-      const newX = Math.max(0.05, Math.min(0.95, this.startConfigX + deltaX));
-      const newY = Math.max(0.05, Math.min(0.98, this.startConfigY + deltaY));
+      // Dynamically clamp dragging so text never leaves the card boundary
+      const halfWidthPercent = rect.width > 0 ? (el.offsetWidth / rect.width) / 2 : 0.12;
+      const minX = Math.max(0.06, halfWidthPercent + 0.01);
+      const maxX = Math.max(minX, Math.min(0.94, 1 - halfWidthPercent - 0.01));
+
+      const halfHeightPercent = rect.height > 0 ? (el.offsetHeight / rect.height) / 2 : 0.02;
+      const minY = Math.max(0.03, halfHeightPercent);
+      const maxY = Math.max(minY, Math.min(0.97, 1 - halfHeightPercent));
+
+      const newX = Math.max(minX, Math.min(maxX, this.startConfigX + deltaX));
+      const newY = Math.max(minY, Math.min(maxY, this.startConfigY + deltaY));
 
       el.style.left = `${(newX * 100).toFixed(2)}%`;
       el.style.top = `${(newY * 100).toFixed(2)}%`;

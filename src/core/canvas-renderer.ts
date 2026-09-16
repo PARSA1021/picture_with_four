@@ -326,7 +326,7 @@ export function drawCanvasSticker(
 }
 
 /**
- * Draws text onto the canvas context with exact font, size, and stroke settings
+ * Draws text onto the canvas context with exact font, size, auto-fitting to bounds, and stroke settings
  */
 export function drawCanvasText(
   ctx: CanvasRenderingContext2D,
@@ -337,19 +337,48 @@ export function drawCanvasText(
 ) {
   if (!textConfig.content || !textConfig.content.trim()) return;
 
-  const x = canvasWidth * textConfig.x;
-  const y = canvasHeight * textConfig.y;
+  const rawX = canvasWidth * textConfig.x;
+  const rawY = canvasHeight * textConfig.y;
   const basePreviewWidth = 330;
-  const fontSize = Math.round(textConfig.size * (canvasWidth / basePreviewWidth));
 
   ctx.save();
+
+  // 1. Calculate base font size
+  let fontSize = Math.round(textConfig.size * (canvasWidth / basePreviewWidth));
   ctx.font = `700 ${fontSize}px "${textConfig.font}", sans-serif`;
+
+  // 2. Safe printable bounds check (prevent any clipping at canvas left/right edges)
+  const safeMarginX = canvasWidth * 0.06;
+  const maxAllowedWidth = canvasWidth - safeMarginX * 2;
+  let textMetrics = ctx.measureText(textConfig.content);
+
+  if (textMetrics.width > maxAllowedWidth && textMetrics.width > 0) {
+    // Dynamically downscale font size so the entire text fits cleanly inside the card
+    const fitFactor = maxAllowedWidth / textMetrics.width;
+    fontSize = Math.max(14, Math.floor(fontSize * fitFactor));
+    ctx.font = `700 ${fontSize}px "${textConfig.font}", sans-serif`;
+    textMetrics = ctx.measureText(textConfig.content);
+  }
+
+  // 3. Clamp X and Y to strictly remain within visible canvas boundaries
+  const halfTextW = textMetrics.width / 2;
+  const clampedX = Math.max(
+    safeMarginX + halfTextW,
+    Math.min(canvasWidth - safeMarginX - halfTextW, rawX)
+  );
+
+  const halfTextH = fontSize / 2;
+  const clampedY = Math.max(
+    halfTextH + 8 * scale,
+    Math.min(canvasHeight - halfTextH - 12 * scale, rawY)
+  );
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // Apply effects
+  // 4. Apply text effects
   if (textConfig.effect === 'soft-shadow') {
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
     ctx.shadowBlur = 10 * scale;
     ctx.shadowOffsetY = 4 * scale;
   }
@@ -366,10 +395,10 @@ export function drawCanvasText(
     ctx.strokeStyle = sc;
     ctx.lineWidth = sw * scale * 2;
     ctx.lineJoin = 'round';
-    ctx.strokeText(textConfig.content, x, y);
+    ctx.strokeText(textConfig.content, clampedX, clampedY);
   }
 
   ctx.fillStyle = textConfig.color;
-  ctx.fillText(textConfig.content, x, y);
+  ctx.fillText(textConfig.content, clampedX, clampedY);
   ctx.restore();
 }
