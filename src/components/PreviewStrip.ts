@@ -78,6 +78,16 @@ export class PreviewStrip {
         showToast('모든 사진이 삭제되었습니다.');
       }
     });
+
+    const shuffleBtn = document.getElementById('btnShuffleImages');
+    shuffleBtn?.addEventListener('click', () => {
+      if (store.getConfig().images.length <= 1) {
+        showToast('사진이 2장 이상 있어야 순서를 섞을 수 있습니다.');
+        return;
+      }
+      store.shuffleImages();
+      showToast('🔀 사진 순서가 셔플되었습니다.');
+    });
   }
 
   public async handleFiles(files: File[]) {
@@ -118,13 +128,15 @@ export class PreviewStrip {
     const config = store.getConfig();
     const images = config.images;
 
-    this.statusText.textContent = `${images.length} / ${MAX_IMAGES}장`;
+    this.statusText.textContent = `${images.length} / ${MAX_IMAGES}장 등록`;
     this.container.innerHTML = '';
 
     if (images.length === 0) {
       this.container.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 1.5rem 0; color: var(--color-text-subtle); font-size: 0.875rem;">
-          아직 추가된 사진이 없습니다. 위 영역을 눌러 사진을 올려보세요!
+        <div class="empty-preview-container">
+          <div class="empty-preview-icon">📷</div>
+          <div class="empty-preview-title">등록된 사진이 없습니다</div>
+          <div class="empty-preview-desc">위의 [내 사진 추가하기]를 누르거나, 스튜디오 샘플 사진 4장으로 바로 시작해 보세요!</div>
         </div>
       `;
       return;
@@ -141,9 +153,10 @@ export class PreviewStrip {
       itemEl.innerHTML = `
         <img src="${imgData.src}" alt="사진 ${index + 1}" loading="lazy" />
         <span class="preview-badge">${index + 1}</span>
+        ${isSelected ? '<span class="preview-selected-indicator">배치 대기</span>' : ''}
         <button type="button" class="preview-btn-delete" title="사진 삭제" aria-label="사진 ${index + 1} 삭제">×</button>
         <div class="preview-action-bar">
-          <button type="button" class="preview-action-btn btn-edit" title="위치/비율 상세 편집" aria-label="상세 편집">
+          <button type="button" class="preview-action-btn btn-edit" title="구도/위치 상세 편집" aria-label="상세 편집">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </button>
           <button type="button" class="preview-action-btn btn-rotate" title="90도 회전" aria-label="회전">

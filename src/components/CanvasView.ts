@@ -92,9 +92,8 @@ export class CanvasView {
         </button>
         <button type="button" class="toolbar-btn btn-toolbar-close" title="닫기">✕</button>
       `;
-      // Append right below the canvas inside the canvas-stage
-      const stage = this.container.closest('.canvas-stage') || this.container.parentElement;
-      stage?.appendChild(el);
+      // Insert directly right after canvas container so it is always immediately under the canvas
+      this.container.after(el);
     }
     this.quickToolbarEl = el;
 
@@ -151,13 +150,19 @@ export class CanvasView {
 
   private setupResizeObserver() {
     let resizeTimer: number | null = null;
-    const observer = new ResizeObserver(() => {
+    const handleResize = () => {
       if (resizeTimer) window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
         this.resizeAndRender();
       }, 30);
-    });
-    observer.observe(this.container);
+    };
+
+    const stage = this.container.closest('.canvas-stage') || this.container.parentElement;
+    if (stage) {
+      const observer = new ResizeObserver(handleResize);
+      observer.observe(stage);
+    }
+    window.addEventListener('resize', handleResize);
   }
 
   private bindStore() {
@@ -167,6 +172,7 @@ export class CanvasView {
 
     store.subscribeSelection(() => {
       this.updateSlotSelectionDOM();
+      this.resizeAndRender();
     });
   }
 
@@ -181,16 +187,96 @@ export class CanvasView {
 
   public resizeAndRender() {
     const config = store.getConfig();
-    const width = this.container.clientWidth || 340;
+    const isMobile = window.innerWidth < 768;
+    const stage = (this.container.closest('.canvas-stage') || this.container.parentElement) as HTMLElement | null;
     const aspect = getLayoutAspectRatio(config.layout);
-    const height = Math.round(width * aspect);
+
+    // Compute maximum allowable height and width for canvas to strictly fit inside the stage
+    const stageH = stage && stage.clientHeight > 0
+      ? stage.clientHeight
+      : (isMobile ? window.innerHeight * 0.38 : window.innerHeight - 80);
+    const stageW = stage && stage.clientWidth > 0
+      ? stage.clientWidth
+      : (isMobile ? window.innerWidth : 380);
+
+    // Dynamically calculate non-canvas vertical space inside the stage
+    let nonCanvasHeight = 0;
+    if (stage) {
+      const style = window.getComputedStyle(stage);
+      nonCanvasHeight += parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0');
+    } else {
+      nonCanvasHeight += isMobile ? 12 : 24;
+    }
+
+    // 1. Slot Quick Toolbar (if active with an image in selected slot)
+    const hasActiveToolbar = store.selectedSlotIndex !== null && Boolean(config.images[store.selectedSlotIndex]);
+    if (hasActiveToolbar) {
+      const toolbar = this.quickToolbarEl;
+      if (toolbar) {
+        const tbH = toolbar.offsetHeight > 0 ? toolbar.offsetHeight : 44;
+        const tbStyle = window.getComputedStyle(toolbar);
+        const tbMargin = parseFloat(tbStyle.marginTop || '8') + parseFloat(tbStyle.marginBottom || '0');
+        nonCanvasHeight += tbH + tbMargin;
+      } else {
+        nonCanvasHeight += 52;
+      }
+    }
+
+    // 2. Stage Guide Tip (if visible)
+    const tip = stage ? stage.querySelector<HTMLElement>('.stage-tip') : null;
+    if (tip && window.getComputedStyle(tip).display !== 'none') {
+      const tipH = tip.offsetHeight > 0 ? tip.offsetHeight : 34;
+      const tipStyle = window.getComputedStyle(tip);
+      const tipMargin = parseFloat(tipStyle.marginTop || '6') + parseFloat(tipStyle.marginBottom || '0');
+      nonCanvasHeight += tipH + tipMargin;
+    }
+
+    // 3. Desktop/Tablet Download Action Container (if visible)
+    const dlContainer = stage ? stage.querySelector<HTMLElement>('.desktop-download-container') : null;
+    if (dlContainer && window.getComputedStyle(dlContainer).display !== 'none') {
+      const dlH = dlContainer.offsetHeight > 0 ? dlContainer.offsetHeight : 46;
+      const dlStyle = window.getComputedStyle(dlContainer);
+      const dlMargin = parseFloat(dlStyle.marginTop || '8') + parseFloat(dlStyle.marginBottom || '0');
+      nonCanvasHeight += dlH + dlMargin;
+    }
+
+    // Add safe breathing margin (12px on mobile, 16px on tablet/desktop)
+    nonCanvasHeight += isMobile ? 12 : 16;
+
+    // Horizontal margins & padding
+    let stagePaddingX = 24;
+    if (stage) {
+      const style = window.getComputedStyle(stage);
+      stagePaddingX = parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0');
+    }
+    const maxAllowedW = Math.max(80, stageW - Math.max(16, stagePaddingX + (isMobile ? 10 : 20)));
+    const maxAllowedH = Math.max(120, stageH - nonCanvasHeight);
+
+    let targetW = maxAllowedW;
+    let targetH = Math.round(targetW * aspect);
+
+    if (targetH > maxAllowedH) {
+      targetH = Math.round(maxAllowedH);
+      targetW = Math.round(targetH / aspect);
+    }
+
+    if (targetW > maxAllowedW) {
+      targetW = Math.round(maxAllowedW);
+      targetH = Math.round(targetW * aspect);
+    }
+
+    targetW = Math.max(80, Math.round(targetW));
+    targetH = Math.round(targetW * aspect);
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
 
-    this.canvas.width = Math.round(width * dpr);
-    this.canvas.height = Math.round(height * dpr);
-    this.canvas.style.width = `${width}px`;
-    this.canvas.style.height = `${height}px`;
+    this.canvas.width = Math.round(targetW * dpr);
+    this.canvas.height = Math.round(targetH * dpr);
+    this.canvas.style.width = `${targetW}px`;
+    this.canvas.style.height = `${targetH}px`;
+
+    this.container.style.width = `${targetW}px`;
+    this.container.style.height = `${targetH}px`;
 
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.render();

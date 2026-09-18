@@ -46,7 +46,11 @@ export class TextOverlayEngine {
 
     el.innerText = config.content;
     el.style.fontFamily = `"${config.font}", sans-serif`;
-    el.style.fontSize = `${config.size}px`;
+
+    const basePreviewWidth = 330;
+    const currentW = this.containerEl.clientWidth || basePreviewWidth;
+    const scale = currentW / basePreviewWidth;
+    el.style.fontSize = `${Math.max(9, Math.round(config.size * scale))}px`;
     el.style.color = config.color;
 
     if (config.effect === 'soft-shadow') {

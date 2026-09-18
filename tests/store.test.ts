@@ -32,6 +32,12 @@ describe('FrameStore', () => {
     const config = store.getConfig();
     expect(config.theme).toBe('clean-white');
     expect(config.backgroundColor).toBe('#ffffff');
+
+    store.setTheme('sunset-lavender');
+    const lavenderConfig = store.getConfig();
+    expect(lavenderConfig.theme).toBe('sunset-lavender');
+    expect(lavenderConfig.backgroundColor).toBe('#4c1d95');
+    expect(lavenderConfig.mainText.color).toBe('#ffffff');
   });
 
   it('applies frame preset properly', () => {
@@ -65,5 +71,31 @@ describe('FrameStore', () => {
 
     store.updateSubText({ content: '2026. 09. 16' });
     expect(store.getConfig().subText.content).toBe('2026. 09. 16');
+  });
+
+  it('swaps and shuffles images correctly', () => {
+    const mockImages = [
+      { id: '1', src: 'img1', rotation: 0, flipped: false, zoom: 100, offsetX: 0, offsetY: 0, filter: null, image: {} as HTMLImageElement },
+      { id: '2', src: 'img2', rotation: 0, flipped: false, zoom: 100, offsetX: 0, offsetY: 0, filter: null, image: {} as HTMLImageElement },
+      { id: '3', src: 'img3', rotation: 0, flipped: false, zoom: 100, offsetX: 0, offsetY: 0, filter: null, image: {} as HTMLImageElement },
+      { id: '4', src: 'img4', rotation: 0, flipped: false, zoom: 100, offsetX: 0, offsetY: 0, filter: null, image: {} as HTMLImageElement }
+    ];
+
+    store.addImages(mockImages);
+    expect(store.getConfig().images).toHaveLength(4);
+
+    // Test swap
+    store.swapImages(0, 3);
+    expect(store.getConfig().images[0].id).toBe('4');
+    expect(store.getConfig().images[3].id).toBe('1');
+
+    // Test shuffle maintains same length and set of items
+    store.shuffleImages();
+    expect(store.getConfig().images).toHaveLength(4);
+    const ids = store.getConfig().images.map((img) => img.id);
+    expect(ids).toContain('1');
+    expect(ids).toContain('2');
+    expect(ids).toContain('3');
+    expect(ids).toContain('4');
   });
 });

@@ -69,14 +69,28 @@ export class TabControl {
 
   private initLayoutButtons() {
     const container = $<HTMLElement>('#layoutButtons');
-    container.innerHTML = LAYOUTS.map(
-      (layout) => `
+    container.innerHTML = LAYOUTS.map((layout) => {
+      let iconHtml = '';
+      if (layout.id === '1x4') {
+        iconHtml = '<div class="layout-preview-icon icon-1x4" aria-hidden="true"><span></span><span></span><span></span><span></span></div>';
+      } else if (layout.id === '2x2') {
+        iconHtml = '<div class="layout-preview-icon icon-2x2" aria-hidden="true"><span></span><span></span><span></span><span></span></div>';
+      } else if (layout.id === '1+3') {
+        iconHtml = '<div class="layout-preview-icon icon-1plus3" aria-hidden="true"><div class="bar-top"></div><div class="row-bottom"><span></span><span></span><span></span></div></div>';
+      } else if (layout.id === '2x3') {
+        iconHtml = '<div class="layout-preview-icon icon-2x3" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>';
+      } else if (layout.id === '3x2') {
+        iconHtml = '<div class="layout-preview-icon icon-3x2" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>';
+      }
+
+      return `
       <button type="button" class="choice-card btn-layout" data-layout="${layout.id}" role="radio" aria-checked="false">
+        ${iconHtml}
         <span class="choice-card-title">${escapeHtml(layout.label)}</span>
         <span class="choice-card-desc">${escapeHtml(layout.description)}</span>
       </button>
-    `
-    ).join('');
+    `;
+    }).join('');
 
     container.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest<HTMLElement>('.btn-layout');
@@ -115,6 +129,7 @@ export class TabControl {
       const isCloud = key === 'sky-cloud';
       const isOil = key === 'pastel-oil';
       const isYellowRose = key === 'yellow-rose';
+      const isAurora = key === 'midnight-aurora';
       let extraClass = '';
       let swatchClass = '';
       let swatchBg = theme.bg;
@@ -145,14 +160,33 @@ export class TabControl {
         swatchClass = 'swatch-yellow-rose';
         swatchBg = 'linear-gradient(135deg, #fefce8 0%, #fef08a 50%, #eab308 100%)';
         icon = '<span class="swatch-yellow-rose-icon">🌼</span>';
+      } else if (isAurora) {
+        extraClass = 'btn-theme-aurora';
+        swatchClass = 'swatch-aurora';
+        swatchBg = 'linear-gradient(135deg, #050711 0%, #0d9488 40%, #7c3aed 80%, #0284c7 100%)';
+        icon = '<span class="swatch-aurora-icon">🌙</span>';
+      } else if (key === 'spring-cherry') {
+        extraClass = 'btn-theme-cherry';
+        swatchClass = 'swatch-cherry';
+        swatchBg = 'linear-gradient(135deg, #fff1f2 0%, #fbcfe8 50%, #f43f5e 100%)';
+        icon = '<span class="swatch-cherry-icon">🌸</span>';
+      } else if (key === 'sunset-lavender') {
+        extraClass = 'btn-theme-lavender';
+        swatchClass = 'swatch-lavender';
+        swatchBg = 'linear-gradient(135deg, #fed7aa 0%, #c084fc 50%, #4c1d95 100%)';
+        icon = '<span class="swatch-lavender-icon">🪻</span>';
       }
+
+      const shortName = theme.shortName || theme.name;
+      const subName = theme.subName || '';
 
       return `
       <button type="button" class="choice-card btn-theme ${extraClass}" data-theme="${key}" role="radio" aria-checked="false" title="${escapeHtml(theme.name)}">
         <div class="theme-swatch ${swatchClass}" style="background: ${swatchBg}; border-color: ${theme.frame === '#ffffff' ? '#e2e8f0' : theme.frame};">
           ${icon}
         </div>
-        <span class="choice-card-title">${escapeHtml(theme.name)}</span>
+        <span class="choice-card-title">${escapeHtml(shortName)}</span>
+        ${subName ? `<span class="choice-card-desc">${escapeHtml(subName)}</span>` : ''}
       </button>
     `;
     }).join('');
@@ -341,6 +375,54 @@ export class TabControl {
         }
       });
     }
+
+    // Midnight Aurora Signature Edition Banner
+    const auroraBanner = document.getElementById('btnApplyAuroraTheme');
+    if (auroraBanner) {
+      auroraBanner.addEventListener('click', () => {
+        store.setTheme('midnight-aurora');
+        showToast('🌙 PIC4U 시그니처 미드나잇 오로라 프레임이 적용되었습니다!');
+      });
+      auroraBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('midnight-aurora');
+          showToast('🌙 PIC4U 시그니처 미드나잇 오로라 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Spring Cherry Blossom Signature Edition Banner
+    const cherryBanner = document.getElementById('btnApplyCherryTheme');
+    if (cherryBanner) {
+      cherryBanner.addEventListener('click', () => {
+        store.setTheme('spring-cherry');
+        showToast('🌸 PIC4U 시그니처 체리블라썸 벚꽃 프레임이 적용되었습니다!');
+      });
+      cherryBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('spring-cherry');
+          showToast('🌸 PIC4U 시그니처 체리블라썸 벚꽃 프레임이 적용되었습니다!');
+        }
+      });
+    }
+
+    // Sunset Lavender Signature Edition Banner
+    const lavenderBanner = document.getElementById('btnApplyLavenderTheme');
+    if (lavenderBanner) {
+      lavenderBanner.addEventListener('click', () => {
+        store.setTheme('sunset-lavender');
+        showToast('🪻 PIC4U 시그니처 선셋 라벤더 프레임이 적용되었습니다!');
+      });
+      lavenderBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          store.setTheme('sunset-lavender');
+          showToast('🪻 PIC4U 시그니처 선셋 라벤더 프레임이 적용되었습니다!');
+        }
+      });
+    }
   }
 
   private setupTextControls() {
@@ -373,6 +455,16 @@ export class TabControl {
 
     mainColorInput.addEventListener('input', () => {
       store.updateMainText({ color: mainColorInput.value });
+    });
+
+    // Quick text preset tags
+    $$<HTMLButtonElement>('.btn-tag-preset').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const text = btn.dataset.text || '';
+        mainTextInput.value = text;
+        store.updateMainText({ content: text });
+        showToast(`각인 문구 적용: "${text}"`);
+      });
     });
 
     // Text size preset buttons [S / M / L]
@@ -457,10 +549,22 @@ export class TabControl {
       this.exportService.exportImage();
     });
 
+    // Desktop copy to clipboard button
+    const desktopCopyBtn = document.getElementById('desktopCopyBtn');
+    desktopCopyBtn?.addEventListener('click', () => {
+      this.exportService.copyImageToClipboard();
+    });
+
     // Mobile sticky download button
     const mobileDownloadBtn = document.getElementById('mobileDownloadBtn');
     mobileDownloadBtn?.addEventListener('click', () => {
       this.exportService.exportImage();
+    });
+
+    // Mobile copy to clipboard button
+    const mobileCopyBtn = document.getElementById('mobileCopyBtn');
+    mobileCopyBtn?.addEventListener('click', () => {
+      this.exportService.copyImageToClipboard();
     });
 
     // Top Bar Reset Button
@@ -525,6 +629,24 @@ export class TabControl {
     const yellowRoseBanner = document.getElementById('btnApplyYellowRoseTheme');
     if (yellowRoseBanner) {
       yellowRoseBanner.classList.toggle('active', config.theme === 'yellow-rose');
+    }
+
+    // Midnight Aurora banner active state
+    const auroraBanner = document.getElementById('btnApplyAuroraTheme');
+    if (auroraBanner) {
+      auroraBanner.classList.toggle('active', config.theme === 'midnight-aurora');
+    }
+
+    // Spring Cherry banner active state
+    const cherryBanner = document.getElementById('btnApplyCherryTheme');
+    if (cherryBanner) {
+      cherryBanner.classList.toggle('active', config.theme === 'spring-cherry');
+    }
+
+    // Sunset Lavender banner active state
+    const lavenderBanner = document.getElementById('btnApplyLavenderTheme');
+    if (lavenderBanner) {
+      lavenderBanner.classList.toggle('active', config.theme === 'sunset-lavender');
     }
 
     // Color pickers

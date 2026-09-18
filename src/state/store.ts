@@ -73,6 +73,8 @@ class FrameStore {
       }
       this.config.mainText.font = 'Noto Sans KR';
       this.config.mainText.size = 42;
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
       this.config.mainText.y = 0.93;
       this.config.layout = '1x4';
       this.config.frameMargin = 4;
@@ -97,8 +99,8 @@ class FrameStore {
       }
       this.config.mainText.font = 'Noto Sans KR';
       this.config.mainText.size = 42;
-      this.config.mainText.color = '#1c395c';
-      this.config.mainText.effect = 'none';
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
       this.config.mainText.y = 0.93;
       this.config.layout = '1x4';
       this.config.frameMargin = 4;
@@ -118,6 +120,45 @@ class FrameStore {
       this.config.imagePadding = 3;
       this.config.imageCornerRadius = 3;
     } else if (themeKey === 'yellow-rose') {
+      if (this.config.mainText.content === '인생네컷') {
+        this.config.mainText.content = 'PIC4U STUDIO';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 42;
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
+      this.config.mainText.y = 0.93;
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    } else if (themeKey === 'midnight-aurora') {
+      if (this.config.mainText.content === '인생네컷') {
+        this.config.mainText.content = 'PIC4U STUDIO';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 42;
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
+      this.config.mainText.y = 0.93;
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    } else if (themeKey === 'spring-cherry') {
+      if (this.config.mainText.content === '인생네컷') {
+        this.config.mainText.content = 'PIC4U STUDIO';
+      }
+      this.config.mainText.font = 'Noto Sans KR';
+      this.config.mainText.size = 42;
+      this.config.mainText.color = '#ffffff';
+      this.config.mainText.effect = 'soft-shadow';
+      this.config.mainText.y = 0.93;
+      this.config.layout = '1x4';
+      this.config.frameMargin = 4;
+      this.config.imagePadding = 3;
+      this.config.imageCornerRadius = 3;
+    } else if (themeKey === 'sunset-lavender') {
       if (this.config.mainText.content === '인생네컷') {
         this.config.mainText.content = 'PIC4U STUDIO';
       }
@@ -292,6 +333,17 @@ class FrameStore {
       this.config.images[indexB] = temp;
       this.notify();
     }
+  }
+
+  public shuffleImages() {
+    if (this.config.images.length <= 1) return;
+    for (let i = this.config.images.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = this.config.images[i];
+      this.config.images[i] = this.config.images[j];
+      this.config.images[j] = temp;
+    }
+    this.notify();
   }
 
   public addSticker(emoji: string) {

@@ -13,7 +13,10 @@ export type ThemeType =
   | 'romantic-rose'
   | 'sky-cloud'
   | 'pastel-oil'
-  | 'yellow-rose';
+  | 'yellow-rose'
+  | 'midnight-aurora'
+  | 'spring-cherry'
+  | 'sunset-lavender';
 
 export type FramePresetType = 'classic-slim' | 'polaroid' | 'modern-round' | 'borderless';
 
@@ -21,6 +24,8 @@ export type TextEffectType = 'none' | 'soft-shadow' | 'sticker-outline';
 
 export interface ThemeDefinition {
   name: string;
+  shortName?: string;
+  subName?: string;
   bg: string;
   frame: string;
   text: string;

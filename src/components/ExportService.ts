@@ -120,4 +120,67 @@ export class ExportService {
       showToast('💡 이미지를 길게 눌러 사진 앱에 저장할 수 있습니다.');
     }
   }
+
+  public async copyImageToClipboard(): Promise<void> {
+    const config = store.getConfig();
+    if (config.images.length === 0) {
+      showToast('⚠️ 먼저 사진을 1장 이상 추가해주세요!');
+      return;
+    }
+
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      showToast('⚠️ 현재 브라우저에서 이미지 클립보드 복사를 지원하지 않습니다.');
+      return;
+    }
+
+    showLoader(true, '클립보드 이미지를 생성하고 있습니다...');
+
+    try {
+      if ('fonts' in document) {
+        await document.fonts.ready;
+      }
+    } catch {
+      // Ignore
+    }
+
+    const exportWidth = EXPORT_WIDTH;
+    const aspect = getLayoutAspectRatio(config.layout);
+    const exportHeight = Math.round(exportWidth * aspect);
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = exportWidth;
+    exportCanvas.height = exportHeight;
+
+    const exportCtx = exportCanvas.getContext('2d');
+    if (!exportCtx) {
+      showLoader(false);
+      showToast('⚠️ 캔버스 생성 실패');
+      return;
+    }
+
+    renderScene(exportCtx, exportWidth, exportHeight, config, {
+      isExport: true,
+      baseScreenWidth: 330
+    });
+
+    try {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        exportCanvas.toBlob(resolve, 'image/png', 1.0)
+      );
+      if (!blob) throw new Error('Blob 생성 실패');
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+
+      showLoader(false);
+      showToast('📋 클립보드에 복사되었습니다! 카톡이나 메모장에 바로 붙여넣기(Ctrl+V)하세요 ✨');
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+      showLoader(false);
+      showToast('💡 클립보드 복사 권한을 허용해주시거나 고화질 저장을 이용해주세요.');
+    }
+  }
 }

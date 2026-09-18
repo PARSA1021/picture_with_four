@@ -15,7 +15,7 @@ export class StickerEngine {
 
   public sync(stickers: StickerItem[], canvasWidth: number) {
     this.containerEl.innerHTML = '';
-    const scale = canvasWidth / 400;
+    const scale = canvasWidth / 330;
 
     stickers.forEach((item) => {
       const el = document.createElement('div');

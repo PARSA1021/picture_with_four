@@ -5,8 +5,11 @@ import { drawRoseBackground, renderRoseDecorations, onRoseTextureLoaded } from '
 import { drawSkyBackground, renderCloudDecorations } from './cloud-frame.ts';
 import { drawOilBackground, renderOilDecorations, onOilTextureLoaded } from './oil-frame.ts';
 import { drawYellowRoseBackground, renderYellowRoseDecorations, onYellowRoseTextureLoaded } from './yellow-rose-frame.ts';
+import { drawAuroraBackground, renderAuroraDecorations, onAuroraTextureLoaded } from './aurora-frame.ts';
+import { drawCherryBackground, renderCherryDecorations, onCherryTextureLoaded } from './cherry-frame.ts';
+import { drawLavenderBackground, renderLavenderDecorations, onLavenderTextureLoaded } from './lavender-frame.ts';
 
-export { onRoseTextureLoaded, onOilTextureLoaded, onYellowRoseTextureLoaded };
+export { onRoseTextureLoaded, onOilTextureLoaded, onYellowRoseTextureLoaded, onAuroraTextureLoaded, onCherryTextureLoaded, onLavenderTextureLoaded };
 
 export interface RenderOptions {
   isExport?: boolean;
@@ -107,6 +110,12 @@ export function renderScene(
       drawOilBackground(targetCtx, 0, 0, width, height, scale);
     } else if (config.theme === 'yellow-rose') {
       drawYellowRoseBackground(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'midnight-aurora') {
+      drawAuroraBackground(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'spring-cherry') {
+      drawCherryBackground(targetCtx, 0, 0, width, height, scale);
+    } else if (config.theme === 'sunset-lavender') {
+      drawLavenderBackground(targetCtx, 0, 0, width, height, scale);
     } else {
       targetCtx.fillStyle = config.frameColor;
       targetCtx.fillRect(0, 0, width, height);
@@ -268,7 +277,10 @@ export function renderScene(
     config.theme === 'romantic-rose' ||
     config.theme === 'sky-cloud' ||
     config.theme === 'pastel-oil' ||
-    config.theme === 'yellow-rose';
+    config.theme === 'yellow-rose' ||
+    config.theme === 'midnight-aurora' ||
+    config.theme === 'spring-cherry' ||
+    config.theme === 'sunset-lavender';
 
   if (isSignatureTheme) {
     const decorKey = `${config.theme}_${width}_${height}_${scale.toFixed(3)}_${config.layout}_${marginPx.toFixed(1)}_${paddingPx.toFixed(1)}`;
@@ -287,6 +299,12 @@ export function renderScene(
         renderOilDecorations(targetCtx, width, height, slots, scale);
       } else if (config.theme === 'yellow-rose') {
         renderYellowRoseDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'midnight-aurora') {
+        renderAuroraDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'spring-cherry') {
+        renderCherryDecorations(targetCtx, width, height, slots, scale);
+      } else if (config.theme === 'sunset-lavender') {
+        renderLavenderDecorations(targetCtx, width, height, slots, scale);
       }
 
       if (offscreen && decorCtx) {

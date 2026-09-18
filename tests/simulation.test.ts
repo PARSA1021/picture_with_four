@@ -123,9 +123,10 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     expect(config.theme).toBe('botanical-eucalyptus');
     expect(config.layout).toBe('1x4');
     expect(config.mainText.content).toBe('PIC4U STUDIO');
-    expect(config.mainText.color).toBe('#736551');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
     expect(config.frameColor).toBe('#f9f9f5');
-    expect(config.backgroundColor).toBe('#54634b');
+    expect(config.backgroundColor).toBe('#3e563b');
   });
 
   it('Simulation 8: Romantic Pink Rose Theme - applies PIC4U brand typography and rose palette', () => {
@@ -150,9 +151,10 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     expect(config.theme).toBe('sky-cloud');
     expect(config.layout).toBe('1x4');
     expect(config.mainText.content).toBe('PIC4U STUDIO');
-    expect(config.mainText.color).toBe('#1c395c');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
     expect(config.frameColor).toBe('#e8f4fc');
-    expect(config.backgroundColor).toBe('#5c97d6');
+    expect(config.backgroundColor).toBe('#38bdf8');
   });
 
   it('Simulation 10: Preserves custom text and allows complete text removal', () => {
@@ -201,5 +203,31 @@ describe('PIC4U User Simulation & E2E Workflow Test', () => {
     expect(config.mainText.effect).toBe('soft-shadow');
     expect(config.frameColor).toBe('#fefce8');
     expect(config.backgroundColor).toBe('#fef08a');
+  });
+
+  it('Simulation 13: Signature #6 Midnight Aurora & Starry Sky Theme defaults and behavior', () => {
+    store.setTheme('midnight-aurora');
+    const config = store.getConfig();
+
+    expect(config.theme).toBe('midnight-aurora');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
+    expect(config.frameColor).toBe('#080d1a');
+    expect(config.backgroundColor).toBe('#0b0f19');
+  });
+
+  it('Simulation 14: Signature #7 Spring Cherry Blossom Theme defaults and behavior', () => {
+    store.setTheme('spring-cherry');
+    const config = store.getConfig();
+
+    expect(config.theme).toBe('spring-cherry');
+    expect(config.layout).toBe('1x4');
+    expect(config.mainText.content).toBe('PIC4U STUDIO');
+    expect(config.mainText.color).toBe('#ffffff');
+    expect(config.mainText.effect).toBe('soft-shadow');
+    expect(config.frameColor).toBe('#fff5f7');
+    expect(config.backgroundColor).toBe('#fdf2f4');
   });
 });

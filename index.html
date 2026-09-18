@@ -32,7 +32,38 @@
     <!-- Header -->
     <header class="app-header">
       <div class="brand-wrapper">
-        <div class="brand-symbol" aria-hidden="true">P4U</div>
+        <div class="brand-symbol" aria-label="PIC4U 스튜디오 로고 아이콘">
+          <svg class="brand-symbol-icon" viewBox="0 0 40 40" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandRing" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="50%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#f43f5e"/>
+              </linearGradient>
+              <radialGradient id="brandCore" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#1e1b4b"/>
+                <stop offset="100%" stop-color="#090a12"/>
+              </radialGradient>
+            </defs>
+            <!-- Camera Iris Shutter Ring -->
+            <circle cx="20" cy="20" r="17" fill="url(#brandCore)" stroke="url(#brandRing)" stroke-width="2"/>
+            <circle cx="20" cy="20" r="14.5" stroke="#ffffff" stroke-width="0.5" opacity="0.35"/>
+            <!-- 6 Aperture blades -->
+            <path d="M20 5.5 C23 10, 25 15, 25 20" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <path d="M32.5 12.8 C29.5 16.5, 25.5 19, 21.5 21" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <path d="M32.5 27.2 C27.5 27, 23 25, 19.5 22" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <path d="M20 34.5 C17 30, 15 25, 15 20" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <path d="M7.5 27.2 C10.5 23.5, 14.5 21, 18.5 19" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <path d="M7.5 12.8 C12.5 13, 17 15, 20.5 18" stroke="url(#brandRing)" stroke-width="1.2" opacity="0.8" stroke-linecap="round"/>
+            <!-- 4-cut center photo frames (2x2) -->
+            <rect x="15" y="15" width="4" height="4" rx="0.8" fill="#ffffff"/>
+            <rect x="21" y="15" width="4" height="4" rx="0.8" fill="#ffffff"/>
+            <rect x="15" y="21" width="4" height="4" rx="0.8" fill="#ffffff"/>
+            <rect x="21" y="21" width="4" height="4" rx="0.8" fill="#ffffff"/>
+            <!-- Sparkle star flash -->
+            <path d="M28 9 L28.8 11 L30.8 11.8 L28.8 12.6 L28 14.6 L27.2 12.6 L25.2 11.8 L27.2 11 Z" fill="#ffffff"/>
+          </svg>
+        </div>
         <div class="brand-info">
           <h1 class="brand-title">PIC4U <span class="brand-subtitle">STUDIO</span></h1>
         </div>
@@ -76,7 +107,7 @@
           <span>사진 슬롯을 탭하여 회전·반전·크롭하거나, 빈 슬롯을 눌러 사진을 채울 수 있습니다.</span>
         </p>
 
-        <!-- Desktop Download Button (Always accessible directly under canvas) -->
+        <!-- Desktop Download & Action Container (Always accessible directly under canvas) -->
         <div class="desktop-download-container">
           <button type="button" id="desktopDownloadBtn" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -84,7 +115,14 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span>고화질 인쇄 저장 / 공유하기</span>
+            <span>고화질 인쇄 저장</span>
+          </button>
+          <button type="button" id="desktopCopyBtn" class="btn-secondary-copy" title="이미지를 클립보드에 복사 (카톡/메모 즉시 붙여넣기)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>클립보드 복사</span>
           </button>
         </div>
       </section>
@@ -109,104 +147,177 @@
         <div class="tab-content-container">
           <!-- STEP 1: Photo Upload & Management -->
           <div id="tab-photo" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-photo">
-            <!-- 1-Click Demo Photo Filler -->
-            <button type="button" id="btnLoadDemoPhotos" class="btn-demo-fill">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-              <span>스튜디오 무드 사진 4장 불러오기 (원클릭)</span>
-            </button>
+            
+            <!-- 1. 사진 등록 및 업로드 -->
+            <div class="control-card">
+              <h2 class="section-title">
+                <span class="badge-step">1</span>사진 등록 및 업로드
+              </h2>
+              <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="사진 파일 추가하기">
+                <div class="drop-zone-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <p class="drop-zone-text">내 사진 파일 추가하기</p>
+                <p class="drop-zone-hint">이곳을 터치하거나 사진을 끌어다 놓으세요 (최대 6장)</p>
+              </div>
+              <input type="file" id="imageUpload" multiple accept="image/*" class="sr-only" />
 
-            <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="사진 파일 추가하기" style="margin-top: var(--space-3);">
-              <div class="drop-zone-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
+              <!-- 1-Click Demo Photo Filler -->
+              <button type="button" id="btnLoadDemoPhotos" class="btn-demo-fill" style="margin-top: 8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-              </div>
-              <p class="drop-zone-text">내 사진 파일 추가하기</p>
-              <p class="drop-zone-hint">이곳을 클릭하거나 사진을 드래그해 올려주세요 (최대 6장)</p>
+                <span>스튜디오 무드 사진 4장 불러오기 (원클릭)</span>
+              </button>
             </div>
-            <input type="file" id="imageUpload" multiple accept="image/*" class="sr-only" />
 
-            <div>
+            <!-- 2. 담긴 사진 관리 & 슬롯 배치 -->
+            <div class="control-card">
               <div class="preview-header">
-                <span id="fileStatus" class="file-status">0 / 6장</span>
-                <button type="button" id="clearImagesBtn" class="btn-clear-all">전체 비우기</button>
+                <h2 class="section-title" style="margin-bottom: 0;">
+                  <span class="badge-step">2</span>담긴 사진 관리 &amp; 배치
+                </h2>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button type="button" id="btnShuffleImages" class="btn-secondary-sm" title="사진 순서 랜덤 섞기" style="font-size: 11px; padding: 4px 8px;">
+                    🔀 순서 섞기
+                  </button>
+                  <button type="button" id="clearImagesBtn" class="btn-clear-all" style="font-size: 11px; padding: 4px 8px;">
+                    전체 비우기
+                  </button>
+                </div>
               </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 8px;">
+                <span id="fileStatus" class="file-status">0 / 6장 등록</span>
+                <span style="font-size: 11px; color: var(--color-text-muted);">💡 썸네일을 눌러 캔버스 슬롯에 배치</span>
+              </div>
+
               <div id="imagePreviews" class="preview-grid" aria-label="추가된 사진 목록"></div>
             </div>
           </div>
 
           <!-- STEP 2: Style, Preset, & Theme -->
           <div id="tab-style" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-style">
-            <!-- Featured Special Editions -->
-            <div class="special-editions-container">
-              <div class="special-edition-banner edition-botanical" id="btnApplyBotanicalTheme" role="button" tabindex="0" aria-label="수채화 유칼립투스 시그니처 에디션 적용하기">
-                <div class="special-edition-icon" aria-hidden="true">🌿</div>
-                <div class="special-edition-info">
-                  <div class="special-edition-badge">PIC4U 시그니처 #1</div>
-                  <div class="special-edition-title">수채화 유칼립투스 프레임</div>
-                  <div class="special-edition-desc">수채화 잎사귀 &amp; 페이퍼 질감 1x4 감성 네컷</div>
-                </div>
-                <span class="special-edition-tag">적용</span>
-              </div>
-
-              <div class="special-edition-banner edition-rose" id="btnApplyRoseTheme" role="button" tabindex="0" aria-label="로맨틱 핑크 로즈 시그니처 에디션 적용하기">
-                <div class="special-edition-icon" aria-hidden="true">🌹</div>
-                <div class="special-edition-info">
-                  <div class="special-edition-badge">PIC4U 시그니처 #2</div>
-                  <div class="special-edition-title">로맨틱 핑크 로즈 프레임</div>
-                  <div class="special-edition-desc">만개한 장미 꽃밭 &amp; 순백 각인 1x4 감성 네컷</div>
-                </div>
-                <span class="special-edition-tag">적용</span>
-              </div>
-
-              <div class="special-edition-banner edition-cloud" id="btnApplyCloudTheme" role="button" tabindex="0" aria-label="퓨어 스카이 뭉게구름 시그니처 에디션 적용하기">
-                <div class="special-edition-icon" aria-hidden="true">☁️</div>
-                <div class="special-edition-info">
-                  <div class="special-edition-badge">PIC4U 시그니처 #3</div>
-                  <div class="special-edition-title">퓨어 스카이 &amp; 뭉게구름 프레임</div>
-                  <div class="special-edition-desc">청명한 푸른 하늘 &amp; 포근한 뭉게구름 1x4 감성 네컷</div>
-                </div>
-                <span class="special-edition-tag">적용</span>
-              </div>
-
-              <div class="special-edition-banner edition-oil" id="btnApplyOilTheme" role="button" tabindex="0" aria-label="파스텔 유화 임파스토 시그니처 에디션 적용하기">
-                <div class="special-edition-icon" aria-hidden="true">🎨</div>
-                <div class="special-edition-info">
-                  <div class="special-edition-badge">PIC4U 시그니처 #4</div>
-                  <div class="special-edition-title">파스텔 유화 임파스토 프레임</div>
-                  <div class="special-edition-desc">크리미한 유화 나이프 터치 &amp; 마블링 캔버스 1x4 감성 네컷</div>
-                </div>
-                <span class="special-edition-tag">적용</span>
-              </div>
-
-              <div class="special-edition-banner edition-yellow-rose" id="btnApplyYellowRoseTheme" role="button" tabindex="0" aria-label="선샤인 옐로우 로즈 &amp; 플라워 시그니처 에디션 적용하기">
-                <div class="special-edition-icon" aria-hidden="true">🌼</div>
-                <div class="special-edition-info">
-                  <div class="special-edition-badge">PIC4U 시그니처 #5</div>
-                  <div class="special-edition-title">선샤인 옐로우 로즈 &amp; 플라워 프레임</div>
-                  <div class="special-edition-desc">만개한 노란 장미 &amp; 옐로우 플라워 가든 1x4 감성 네컷</div>
-                </div>
-                <span class="special-edition-tag">적용</span>
-              </div>
-            </div>
-
+            
+            <!-- 1. 프레임 레이아웃 (가장 먼저 컷 수 및 구성 선택) -->
             <div>
-              <h2 class="section-title">프레임 레이아웃</h2>
+              <h2 class="section-title">
+                <span class="badge-step">1</span>프레임 레이아웃
+              </h2>
               <div id="layoutButtons" class="choice-grid-3" role="radiogroup" aria-label="레이아웃 선택"></div>
             </div>
 
+            <!-- 2. 포토페이퍼 테마 (시그니처 에디션 & 스튜디오 컬러 통합) -->
             <div>
-              <h2 class="section-title">마진 &amp; 모서리 프리셋</h2>
-              <div id="presetButtons" class="choice-grid-2" role="radiogroup" aria-label="프레임 스타일 프리셋 선택"></div>
+              <h2 class="section-title">
+                <span class="badge-step">2</span>포토페이퍼 테마
+              </h2>
+
+              <!-- 시그니처 에디션 7종 -->
+              <div class="theme-subgroup-header">
+                <span class="theme-subgroup-title">🌟 PIC4U 시그니처 에디션 (8종)</span>
+                <span class="theme-subgroup-desc">고화질 아트워크 &amp; 순백 각인 네컷</span>
+              </div>
+              <div class="special-editions-container">
+                <div class="special-edition-banner edition-botanical" id="btnApplyBotanicalTheme" role="button" tabindex="0" aria-label="수채화 유칼립투스 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🌿</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #1</div>
+                    <div class="special-edition-title">수채화 유칼립투스 프레임</div>
+                    <div class="special-edition-desc">싱그러운 유칼립투스 가든 &amp; 순백 각인</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-rose" id="btnApplyRoseTheme" role="button" tabindex="0" aria-label="로맨틱 핑크 로즈 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🌹</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #2</div>
+                    <div class="special-edition-title">로맨틱 핑크 로즈 프레임</div>
+                    <div class="special-edition-desc">만개한 장미 꽃밭 &amp; 순백 각인</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-cloud" id="btnApplyCloudTheme" role="button" tabindex="0" aria-label="퓨어 스카이 뭉게구름 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">☁️</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #3</div>
+                    <div class="special-edition-title">퓨어 스카이 &amp; 뭉게구름 프레임</div>
+                    <div class="special-edition-desc">청명한 푸른 하늘 &amp; 순백 각인</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-oil" id="btnApplyOilTheme" role="button" tabindex="0" aria-label="파스텔 유화 임파스토 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🎨</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #4</div>
+                    <div class="special-edition-title">파스텔 유화 임파스토 프레임</div>
+                    <div class="special-edition-desc">크리미한 파스텔 유화 &amp; 순백 각인</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-yellow-rose" id="btnApplyYellowRoseTheme" role="button" tabindex="0" aria-label="선샤인 옐로우 로즈 &amp; 플라워 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🌼</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #5</div>
+                    <div class="special-edition-title">선샤인 옐로우 로즈 프레임</div>
+                    <div class="special-edition-desc">만개한 노란 장미 &amp; 플라워 가든</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-aurora" id="btnApplyAuroraTheme" role="button" tabindex="0" aria-label="미드나잇 오로라 &amp; 별빛 밤하늘 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🌙</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #6</div>
+                    <div class="special-edition-title">미드나잇 오로라 &amp; 별빛 프레임</div>
+                    <div class="special-edition-desc">몽환적 에메랄드·바이올렛 오로라</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-cherry" id="btnApplyCherryTheme" role="button" tabindex="0" aria-label="체리블라썸 &amp; 벚꽃 흩날림 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🌸</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #7</div>
+                    <div class="special-edition-title">체리블라썸 &amp; 벚꽃 프레임</div>
+                    <div class="special-edition-desc">만개한 벚꽃 잎 &amp; 봄 햇살 네컷</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+
+                <div class="special-edition-banner edition-lavender" id="btnApplyLavenderTheme" role="button" tabindex="0" aria-label="선셋 라벤더 &amp; 퍼플 가든 시그니처 에디션 적용하기">
+                  <div class="special-edition-icon" aria-hidden="true">🪻</div>
+                  <div class="special-edition-info">
+                    <div class="special-edition-badge">PIC4U 시그니처 #8</div>
+                    <div class="special-edition-title">선셋 라벤더 &amp; 퍼플 가든 프레임</div>
+                    <div class="special-edition-desc">보랏빛 라벤더 꽃밭 &amp; 황혼의 노을빛</div>
+                  </div>
+                  <span class="special-edition-tag">적용</span>
+                </div>
+              </div>
+
+              <!-- 스튜디오 컬러 및 전체 테마 팔레트 -->
+              <div class="theme-subgroup-header" style="margin-top: var(--space-3);">
+                <span class="theme-subgroup-title">🎨 클래식 &amp; 스튜디오 팔레트</span>
+                <span class="theme-subgroup-desc">단색 및 전체 테마 원클릭 변경</span>
+              </div>
+              <div id="themeButtons" class="choice-grid-4" role="radiogroup" aria-label="컬러 테마 선택"></div>
             </div>
 
+            <!-- 3. 프레임 스타일 프리셋 (마진 & 모서리 프리셋) -->
             <div>
-              <h2 class="section-title">포토페이퍼 테마</h2>
-              <div id="themeButtons" class="choice-grid-4" role="radiogroup" aria-label="컬러 테마 선택"></div>
+              <h2 class="section-title">
+                <span class="badge-step">3</span>프레임 스타일 프리셋
+              </h2>
+              <div id="presetButtons" class="choice-grid-2" role="radiogroup" aria-label="프레임 스타일 프리셋 선택"></div>
             </div>
 
             <!-- Optional Collapsible Advanced Customization -->
@@ -264,37 +375,51 @@
             </div>
           </div>
 
-          <!-- STEP 3: Stickers & Typography -->
-          <div id="tab-decor" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-decor">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="section-title">감성 스티커</h2>
-                <button type="button" id="btnClearStickers" class="btn-secondary-sm">전체 삭제</button>
-              </div>
-              <p style="font-size: 11px; color: var(--color-text-muted);">스티커를 누르면 캔버스에 배치되며, 자유롭게 드래그해 옮길 수 있습니다.</p>
-              <div id="stickerPalette" class="sticker-palette-grid"></div>
-            </div>
-
-            <!-- Text Setting -->
+          <!-- STEP 3: Typography & Stickers -->
+          <div id="tab-text" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-text">
+            
+            <!-- 1. 메인 타이틀 각인 -->
             <div class="control-card">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="section-title" style="margin-bottom: 0;">메인 타이틀 각인</h2>
-                <button type="button" id="btnClearMainText" class="btn-secondary-sm btn-clear-text">✕ 문구 지우기</button>
-              </div>
-              <input type="text" id="customTextInput" class="input-text" placeholder="예: PIC4U STUDIO, 성민❤️기영" aria-label="메인 타이틀 텍스트" />
-
-              <div style="display: flex; gap: 6px; margin-top: 2px;">
-                <button type="button" id="btnRestoreBrand" class="btn-secondary-sm" style="font-size: 11px;">🏷️ 우리 브랜드명 (PIC4U STUDIO)</button>
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); align-items: center; margin-top: 4px;">
-                <select id="mainFontSelector" class="select-font" aria-label="폰트 선택"></select>
-                <div class="color-input-wrapper" style="width: 38px; height: 38px;">
-                  <input type="color" id="mainFontColorPicker" aria-label="메인 텍스트 색상" />
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+                <h2 class="section-title" style="margin-bottom: 0;">
+                  <span class="badge-step">1</span>메인 타이틀 각인
+                </h2>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" id="btnRestoreBrand" class="btn-secondary-sm" title="기본 브랜드명 복원">↺ 기본 문구</button>
+                  <button type="button" id="btnClearMainText" class="btn-secondary-sm btn-clear-text">✕ 지우기</button>
                 </div>
               </div>
 
-              <div>
+              <!-- Main Text Input -->
+              <input type="text" id="customTextInput" class="input-text" placeholder="예: PIC4U STUDIO, 민수❤️지은" aria-label="메인 타이틀 텍스트" />
+
+              <!-- Quick Text Preset Tags -->
+              <div style="margin-top: 8px;">
+                <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 5px;">추천 문구 (클릭 시 자동 입력)</span>
+                <div class="quick-preset-container" aria-label="빠른 문구 추천">
+                  <button type="button" class="btn-tag-preset" data-text="PIC4U STUDIO">🏷️ PIC4U STUDIO</button>
+                  <button type="button" class="btn-tag-preset" data-text="HAPPY MOMENTS">✨ HAPPY MOMENTS</button>
+                  <button type="button" class="btn-tag-preset" data-text="OUR MEMORIES">🎞️ OUR MEMORIES</button>
+                  <button type="button" class="btn-tag-preset" data-text="오늘의 우리">🌿 오늘의 우리</button>
+                  <button type="button" class="btn-tag-preset" data-text="FOREVER YOUNG">💖 FOREVER YOUNG</button>
+                  <button type="button" class="btn-tag-preset" data-text="사랑하는 우리">🤍 사랑하는 우리</button>
+                  <button type="button" class="btn-tag-preset" data-text="HAPPY BIRTHDAY">🎂 HAPPY BIRTHDAY</button>
+                </div>
+              </div>
+
+              <!-- Font & Color Selection -->
+              <div style="margin-top: 10px;">
+                <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 4px;">폰트 서체 &amp; 글자 색상</span>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); align-items: center;">
+                  <select id="mainFontSelector" class="select-font" aria-label="폰트 선택"></select>
+                  <div class="color-input-wrapper" style="width: 38px; height: 38px;" title="글자 색상 선택">
+                    <input type="color" id="mainFontColorPicker" aria-label="메인 텍스트 색상" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Font Size -->
+              <div style="margin-top: 10px;">
                 <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 6px;">글자 크기</span>
                 <div class="segmented-control">
                   <button type="button" class="segmented-btn btn-text-size" data-size="32">작게 (32px)</button>
@@ -303,44 +428,69 @@
                 </div>
               </div>
 
-              <div>
-                <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 6px;">글자 스타일</span>
+              <!-- Font Style & Effects -->
+              <div style="margin-top: 10px;">
+                <span style="font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 6px;">글자 스타일 &amp; 효과</span>
                 <div class="segmented-control">
-                  <button type="button" class="segmented-btn btn-text-effect active" data-effect="none">심플</button>
+                  <button type="button" class="segmented-btn btn-text-effect active" data-effect="none">심플 플랫</button>
                   <button type="button" class="segmented-btn btn-text-effect" data-effect="soft-shadow">소프트 섀도우</button>
                   <button type="button" class="segmented-btn btn-text-effect" data-effect="sticker-outline">외곽선 아웃라인</button>
                 </div>
               </div>
             </div>
 
-            <!-- Date & Subtext Setting -->
+            <!-- 2. 촬영 날짜 및 서브 각인 -->
             <div class="control-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
-                <h2 class="section-title" style="margin-bottom: 0;">날짜 및 서브 타이포</h2>
+                <h2 class="section-title" style="margin-bottom: 0;">
+                  <span class="badge-step">2</span>촬영 날짜 &amp; 서브 각인
+                </h2>
                 <button type="button" id="btnClearSubText" class="btn-secondary-sm btn-clear-text">✕ 날짜 지우기</button>
               </div>
 
-              <!-- Date Picker Row -->
-              <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
-                <input type="date" id="datePickerInput" class="input-date" aria-label="달력에서 날짜 선택" />
-                <button type="button" id="btnTodayDate" class="btn-secondary-sm">📅 오늘 날짜</button>
-              </div>
-
-              <input type="text" id="subTextInput" class="input-text" placeholder="예: 2026. 09. 16 또는 나만의 문구 입력" aria-label="서브 텍스트" />
-
-              <div class="color-item" style="margin-top: 4px;">
-                <div class="color-input-wrapper" style="width: 34px; height: 34px;">
+              <!-- Subtext input + Color Picker Row -->
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); align-items: center; margin-bottom: 8px;">
+                <input type="text" id="subTextInput" class="input-text" placeholder="예: 2026. 09. 18 또는 나만의 기념일 입력" aria-label="서브 텍스트" />
+                <div class="color-input-wrapper" style="width: 38px; height: 38px;" title="날짜 글자 색상">
                   <input type="color" id="subFontColorPicker" aria-label="날짜 텍스트 색상" />
                 </div>
-                <div class="color-meta">
-                  <span style="font-size: 11px; color: var(--color-text-muted);">날짜 글자 색상</span>
+              </div>
+
+              <!-- Quick Date Stamping Helpers -->
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <button type="button" id="btnTodayDate" class="btn-secondary-sm" style="flex: 1; justify-content: center; padding: 7px 10px;">
+                  📅 오늘 날짜 찍기
+                </button>
+                <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                  <input type="date" id="datePickerInput" class="input-date" style="width: 100%; height: 34px;" aria-label="달력에서 날짜 선택" />
                 </div>
               </div>
             </div>
 
-            <button type="button" id="btnClearAllTexts" class="btn-secondary-sm btn-clear-text" style="width: 100%; justify-content: center; padding: 10px; margin-top: var(--space-2);">
-              ✕ 모든 문구 제거 (사진만 있는 무지 프레임)
-            </button>
+            <!-- 3. 감성 스티커 꾸미기 -->
+            <div class="control-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="section-title" style="margin-bottom: 0;">
+                  <span class="badge-step">3</span>감성 스티커 꾸미기
+                </h2>
+                <button type="button" id="btnClearStickers" class="btn-secondary-sm">전체 삭제</button>
+              </div>
+              <p style="font-size: 11px; color: var(--color-text-muted); margin-top: 4px; margin-bottom: 6px;">
+                💡 스티커를 클릭하면 캔버스에 추가되며, 원하는 위치로 자유롭게 드래그할 수 있습니다.
+              </p>
+              <div id="stickerPalette" class="sticker-palette-grid"></div>
+            </div>
+
+            <!-- 4. 원클릭 무지 프레임 옵션 -->
+            <div class="blank-frame-card">
+              <div>
+                <span style="font-size: 12px; font-weight: 600; color: var(--color-text-main); display: block;">깔끔한 무지 프레임</span>
+                <span style="font-size: 11px; color: var(--color-text-muted);">글자와 날짜를 모두 비우고 사진만 깔끔하게 인쇄</span>
+              </div>
+              <button type="button" id="btnClearAllTexts" class="btn-secondary-sm btn-clear-text" style="flex-shrink: 0;">
+                ✕ 문구 전체 제거
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -349,33 +499,45 @@
 
   <!-- Mobile Sticky Action Bar (Always accessible on phones) -->
   <div class="mobile-action-bar">
-    <button type="button" id="mobileDownloadBtn" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      <span>고화질 인쇄 저장 / 공유하기</span>
-    </button>
+    <div class="mobile-action-bar-inner">
+      <button type="button" id="mobileDownloadBtn" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>고화질 저장</span>
+      </button>
+      <button type="button" id="mobileCopyBtn" class="btn-secondary-sm btn-mobile-copy" title="클립보드 복사" aria-label="클립보드 복사">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <span>복사</span>
+      </button>
+    </div>
   </div>
 
   <!-- Image Detail Edit Modal -->
   <div id="imageEditModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
     <div class="modal-dialog">
-      <h2 id="editModalTitle" class="modal-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        <span>사진 구도 및 상세 조절</span>
-      </h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <h2 id="editModalTitle" class="modal-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>사진 구도 조절</span>
+        </h2>
+        <button type="button" id="editResetBtn" class="btn-secondary-sm" title="구도 초기화" style="font-size: 11px;">↺ 초기화</button>
+      </div>
 
       <div id="editCanvasContainer">
         <canvas id="editCanvas"></canvas>
       </div>
-      <p class="edit-gesture-hint">캔버스를 직접 터치하거나 드래그하여 구도를 조절하세요.</p>
+      <p class="edit-gesture-hint">캔버스를 직접 터치하거나 드래그하여 구도를 맞추세요.</p>
 
-      <div style="width: 100%; display: flex; flex-direction: column; gap: var(--space-3);">
+      <div style="width: 100%; display: flex; flex-direction: column; gap: var(--space-2);">
         <div class="slider-field">
           <div class="slider-header" style="color: #cbd5e1;">
             <span>확대 / 축소 (Zoom)</span>
@@ -417,6 +579,16 @@
       </div>
       <img id="resultImage" alt="완성된 네컷 사진" />
       <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: var(--space-3);">
+        <button type="button" id="modalShareBtn" class="btn-primary" style="width: 100%; display: none; background: #2563eb;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          <span>사진 공유 / 사진첩 저장</span>
+        </button>
         <button type="button" id="modalDownloadBtn" class="btn-primary" style="width: 100%;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

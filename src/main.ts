@@ -10,9 +10,13 @@ import { PreviewStrip } from './components/PreviewStrip.ts';
 import { ResultModal } from './components/ResultModal.ts';
 import { TabControl } from './components/TabControl.ts';
 import { pwaInstaller } from './core/pwa-installer.ts';
+import { onBotanicalTextureLoaded } from './core/botanical-frame.ts';
+import { onCloudTextureLoaded } from './core/cloud-frame.ts';
 import { onOilTextureLoaded } from './core/oil-frame.ts';
 import { onRoseTextureLoaded } from './core/rose-frame.ts';
 import { onYellowRoseTextureLoaded } from './core/yellow-rose-frame.ts';
+import { onAuroraTextureLoaded } from './core/aurora-frame.ts';
+import { onCherryTextureLoaded } from './core/cherry-frame.ts';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = new ResultModal();
@@ -23,6 +27,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const canvasView = new CanvasView();
 
   // Re-render when asynchronous textures finish loading
+  onBotanicalTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
+  onCloudTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
   onOilTextureLoaded(() => {
     canvasView.resizeAndRender();
   });
@@ -35,12 +47,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     canvasView.resizeAndRender();
   });
 
+  onAuroraTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
+  onCherryTextureLoaded(() => {
+    canvasView.resizeAndRender();
+  });
+
   // Initialize Progressive Web App (PWA) installation
   pwaInstaller.init('headerInstallBtn');
 
-  // iOS Safari install guide close button
+  // iOS Safari install guide close button & backdrop dismiss
+  const iosModal = document.getElementById('iosInstallModal');
   document.getElementById('closeIosInstallBtn')?.addEventListener('click', () => {
-    document.getElementById('iosInstallModal')?.classList.remove('is-open');
+    iosModal?.classList.remove('is-open');
+  });
+  iosModal?.addEventListener('click', (e) => {
+    if (e.target === iosModal) {
+      iosModal.classList.remove('is-open');
+    }
   });
 
   try {
